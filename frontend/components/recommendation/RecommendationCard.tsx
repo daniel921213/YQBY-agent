@@ -1,15 +1,17 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Clock, Zap } from "lucide-react";
 import type { ScanItem } from "@/lib/types";
 import {
   confidenceLabel,
   directionLabel,
   formatPercent,
   formatPrice,
+  formatRelativeTime,
   formatScore,
   percentTone
 } from "@/lib/format";
+import { FrequencyTier } from "@/components/dashboard/FrequencyTier";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
 
 interface RecommendationCardProps {
@@ -83,6 +85,31 @@ export function RecommendationCard({ item, selected, onClick }: RecommendationCa
       <div className="mt-4">
         <TugOfWarBar long={item.long_score} short={item.short_score} size="sm" />
       </div>
+
+      {item.first_seen_ts !== null ? (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-2 text-[11px] text-stone-500">
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatRelativeTime(item.minutes_since_first)}
+          </span>
+          {item.is_new ? (
+            <span className="rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+              新
+            </span>
+          ) : null}
+          <span>
+            首次 {formatPrice(item.first_seen_price)} →{" "}
+            <span className={percentTone(item.change_since_first)}>
+              {formatPercent(item.change_since_first)}
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Zap className="h-3 w-3 text-ember/80" />
+            近1h {item.alert_trigger_count} 次
+            <FrequencyTier tier={item.frequency_tier} />
+          </span>
+        </div>
+      ) : null}
     </button>
   );
 }
