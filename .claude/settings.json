@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm run typecheck)",
+      "PowerShell($n = Get-Command node -ErrorAction SilentlyContinue; if \\($n\\) { $n.Source } else { \"node not found\" }; $np = Get-Command npm -ErrorAction SilentlyContinue; if \\($np\\) { $np.Source } else { \"npm not found\" })",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;$env:Path\"; Set-Location frontend; & \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \".\\\\node_modules\\\\typescript\\\\bin\\\\tsc\" --noEmit; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($py = Get-Command python -ErrorAction SilentlyContinue; if \\($py\\) { $py.Source } else { \"python not found\" }; if \\(Test-Path \"backend\\\\.venv\\\\Scripts\\\\python.exe\"\\) { \"VENV: backend\\\\.venv\\\\Scripts\\\\python.exe\" })",
+      "PowerShell($env:PYTHONPATH = \"backend\"; & \"C:\\\\Users\\\\danie\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" \"backend\\\\_bias_check.py\")",
+      "PowerShell(Remove-Item \"backend\\\\_bias_check.py\" -Force; $env:PYTHONPATH = \"backend\"; Set-Location backend; & \"C:\\\\Users\\\\danie\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -m pytest -q; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(Set-Location frontend; & \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \".\\\\node_modules\\\\typescript\\\\bin\\\\tsc\" --noEmit; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(Remove-Item \"D:\\\\Crypto_killer\\\\backend\\\\_scan_check.py\" -Force; $env:PYTHONPATH = \"D:\\\\Crypto_killer\\\\backend\"; Set-Location \"D:\\\\Crypto_killer\\\\backend\"; & \"C:\\\\Users\\\\danie\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -m pytest -q; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($env:PYTHONPATH = \"D:\\\\Crypto_killer\\\\backend\"; & \"C:\\\\Users\\\\danie\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" \"D:\\\\Crypto_killer\\\\backend\\\\_scan_check.py\")",
+      "PowerShell(Set-Location \"D:\\\\Crypto_killer\\\\frontend\"; & \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" \".\\\\node_modules\\\\typescript\\\\bin\\\\tsc\" --noEmit; \"FRONTEND_EXIT=$LASTEXITCODE\")",
+      "WebFetch(domain:fapi.binance.com)",
+      "PowerShell($env:PYTHONPATH = \"D:\\\\Crypto_killer\\\\backend\"; & \"C:\\\\Users\\\\danie\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -c \"import httpx; print\\('httpx', httpx.__version__\\)\")"
+    ]
+  }
+}

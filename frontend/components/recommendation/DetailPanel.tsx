@@ -1,0 +1,152 @@
+import { X } from "lucide-react";
+import { IndicatorEvidenceList } from "@/components/dashboard/IndicatorEvidenceList";
+import { SignalRadar } from "@/components/dashboard/SignalRadar";
+import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
+import { PillarList } from "@/components/dashboard/PillarList";
+import type { AnalysisResponse, EvidenceItem, PillarScore, ScanItem } from "@/lib/types";
+import { confidenceLabel, directionLabel } from "@/lib/format";
+
+const PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"];
+
+function derivePillars(evidence: EvidenceItem[]): PillarScore[] {
+  return PILLAR_ORDER.map((pillar) => {
+    const members = evidence.filter((e) => e.pillar === pillar);
+    if (!members.length) {
+      return { pillar, direction: "NEUTRAL", strength: 0, score: 0 };
+    }
+    const top = members.reduce((a, b) => (b.strength > a.strength ? b : a));
+    return {
+      pillar,
+      direction: top.direction,
+      strength: top.strength,
+      score: members.reduce((sum, e) => sum + e.score, 0)
+    };
+  });
+}
+
+interface DetailPanelProps {
+  analysis: AnalysisResponse | null;
+  selectedScanItem: ScanItem | null;
+  loading: boolean;
+  error: string | null;
+  symbol: string;
+  onClose: () => void;
+}
+
+export function DetailPanel({
+  analysis,
+  selectedScanItem,
+  loading,
+  error,
+  symbol,
+  onClose
+}: DetailPanelProps) {
+  if (!analysis) {
+    return (
+      <ModalFrame title={symbol} onClose={onClose}>
+        <div className="flex h-64 items-center justify-center text-sm text-stone-300">
+          {error ?? (loading ? "載入分析中" : "尚無分析資料")}
+        </div>
+      </ModalFrame>
+    );
+  }
+
+  const rec = analysis.recommendation;
+  const longScore = rec.long_score;
+  const shortScore = rec.short_score;
+  const direction = rec.direction;
+  const directionTone = direction === "LONG" ? "text-long" : "text-short";
+  const pillars = derivePillars(analysis.evidence);
+
+  return (
+    <ModalFrame title={analysis.recommendation.symbol} onClose={onClose}>
+      <section className="grid max-h-[78vh] gap-5 overflow-y-auto pr-1">
+        <div className="grid gap-4 border border-white/10 bg-graphite/85 p-4 md:grid-cols-[1fr_240px] md:items-center">
+          <div>
+            <div className="text-xs tracking-[0.16em] text-ember">交易方向</div>
+            <h2 className={`mt-2 text-3xl font-semibold ${directionTone}`}>
+              {directionLabel(direction)} {analysis.recommendation.score.toFixed(1)}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-stone-300">
+              {rec.confluence_pillars}/5 支柱同向（原始 {rec.raw_score.toFixed(1)} × 共振{" "}
+              {rec.confluence_multiplier.toFixed(2)} = {rec.score.toFixed(1)}），信心{" "}
+              {confidenceLabel(rec.confidence_level)}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-1">
+            <Metric label="排名" value={selectedScanItem ? `第 ${selectedScanItem.rank} 名` : "--"} />
+            <Metric
+              label="觸發指標"
+              value={selectedScanItem ? `${selectedScanItem.triggered_count} 個` : "--"}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[260px_1fr]">
+          <div className="flex flex-col items-center justify-center border border-white/10 bg-graphite/85 p-4">
+            <div className="mb-1 self-start text-sm font-medium text-stone-100">五支柱雷達</div>
+            <SignalRadar pillars={pillars} direction={direction} />
+          </div>
+
+          <div className="flex flex-col justify-center gap-5 border border-white/10 bg-graphite/85 p-4">
+            <div>
+              <div className="mb-2 text-sm font-medium text-stone-100">支柱強弱</div>
+              <PillarList pillars={pillars} />
+            </div>
+            <div>
+              <div className="mb-3 text-sm font-medium text-stone-100">多空力量對比</div>
+              <TugOfWarBar long={longScore} short={shortScore} size="lg" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-3 text-sm font-medium text-stone-100">分數拆解與理由</div>
+          <IndicatorEvidenceList evidence={analysis.evidence} />
+        </div>
+      </section>
+    </ModalFrame>
+  );
+}
+
+function ModalFrame({
+  title,
+  onClose,
+  children
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
+      <div className="animate-signal-rise w-full max-w-4xl rounded-md border border-ember/25 bg-[#0d0b09] shadow-[0_30px_120px_rgba(0,0,0,0.58)]">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div>
+            <div className="text-xs tracking-[0.18em] text-ember">訊號詳情</div>
+            <div className="mt-1 text-xl font-semibold text-stone-50">{title}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-stone-300 transition hover:border-ember/60 hover:text-ember"
+            title="關閉"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-white/10 bg-black/20 px-3 py-2">
+      <div className="text-xs text-stone-500">{label}</div>
+      <div className="mt-1 font-medium text-stone-100">{value}</div>
+    </div>
+  );
+}

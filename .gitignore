@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.env
+.env.local
+node_modules/
+.next/
+dist/
+coverage/
+*.log
+*.egg-info/
+.claude/settings.local.json
+
