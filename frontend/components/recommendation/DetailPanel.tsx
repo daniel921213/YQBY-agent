@@ -4,7 +4,13 @@ import { SignalRadar } from "@/components/dashboard/SignalRadar";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
 import { PillarList } from "@/components/dashboard/PillarList";
 import type { AnalysisResponse, EvidenceItem, PillarScore, ScanItem } from "@/lib/types";
-import { confidenceLabel, directionLabel } from "@/lib/format";
+import {
+  confidenceLabel,
+  directionLabel,
+  formatPercent,
+  formatPrice,
+  formatRelativeTime
+} from "@/lib/format";
 
 const PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"];
 
@@ -74,12 +80,36 @@ export function DetailPanel({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-1">
+          <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-2">
             <Metric label="排名" value={selectedScanItem ? `第 ${selectedScanItem.rank} 名` : "--"} />
+            <Metric
+              label="現價"
+              value={selectedScanItem ? formatPrice(selectedScanItem.price) : "--"}
+            />
+            <Metric
+              label="24H 漲跌"
+              value={selectedScanItem ? formatPercent(selectedScanItem.change_24h) : "--"}
+            />
             <Metric
               label="觸發指標"
               value={selectedScanItem ? `${selectedScanItem.triggered_count} 個` : "--"}
             />
+            {selectedScanItem?.first_seen_ts ? (
+              <>
+                <Metric
+                  label="首次警報"
+                  value={`${formatRelativeTime(selectedScanItem.minutes_since_first)} · ${formatPrice(
+                    selectedScanItem.first_seen_price
+                  )}`}
+                />
+                <Metric
+                  label="首次警報後"
+                  value={`${formatPercent(selectedScanItem.change_since_first)} · 近1h ${
+                    selectedScanItem.alert_trigger_count
+                  } 次`}
+                />
+              </>
+            ) : null}
           </div>
         </div>
 

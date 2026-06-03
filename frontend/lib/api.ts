@@ -1,4 +1,4 @@
-import type { AnalysisResponse, ScanResponse } from "@/lib/types";
+import type { AnalysisResponse, AnomalyHistoryResponse, ScanResponse } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -58,5 +58,17 @@ export async function fetchMarketScan(): Promise<ScanResponse> {
     throw new Error(`市場掃描讀取失敗：${response.status}`);
   }
 
+  return response.json();
+}
+
+export async function fetchAnomalyHistory(): Promise<AnomalyHistoryResponse> {
+  const url = new URL("/api/v1/anomaly-history", API_BASE_URL);
+  const response = await fetch(url.toString(), {
+    headers: { Accept: "application/json" },
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    throw new Error(`歷史紀錄讀取失敗：${response.status}`);
+  }
   return response.json();
 }

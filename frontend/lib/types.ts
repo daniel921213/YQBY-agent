@@ -64,14 +64,23 @@ export interface AnalysisMeta {
   refresh_interval_seconds: number;
 }
 
+export interface MarketSnapshot {
+  funding_rate: number;
+  top_trader_ratio: number;
+  account_ratio: number;
+  open_interest: number;
+}
+
 export interface AnalysisResponse {
   recommendation: Recommendation;
   evidence: EvidenceItem[];
   chart: MarketChartPayload;
   meta: AnalysisMeta;
+  metrics: MarketSnapshot | null;
 }
 
 export type AnomalyCategory = "轉多" | "轉空" | "疑似反轉";
+export type FrequencyTier = "low" | "mid" | "high";
 
 export interface ScanItem {
   rank: number;
@@ -89,6 +98,15 @@ export interface ScanItem {
   triggered_count: number;
   pillars: PillarScore[];
   top_evidence: EvidenceItem[];
+  price: number;
+  change_24h: number;
+  first_seen_ts: number | null;
+  minutes_since_first: number;
+  first_seen_price: number;
+  change_since_first: number;
+  alert_trigger_count: number;
+  frequency_tier: FrequencyTier;
+  is_new: boolean;
 }
 
 export interface MarketBreadth {
@@ -98,9 +116,65 @@ export interface MarketBreadth {
   anomaly_count: number;
 }
 
+export interface AltseasonIndex {
+  index: number;
+  label: "BTC季" | "偏BTC" | "中性" | "偏山寨" | "山寨季";
+  outperform_count: number;
+  total: number;
+  previous_index: number | null;
+}
+
+export type OiMoverSide = "多頭建倉" | "空頭建倉" | "多頭減倉" | "空頭減倉" | "持平";
+
+export interface OiMover {
+  symbol: string;
+  price: number;
+  oi_change_1h: number;
+  oi_delta: number;
+  total_oi: number;
+  change_24h: number;
+  side: OiMoverSide;
+}
+
+export interface ScreenerRow {
+  symbol: string;
+  price: number;
+  change_24h: number;
+  score: number;
+  direction: EvidenceDirection;
+  confidence_level: ConfidenceLevel;
+  confluence_pillars: number;
+  pillars: PillarScore[];
+  funding_rate: number;
+  top_trader_ratio: number;
+  account_ratio: number;
+  oi_change_1h: number;
+}
+
 export interface ScanResponse {
   items: ScanItem[];
   scanned_symbols: string[];
   breadth: MarketBreadth;
   meta: AnalysisMeta;
+  altseason: AltseasonIndex | null;
+  oi_movers: OiMover[];
+  universe: ScreenerRow[];
+}
+
+export interface AnomalyHistoryItem {
+  symbol: string;
+  direction: TradeDirection;
+  category: AnomalyCategory;
+  first_seen_ts: number;
+  resolved_ts: number;
+  duration_minutes: number;
+  first_seen_price: number;
+  last_price: number;
+  change_over_life: number;
+  peak_score: number;
+  trigger_count: number;
+}
+
+export interface AnomalyHistoryResponse {
+  items: AnomalyHistoryItem[];
 }

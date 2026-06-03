@@ -2,7 +2,14 @@
 
 import { ArrowDownRight, ArrowUpRight, ChevronRight } from "lucide-react";
 import type { ScanItem } from "@/lib/types";
-import { confidenceLabel, directionLabel, formatScore } from "@/lib/format";
+import {
+  confidenceLabel,
+  directionLabel,
+  formatPercent,
+  formatPrice,
+  formatScore,
+  percentTone
+} from "@/lib/format";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
 
 interface RecommendationCardProps {
@@ -43,6 +50,14 @@ export function RecommendationCard({ item, selected, onClick }: RecommendationCa
             <span className={`inline-flex items-center gap-1 ${tone}`}>
               <Icon className="h-4 w-4" />
               <span className="text-sm font-semibold">{directionLabel(item.direction)}</span>
+            </span>
+          </div>
+          <div className="mt-1.5 flex items-center gap-2 text-sm">
+            <span className="font-medium tabular-nums text-stone-200">
+              {formatPrice(item.price)}
+            </span>
+            <span className={`text-xs font-medium tabular-nums ${percentTone(item.change_24h)}`}>
+              {formatPercent(item.change_24h)}
             </span>
           </div>
         </div>

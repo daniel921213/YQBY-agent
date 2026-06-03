@@ -5,17 +5,28 @@ from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE, RECOMMEND_SC
 from app.schemas.indicators import EvidenceItem
 from app.schemas.market import CandlePoint, LinePoint, MarketChartPayload
 from app.schemas.scoring import (
+    AltseasonIndex,
     AnalysisMeta,
     AnalysisResponse,
     MarketBreadth,
+    MarketSnapshot,
+    OiMover,
     PillarScore,
     Recommendation,
     ScanItem,
     ScanResponse,
+    ScreenerRow,
 )
+from app.utils.numeric import pct_change
+from app.utils.timeframes import timeframe_to_seconds
 
 # Fixed display order for the five pillars.
 PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"]
+
+# Keep the OI movement board readable — only the biggest 1h movers.
+OI_MOVERS_CAP = 15
+# Below this score a screener row reads as 中性 rather than forcing 做多/做空.
+SCREENER_NEUTRAL_SCORE = 15.0
 
 
 def _pillar_breakdown(evidence: list) -> list[PillarScore]:
@@ -37,7 +48,74 @@ def _pillar_breakdown(evidence: list) -> list[PillarScore]:
         )
     return rows
 from app.scoring.engine import ScoringEngine
+from app.services.anomaly_tracker import anomaly_tracker
 from app.services.market_data_service import MarketDataService
+
+
+def _bars_for(seconds: int, primary_timeframe: str) -> int:
+    """How many primary-frame bars span `seconds` (>=1)."""
+    return max(1, seconds // timeframe_to_seconds(primary_timeframe))
+
+
+def _price_and_change_24h(chart: MarketChartPayload, primary_timeframe: str) -> tuple[float, float]:
+    candles = chart.candles
+    if not candles:
+        return 0.0, 0.0
+    price = candles[-1].close
+    bars_24h = _bars_for(86_400, primary_timeframe)
+    ref = candles[-1 - bars_24h] if len(candles) > bars_24h else candles[0]
+    return price, round(pct_change(ref.close, price), 6)
+
+
+def _relative_strength_direction(evidence: list[EvidenceItem]) -> str:
+    for e in evidence:
+        if e.key == "relative_strength":
+            return e.direction
+    return "NEUTRAL"
+
+
+def _oi_change_1h(chart: MarketChartPayload, primary_timeframe: str) -> float:
+    oi = chart.open_interest
+    if len(oi) < 2:
+        return 0.0
+    bars_1h = _bars_for(3_600, primary_timeframe)
+    prev = oi[-1 - bars_1h].value if len(oi) > bars_1h else oi[0].value
+    return round(pct_change(prev, oi[-1].value), 6)
+
+
+def _oi_mover(
+    symbol: str,
+    chart: MarketChartPayload,
+    price: float,
+    change_24h: float,
+    primary_timeframe: str,
+) -> OiMover | None:
+    oi = chart.open_interest
+    if len(oi) < 2 or oi[-1].value <= 0:
+        return None
+    bars_1h = _bars_for(3_600, primary_timeframe)
+    prev = oi[-1 - bars_1h].value if len(oi) > bars_1h else oi[0].value
+    total_oi = oi[-1].value
+    oi_delta = total_oi - prev
+
+    candles = chart.candles
+    price_ref = candles[-1 - bars_1h].close if len(candles) > bars_1h else candles[0].close
+    price_up = price >= price_ref
+    oi_up = oi_delta >= 0
+    if oi_up:
+        side = "多頭建倉" if price_up else "空頭建倉"
+    else:
+        side = "空頭減倉" if price_up else "多頭減倉"
+
+    return OiMover(
+        symbol=symbol,
+        price=price,
+        oi_change_1h=round(pct_change(prev, total_oi), 6),
+        oi_delta=round(oi_delta, 2),
+        total_oi=round(total_oi, 2),
+        change_24h=change_24h,
+        side=side,
+    )
 
 
 def _is_anomaly(recommendation: Recommendation) -> bool:
@@ -118,10 +196,19 @@ class AnalysisService:
             ],
         )
 
+        last = primary.iloc[-1]
+        metrics = MarketSnapshot(
+            funding_rate=float(last["funding_rate"]),
+            top_trader_ratio=float(last["top_trader_long_short_ratio"]),
+            account_ratio=float(last["account_long_short_ratio"]),
+            open_interest=float(last["open_interest"]),
+        )
+
         return AnalysisResponse(
             recommendation=recommendation,
             evidence=evidence,
             chart=chart,
+            metrics=metrics,
             meta=AnalysisMeta(
                 primary_timeframe=primary_timeframe,
                 trigger_timeframe=trigger_timeframe,
@@ -139,6 +226,7 @@ class AnalysisService:
         trend_timeframe: str,
         lookback: int,
         top_per_direction: int = 20,
+        track: bool = False,
     ) -> ScanResponse:
         # No explicit symbols => scan the entire tradable universe.
         scanned_symbols = symbols if symbols else self.market_data.list_symbols()
@@ -174,7 +262,18 @@ class AnalysisService:
             if a.recommendation.score < RECOMMEND_SCORE
             and a.recommendation.confluence_pillars >= ANOMALY_MIN_CONFLUENCE
         ][:ANOMALY_CAP]
-        items = [self._build_item(rank, a) for rank, a in enumerate(recommends + anomalies, 1)]
+        items: list[ScanItem] = []
+        for rank, analysis in enumerate(recommends + anomalies, 1):
+            item = self._build_item(rank, analysis)
+            item.price, item.change_24h = _price_and_change_24h(
+                analysis.chart, primary_timeframe
+            )
+            items.append(item)
+
+        # Lifecycle enrichment (first-seen time/price, change-since, trigger count)
+        # only on an authoritative full scan — analyst/subset calls don't pollute it.
+        if track:
+            anomaly_tracker.record(items)
 
         breadth = MarketBreadth(
             total=len(analyses),
@@ -183,10 +282,17 @@ class AnalysisService:
             anomaly_count=sum(1 for a in analyses if _is_anomaly(a.recommendation)),
         )
 
+        oi_movers = self._build_oi_movers(analyses, primary_timeframe)
+        altseason = self._build_altseason(analyses, record=track)
+        universe = self._build_universe(analyses, primary_timeframe)
+
         return ScanResponse(
             items=items,
             scanned_symbols=scanned_symbols,
             breadth=breadth,
+            altseason=altseason,
+            oi_movers=oi_movers,
+            universe=universe,
             meta=AnalysisMeta(
                 primary_timeframe=primary_timeframe,
                 trigger_timeframe=trigger_timeframe,
@@ -195,6 +301,60 @@ class AnalysisService:
                 data_provider=self.settings.data_provider,
             ),
         )
+
+    @staticmethod
+    def _build_universe(
+        analyses: list[AnalysisResponse], primary_timeframe: str
+    ) -> list[ScreenerRow]:
+        rows: list[ScreenerRow] = []
+        for a in analyses:
+            r = a.recommendation
+            price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
+            direction = "NEUTRAL" if r.score < SCREENER_NEUTRAL_SCORE else r.direction
+            m = a.metrics
+            rows.append(
+                ScreenerRow(
+                    symbol=r.symbol,
+                    price=price,
+                    change_24h=change_24h,
+                    score=r.score,
+                    direction=direction,
+                    confidence_level=r.confidence_level,
+                    confluence_pillars=r.confluence_pillars,
+                    pillars=_pillar_breakdown(a.evidence),
+                    funding_rate=m.funding_rate if m else 0.0,
+                    top_trader_ratio=m.top_trader_ratio if m else 1.0,
+                    account_ratio=m.account_ratio if m else 1.0,
+                    oi_change_1h=_oi_change_1h(a.chart, primary_timeframe),
+                )
+            )
+        rows.sort(key=lambda row: row.score, reverse=True)
+        return rows
+
+    @staticmethod
+    def _build_oi_movers(
+        analyses: list[AnalysisResponse], primary_timeframe: str
+    ) -> list[OiMover]:
+        movers: list[OiMover] = []
+        for a in analyses:
+            price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
+            mover = _oi_mover(
+                a.recommendation.symbol, a.chart, price, change_24h, primary_timeframe
+            )
+            if mover is not None:
+                movers.append(mover)
+        # Rank by notional 1h OI change, like the reference's "依變化金額排序".
+        movers.sort(key=lambda m: abs(m.oi_delta), reverse=True)
+        return movers[:OI_MOVERS_CAP]
+
+    @staticmethod
+    def _build_altseason(analyses: list[AnalysisResponse], record: bool) -> AltseasonIndex:
+        # A snapshot is only logged for an authoritative scan (record=True), so
+        # the "vs 稍早" baseline isn't skewed by analyst/subset calls.
+        outperform = sum(
+            1 for a in analyses if _relative_strength_direction(a.evidence) == "LONG"
+        )
+        return anomaly_tracker.build_altseason(outperform, len(analyses), record=record)
 
     @staticmethod
     def _build_item(rank: int, analysis: AnalysisResponse) -> ScanItem:

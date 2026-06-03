@@ -45,6 +45,7 @@ class ScanCache:
             trend_timeframe=TREND_TIMEFRAME,
             lookback=DEFAULT_LOOKBACK_CANDLES,
             top_per_direction=20,
+            track=True,
         )
         with self._lock:
             self._latest = result

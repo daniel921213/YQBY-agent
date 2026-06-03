@@ -7,8 +7,15 @@ from app.core.constants import (
     TREND_TIMEFRAME,
     TRIGGER_TIMEFRAME,
 )
-from app.schemas.scoring import AnalysisMeta, AnalysisResponse, MarketBreadth, ScanResponse
+from app.schemas.scoring import (
+    AnalysisMeta,
+    AnalysisResponse,
+    AnomalyHistoryResponse,
+    MarketBreadth,
+    ScanResponse,
+)
 from app.services.analysis_service import AnalysisService
+from app.services.anomaly_tracker import anomaly_tracker
 from app.services.scan_cache import scan_cache
 
 
@@ -73,6 +80,8 @@ def scan_market(
         )
 
     service = AnalysisService()
+    # Track lifecycle only for the authoritative full-universe scan (no explicit
+    # symbols) so first-seen times / trigger counts reflect the whole market.
     return service.scan_market(
         symbols=selected_symbols,
         primary_timeframe=primary_timeframe,
@@ -80,4 +89,10 @@ def scan_market(
         trend_timeframe=trend_timeframe,
         lookback=lookback,
         top_per_direction=top,
+        track=selected_symbols is None,
     )
+
+
+@router.get("/anomaly-history", response_model=AnomalyHistoryResponse)
+def anomaly_history() -> AnomalyHistoryResponse:
+    return AnomalyHistoryResponse(items=anomaly_tracker.history)

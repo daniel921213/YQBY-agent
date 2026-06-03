@@ -1,15 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { AlertTriangle, BarChart3, Bot, ListFilter, X } from "lucide-react";
 import { DetailPanel } from "@/components/recommendation/DetailPanel";
-import { RecommendationStrip } from "@/components/recommendation/RecommendationStrip";
 import { MarketHeader } from "@/components/dashboard/MarketHeader";
+import { MarketOverviewBar } from "@/components/dashboard/MarketOverviewBar";
+import { AnomalyPanel } from "@/components/dashboard/AnomalyPanel";
+import { ScreenerTable } from "@/components/dashboard/ScreenerTable";
+import { DataRankings } from "@/components/dashboard/DataRankings";
+import { AnomalyHistoryModal } from "@/components/dashboard/AnomalyHistoryModal";
 import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useMarketScan } from "@/hooks/useMarketScan";
 
+type Tab = "anomaly" | "screener" | "data";
+
 export default function Page() {
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [analystOpen, setAnalystOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("anomaly");
   const { data: scan, loading: scanLoading, error: scanError, refresh } = useMarketScan();
   const { data: analysis, loading: analysisLoading, error: analysisError } =
     useMarketAnalysis(selectedSymbol);
@@ -23,11 +33,19 @@ export default function Page() {
     }).format(new Date());
   }, [scan]);
 
-  const selectedScanItem = scan?.items.find((item) => item.symbol === selectedSymbol) ?? null;
+  const items = scan?.items ?? [];
+  const universe = scan?.universe ?? [];
+  const selectedScanItem = items.find((item) => item.symbol === selectedSymbol) ?? null;
+
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
+    { key: "anomaly", label: "異常警報", icon: <AlertTriangle className="h-4 w-4" />, count: items.length },
+    { key: "screener", label: "選幣 · 全市場", icon: <ListFilter className="h-4 w-4" />, count: universe.length },
+    { key: "data", label: "數據榜單", icon: <BarChart3 className="h-4 w-4" /> }
+  ];
 
   return (
     <main className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
         <MarketHeader
           onRefresh={refresh}
           updatedLabel={updatedLabel}
@@ -35,19 +53,65 @@ export default function Page() {
           scan={scan}
         />
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <RecommendationStrip
-            scan={scan}
-            loading={scanLoading}
-            error={scanError}
-            selectedSymbol={selectedSymbol}
-            onSelect={setSelectedSymbol}
-          />
+        <MarketOverviewBar scan={scan} />
 
-          <div className="h-[600px] xl:sticky xl:top-5 xl:h-[calc(100vh-7rem)]">
-            <AnalystChat />
-          </div>
-        </div>
+        {scanError ? (
+          <section className="rounded-md border border-short/30 bg-short/10 px-4 py-4 text-sm text-red-100">
+            {scanError}
+          </section>
+        ) : !scan ? (
+          <section className="flex h-36 items-center justify-center rounded-md border border-white/10 bg-graphite/60 text-sm text-stone-400">
+            {scanLoading ? "掃描中…" : "目前沒有掃描資料"}
+          </section>
+        ) : (
+          <>
+            <nav className="flex flex-wrap gap-1 border-b border-white/10">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTab(t.key)}
+                  className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm transition ${
+                    tab === t.key
+                      ? "border-ember text-stone-50"
+                      : "border-transparent text-stone-500 hover:text-stone-300"
+                  }`}
+                >
+                  {t.icon}
+                  {t.label}
+                  {typeof t.count === "number" ? (
+                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-[11px] tabular-nums text-stone-400">
+                      {t.count}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </nav>
+
+            {tab === "anomaly" ? (
+              <AnomalyPanel
+                items={items}
+                selectedSymbol={selectedSymbol}
+                onSelect={setSelectedSymbol}
+                onShowHistory={() => setHistoryOpen(true)}
+              />
+            ) : null}
+            {tab === "screener" ? (
+              <ScreenerTable
+                rows={universe}
+                onSelect={setSelectedSymbol}
+                selectedSymbol={selectedSymbol}
+              />
+            ) : null}
+            {tab === "data" ? (
+              <DataRankings
+                universe={universe}
+                movers={scan.oi_movers}
+                onSelect={setSelectedSymbol}
+              />
+            ) : null}
+          </>
+        )}
 
         {selectedSymbol ? (
           <DetailPanel
@@ -59,7 +123,38 @@ export default function Page() {
             onClose={() => setSelectedSymbol(null)}
           />
         ) : null}
+
+        {historyOpen ? <AnomalyHistoryModal onClose={() => setHistoryOpen(false)} /> : null}
       </div>
+
+      {/* Collapsible analyst — frees the full width for the tables when closed. */}
+      {!analystOpen ? (
+        <button
+          type="button"
+          onClick={() => setAnalystOpen(true)}
+          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-ember/40 bg-ember/15 px-4 py-2.5 text-sm font-medium text-ember shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur transition hover:bg-ember/25"
+        >
+          <Bot className="h-4 w-4" />
+          分析師
+        </button>
+      ) : (
+        <div className="fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 border-l border-white/10 bg-[#0d0b09] p-3 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs tracking-[0.18em] text-ember">YQBY 分析師</span>
+            <button
+              type="button"
+              onClick={() => setAnalystOpen(false)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-stone-300 transition hover:border-ember/60 hover:text-ember"
+              title="收合"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <AnalystChat />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
