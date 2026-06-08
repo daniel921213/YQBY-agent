@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes.analysis import router as analysis_router
 from app.api.v1.routes.analyst import router as analyst_router
+from app.api.v1.routes.auth import router as auth_router
 from app.core.config import get_settings
+from app.db import init_db
 from app.services.scan_cache import scan_cache
 
 
@@ -14,6 +16,12 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create the accounts table if missing. Wrapped so a DB hiccup never blocks
+    # the (public) dashboard from starting — only auth would be affected.
+    try:
+        init_db()
+    except Exception as exc:  # pragma: no cover
+        print(f"[startup] init_db skipped: {type(exc).__name__}: {exc}")
     # Start the background full-universe scanner only for the live provider;
     # the mock provider is fast enough to scan per request.
     if settings.data_provider.lower() == "binance" and settings.scan_background:
@@ -34,6 +42,7 @@ app.add_middleware(
 
 app.include_router(analysis_router, prefix=settings.api_v1_prefix)
 app.include_router(analyst_router, prefix=settings.api_v1_prefix)
+app.include_router(auth_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

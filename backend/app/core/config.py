@@ -27,6 +27,20 @@ class Settings(BaseSettings):
     analyst_model: str = "claude-sonnet-4-6"
     analyst_max_tokens: int = 1024
 
+    # Auth / accounts. DATABASE_URL is provided by Railway's Postgres plugin in
+    # production; locally it falls back to a SQLite file so dev needs no DB.
+    database_url: str | None = None
+    jwt_secret: str = "dev-insecure-change-me"  # MUST set JWT_SECRET in production
+    jwt_expire_hours: int = 720  # 30 days
+
+    @property
+    def resolved_database_url(self) -> str:
+        url = self.database_url or "sqlite:///./yqby_auth.db"
+        # SQLAlchemy needs the postgresql:// scheme; some providers hand out postgres://.
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        return url
+
     # Live Binance fetch tuning (only used when data_provider == "binance").
     binance_base_url: str = "https://fapi.binance.com"
     binance_request_timeout: float = 10.0

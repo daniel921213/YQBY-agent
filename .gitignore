@@ -14,5 +14,6 @@ coverage/
 *.log
 *.egg-info/
 *.tsbuildinfo
+*.db
 .claude/settings.local.json
 
