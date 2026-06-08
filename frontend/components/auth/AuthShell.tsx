@@ -26,7 +26,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           {logoOk ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/logo.png"
+              src="/logo.svg"
               alt="YQBY Crypto Killer"
               className="h-16 w-16 object-contain"
               onError={() => setLogoOk(false)}
