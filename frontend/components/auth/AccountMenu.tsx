@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogIn, LogOut, UserRound } from "lucide-react";
 import { getCurrentUser, logout } from "@/lib/auth";
 
 export function AccountMenu() {
+  const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -38,6 +40,7 @@ export function AccountMenu() {
         onClick={() => {
           logout();
           setUid(null);
+          router.replace("/login");
         }}
         title="登出"
         className="ml-1 text-stone-400 transition hover:text-short"

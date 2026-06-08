@@ -10,12 +10,22 @@ import { ScreenerTable } from "@/components/dashboard/ScreenerTable";
 import { DataRankings } from "@/components/dashboard/DataRankings";
 import { AnomalyHistoryModal } from "@/components/dashboard/AnomalyHistoryModal";
 import { AnalystChat } from "@/components/analyst/AnalystChat";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useMarketScan } from "@/hooks/useMarketScan";
 
 type Tab = "anomaly" | "screener" | "data";
 
 export default function Page() {
+  // Gate the whole dashboard behind login — not logged in => redirect to /login.
+  return (
+    <AuthGuard>
+      <Dashboard />
+    </AuthGuard>
+  );
+}
+
+function Dashboard() {
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [analystOpen, setAnalystOpen] = useState(false);
