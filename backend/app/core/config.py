@@ -15,7 +15,8 @@ class Settings(BaseSettings):
         ),
         alias="CORS_ORIGINS",
     )
-    # "mock" => deterministic synthetic data; "binance" => live Binance futures API.
+    # "mock" => deterministic synthetic data; "binance" => live Binance futures
+    # API; "gate" => live Gate USDT-perpetual futures API.
     data_provider: str = "mock"
 
     binance_api_key: str | None = None
@@ -55,6 +56,12 @@ class Settings(BaseSettings):
     scan_max_workers: int = 8
     # Soft cap on outbound requests/sec to stay under Binance IP limits.
     binance_max_requests_per_second: float = 8.0
+
+    # Live Gate fetch tuning (only used when data_provider == "gate"). Gate's
+    # public v4 market endpoints are keyless and more generous than Binance.
+    gate_base_url: str = "https://api.gateio.ws/api/v4"
+    gate_request_timeout: float = 10.0
+    gate_max_requests_per_second: float = 15.0
 
     # Background full-universe scan: refresh the cached top-20/direction every N
     # seconds so the frontend reads a fresh result instantly instead of each page

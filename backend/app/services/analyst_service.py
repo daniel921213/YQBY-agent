@@ -26,17 +26,17 @@ from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
 from app.services.scan_cache import scan_cache
 
-# ── Binance public web3 skills (read-only) ───────────────────────────
+# ── Gate public API skills (read-only) ───────────────────────────────
 # Bundled SKILL.md docs are injected into the system prompt; the agent calls the
-# documented public endpoints via the scoped web3_get tool below. Adding a skill
-# = drop its SKILL.md here + whitelist its host(s). NO API keys, NO trading.
+# documented public endpoints via the scoped gate_query tool below. Adding a
+# skill = drop its SKILL.md here + whitelist its host(s). NO API keys, NO trading.
 _SKILLS_DIR = Path(__file__).resolve().parent.parent / "analyst_skills"
-# Public read-only hosts the skills document. NO auth is ever sent, so even a
+# Public read-only host the skills document. NO auth is ever sent, so even a
 # POST here cannot execute a trade (those require signed/authenticated requests).
-_ALLOWED_WEB3_HOSTS = {"web3.binance.com", "www.binance.com", "dquery.sintral.io"}
-_WEB3_HEADERS = {"Accept-Encoding": "identity", "User-Agent": "binance-web3/1.1 (Skill)"}
-_WEB3_LIST_CAP = 10      # keep at most N items from a list payload
-_WEB3_MAX_CHARS = 12000  # final guard on serialized tool output
+_ALLOWED_GATE_HOSTS = {"api.gateio.ws"}
+_GATE_HEADERS = {"Accept": "application/json"}
+_GATE_LIST_CAP = 10      # keep at most N items from a list payload
+_GATE_MAX_CHARS = 12000  # final guard on serialized tool output
 
 
 def _load_skill_reference() -> str:
@@ -48,8 +48,8 @@ def _load_skill_reference() -> str:
     if not docs:
         return ""
     return (
-        "你可使用以下幣安公開 Web3 技能(皆為公開、唯讀端點，無需金鑰)。"
-        "需要查代幣/價格/鏈上資訊時，依說明用 web3_get 工具呼叫對應的 URL：\n\n"
+        "你可使用以下 Gate 公開 API 技能(皆為公開、唯讀端點，無需金鑰)。"
+        "需要查代幣/價格/行情/資金費率/OI/多空比/市場排行時，依說明用 gate_query 工具呼叫對應的 URL：\n\n"
         + "\n\n---\n\n".join(docs)
     )
 
@@ -57,32 +57,41 @@ def _load_skill_reference() -> str:
 _SKILL_REFERENCE = _load_skill_reference()
 
 
-def _tool_web3_query(url: str, method: str = "GET", body: Any = None) -> dict[str, Any]:
+def _trim_list(payload: Any) -> Any:
+    """Cap big list payloads (Gate often returns top-level arrays) so one query
+    doesn't blow the context."""
+    if isinstance(payload, list) and len(payload) > _GATE_LIST_CAP:
+        return payload[:_GATE_LIST_CAP] + [
+            {"_note": f"已截斷為前 {_GATE_LIST_CAP} 筆（原共 {len(payload)} 筆）"}
+        ]
+    if isinstance(payload, dict) and isinstance(payload.get("data"), list):
+        full = len(payload["data"])
+        if full > _GATE_LIST_CAP:
+            payload["data"] = payload["data"][:_GATE_LIST_CAP]
+            payload["_note"] = f"已截斷為前 {_GATE_LIST_CAP} 筆（原共 {full} 筆）"
+    return payload
+
+
+def _tool_gate_query(url: str, method: str = "GET", body: Any = None) -> dict[str, Any]:
     parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_WEB3_HOSTS:
-        return {"error": f"host not allowed: {parsed.hostname}. 僅允許 {sorted(_ALLOWED_WEB3_HOSTS)}"}
+    if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_GATE_HOSTS:
+        return {"error": f"host not allowed: {parsed.hostname}. 僅允許 {sorted(_ALLOWED_GATE_HOSTS)}"}
     method = (method or "GET").upper()
     if method not in ("GET", "POST"):
         return {"error": f"method not allowed: {method}（僅 GET/POST，且永不帶金鑰）"}
     try:
         if method == "POST":
-            resp = httpx.post(url, headers=_WEB3_HEADERS, json=body or {}, timeout=20.0)
+            resp = httpx.post(url, headers=_GATE_HEADERS, json=body or {}, timeout=20.0)
         else:
-            resp = httpx.get(url, headers=_WEB3_HEADERS, timeout=20.0)
+            resp = httpx.get(url, headers=_GATE_HEADERS, timeout=20.0)
         resp.raise_for_status()
         try:
-            payload = resp.json()
+            payload = _trim_list(resp.json())
         except ValueError:
-            return {"text": resp.text[:_WEB3_MAX_CHARS]}
-        # Trim large list payloads so a 27-token search doesn't blow the context.
-        if isinstance(payload, dict) and isinstance(payload.get("data"), list):
-            full = len(payload["data"])
-            if full > _WEB3_LIST_CAP:
-                payload["data"] = payload["data"][:_WEB3_LIST_CAP]
-                payload["_note"] = f"已截斷為前 {_WEB3_LIST_CAP} 筆（原共 {full} 筆）"
+            return {"text": resp.text[:_GATE_MAX_CHARS]}
         serialized = json.dumps(payload, ensure_ascii=False)
-        if len(serialized) > _WEB3_MAX_CHARS:
-            return {"text": serialized[:_WEB3_MAX_CHARS] + " …（截斷）"}
+        if len(serialized) > _GATE_MAX_CHARS:
+            return {"text": serialized[:_GATE_MAX_CHARS] + " …（截斷）"}
         return {"data": payload}
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}
@@ -94,7 +103,7 @@ SYSTEM_PROMPT = (
     "在還沒呼叫工具拿到資料前，絕不憑空作答，也不要列出你的功能清單或自我介紹。\n\n"
     "工具選擇：\n"
     "- 問市場整體、推薦、轉多/轉空/疑似反轉、或某交易對(如 BTCUSDT)的支柱打分 → 用 get_market_scan 或 analyze_symbol（我們自己的即時掃描數據）。\n"
-    "- 問某代幣是什麼、價格、市值、鏈上 K線、市場排行、代幣審計、鏈上地址、交易訊號、迷因幣熱度 → 依系統提示中的『幣安公開 Web3 技能』說明，用 web3_query 呼叫(注意端點是 GET 還是 POST)。\n\n"
+    "- 問某幣的價格、24h漲跌、資金費率、未平倉(OI)、多空比、主動買賣、K線、市場排行/最熱/漲跌榜 → 依系統提示中的『Gate 公開 API 技能』說明，用 gate_query 呼叫(合約代號要轉成 BTC_USDT 格式)。\n\n"
     "誠實框架（務必遵守）：分數代表『訊號異常強度』，不是上漲機率；"
     "這是數據判讀，不是投資建議；必要時提醒使用者風險自負。\n\n"
     "回答風格：像朋友跟你講重點，不是寫報告。"
@@ -128,18 +137,18 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
     {
-        "name": "web3_query",
+        "name": "gate_query",
         "description": (
-            "對幣安公開 Web3 端點發出請求(免金鑰、唯讀)。用於系統提示中『技能』所記載的"
-            "公開 API：代幣搜尋/資訊/價格、鏈上 K線、市場排行、代幣審計、鏈上地址、交易訊號等。"
-            "依技能文件決定 method(GET 或 POST)與 body。"
+            "對 Gate 公開 v4 端點發出 GET 請求(免金鑰、唯讀)。用於系統提示中『Gate 公開 API 技能』"
+            "所記載的端點：永續行情/市場排行(tickers)、K線(candlesticks)、未平倉與多空比(contract_stats)、"
+            "資金費率(funding_rate)、現貨價格(spot)。合約代號用 BTC_USDT 格式。"
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "url": {"type": "string", "description": "完整 https URL，須為技能文件所列的公開端點"},
+                "url": {"type": "string", "description": "完整 https URL，須為技能文件所列的 api.gateio.ws 公開端點"},
                 "method": {"type": "string", "enum": ["GET", "POST"], "description": "預設 GET"},
-                "body": {"type": "object", "description": "POST 時的 JSON body(依技能文件)"},
+                "body": {"type": "object", "description": "POST 時的 JSON body(一般用不到)"},
             },
             "required": ["url"],
         },
@@ -219,8 +228,8 @@ def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
             return _tool_get_market_scan()
         if name == "analyze_symbol":
             return _tool_analyze_symbol(args.get("symbol", ""))
-        if name == "web3_query":
-            return _tool_web3_query(args.get("url", ""), args.get("method", "GET"), args.get("body"))
+        if name == "gate_query":
+            return _tool_gate_query(args.get("url", ""), args.get("method", "GET"), args.get("body"))
         return {"error": f"unknown tool {name}"}
     except Exception as exc:  # never let a tool failure break the chat
         return {"error": f"{type(exc).__name__}: {exc}"}
@@ -254,7 +263,7 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
     tools_used: list[str] = []
 
     try:
-        for _ in range(8):  # cap tool-use rounds (web3 lookups may chain calls)
+        for _ in range(8):  # cap tool-use rounds (gate lookups may chain calls)
             resp = client.messages.create(
                 model=settings.analyst_model,
                 max_tokens=settings.analyst_max_tokens,

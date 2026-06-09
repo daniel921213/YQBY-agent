@@ -26,6 +26,13 @@ def _build_sources() -> tuple[MarketDataSource, DerivativesDataSource]:
         )
 
         return BinanceLiveMarketDataSource(), BinanceLiveDerivativesDataSource()
+    if provider == "gate":
+        from app.data_sources.gate_live import (
+            GateLiveDerivativesDataSource,
+            GateLiveMarketDataSource,
+        )
+
+        return GateLiveMarketDataSource(), GateLiveDerivativesDataSource()
     return BinanceMockDataSource(), CoinglassMockDataSource()
 
 

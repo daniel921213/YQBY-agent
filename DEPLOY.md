@@ -14,12 +14,12 @@
    - **Region** = `Southeast Asia (Singapore)`
 3. **Variables**（環境變數）貼上：
    ```
-   DATA_PROVIDER=binance
+   DATA_PROVIDER=gate
    ANTHROPIC_API_KEY=<你的 Claude 金鑰>
    ANALYST_MODEL=claude-sonnet-4-6
    SCAN_UNIVERSE_SIZE=150
-   BINANCE_MAX_REQUESTS_PER_SECOND=8
    ```
+   （`DATA_PROVIDER` 可選 `gate`(預設、免金鑰) / `binance` / `mock`；Gate 公開 API 在新加坡/東京區皆可，無地理封鎖問題。）
    （`CORS_ORIGINS` 等拿到前端網址後再回來加。）
 4. **Settings → Networking → Generate Domain**，記下後端網址，例如
    `https://yqby-backend-production.up.railway.app`
