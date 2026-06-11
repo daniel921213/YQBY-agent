@@ -124,7 +124,7 @@ export interface AltseasonIndex {
   previous_index: number | null;
 }
 
-export type OiMoverSide = "多頭建倉" | "空頭建倉" | "多頭減倉" | "空頭減倉" | "持平";
+export type OiMoverSide = "多頭建倉" | "空頭建倉" | "多頭平倉" | "空頭平倉" | "持平";
 
 export interface OiMover {
   symbol: string;
@@ -133,6 +133,7 @@ export interface OiMover {
   oi_delta: number;
   total_oi: number;
   change_24h: number;
+  price_change_1h: number;
   side: OiMoverSide;
 }
 

@@ -23,8 +23,9 @@ from app.utils.timeframes import timeframe_to_seconds
 # Fixed display order for the five pillars.
 PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"]
 
-# Keep the OI movement board readable — only the biggest 1h movers.
-OI_MOVERS_CAP = 15
+# Points on the OI quadrant map — biggest 1h movers by notional change. Higher
+# than the old table's 15 so all four quadrants have enough dots to read.
+OI_MOVERS_CAP = 40
 # Below this score a screener row reads as 中性 rather than forcing 做多/做空.
 SCREENER_NEUTRAL_SCORE = 15.0
 
@@ -100,12 +101,13 @@ def _oi_mover(
 
     candles = chart.candles
     price_ref = candles[-1 - bars_1h].close if len(candles) > bars_1h else candles[0].close
-    price_up = price >= price_ref
+    price_change_1h = pct_change(price_ref, price)
+    price_up = price_change_1h >= 0
     oi_up = oi_delta >= 0
     if oi_up:
         side = "多頭建倉" if price_up else "空頭建倉"
     else:
-        side = "空頭減倉" if price_up else "多頭減倉"
+        side = "空頭平倉" if price_up else "多頭平倉"
 
     return OiMover(
         symbol=symbol,
@@ -114,6 +116,7 @@ def _oi_mover(
         oi_delta=round(oi_delta, 2),
         total_oi=round(total_oi, 2),
         change_24h=change_24h,
+        price_change_1h=round(price_change_1h, 6),
         side=side,
     )
 

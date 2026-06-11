@@ -111,7 +111,7 @@ class AltseasonIndex(BaseModel):
 
 
 class OiMover(BaseModel):
-    """One row of the OI movement ranking (1h open-interest change)."""
+    """One point of the OI movement quadrant map (1h open-interest × price)."""
 
     symbol: str
     price: float
@@ -119,7 +119,10 @@ class OiMover(BaseModel):
     oi_delta: float              # notional change (current OI units) over 1h
     total_oi: float
     change_24h: float
-    side: Literal["多頭建倉", "空頭建倉", "多頭減倉", "空頭減倉", "持平"]
+    # Price change over the same 1h window — the quadrant chart's Y axis and
+    # what `side` is classified from (OI Δ sign × price Δ sign).
+    price_change_1h: float = 0.0
+    side: Literal["多頭建倉", "空頭建倉", "多頭平倉", "空頭平倉", "持平"]
 
 
 class ScreenerRow(BaseModel):

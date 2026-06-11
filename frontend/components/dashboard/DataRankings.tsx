@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import type { OiMover, ScreenerRow } from "@/lib/types";
-import { formatPercent, formatPrice, percentTone } from "@/lib/format";
-import { OiRankingTable } from "@/components/dashboard/OiRankingTable";
+import { formatPercent, percentTone } from "@/lib/format";
+import { OiQuadrantChart } from "@/components/dashboard/OiQuadrantChart";
 
 interface DataRankingsProps {
   universe: ScreenerRow[];
@@ -55,6 +55,16 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
 
   return (
     <div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
+          <span className="text-sm font-semibold text-stone-100">OI 異動 · 四象限地圖</span>
+          <span className="text-xs text-stone-500">
+            1H 持倉變化 × 價格變化 · 氣泡大小 = 變化金額 · 點擊幣種看分析
+          </span>
+        </div>
+        <OiQuadrantChart movers={movers} onSelect={onSelect} />
+      </section>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card title="資金費率極端">
           <SubList label="軋空風險（費率最高）" rows={rankings.fundingHigh} onSelect={onSelect} />
@@ -69,14 +79,6 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
           <SubList label="跌幅 Top" rows={rankings.losers} onSelect={onSelect} />
         </Card>
       </div>
-
-      <section className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
-          <span className="text-sm font-semibold text-stone-100">OI 異動排名</span>
-          <span className="text-xs text-stone-500">1H 持倉量變化 · 依變化金額排序</span>
-        </div>
-        <OiRankingTable movers={movers} />
-      </section>
     </div>
   );
 }

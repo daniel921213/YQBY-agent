@@ -44,8 +44,10 @@ def test_scan_endpoint_includes_altseason_and_oi_movers() -> None:
     assert altseason["label"] in {"BTC季", "偏BTC", "中性", "偏山寨", "山寨季"}
     assert payload["oi_movers"]
     mover = payload["oi_movers"][0]
-    assert mover["side"] in {"多頭建倉", "空頭建倉", "多頭減倉", "空頭減倉", "持平"}
+    assert mover["side"] in {"多頭建倉", "空頭建倉", "多頭平倉", "空頭平倉", "持平"}
     assert mover["total_oi"] > 0
+    # Quadrant chart Y axis: 1h price change shipped alongside the 1h OI change.
+    assert "price_change_1h" in mover
 
     # Full universe (every scanned symbol) powers the screener + data rankings.
     universe = payload["universe"]
