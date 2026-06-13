@@ -83,6 +83,16 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins_raw.split(",") if origin.strip()]
 
+    @property
+    def is_live_provider(self) -> bool:
+        """True for any real upstream (binance/gate) — i.e. not the mock.
+
+        Live providers fan out hundreds of rate-limited HTTP calls per full
+        scan, so they share the background scanner + cache; the mock is fast
+        enough to scan per request.
+        """
+        return self.data_provider.lower() != "mock"
+
 
 @lru_cache
 def get_settings() -> Settings:

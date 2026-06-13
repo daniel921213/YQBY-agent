@@ -22,9 +22,9 @@ async def lifespan(app: FastAPI):
         init_db()
     except Exception as exc:  # pragma: no cover
         print(f"[startup] init_db skipped: {type(exc).__name__}: {exc}")
-    # Start the background full-universe scanner only for the live provider;
-    # the mock provider is fast enough to scan per request.
-    if settings.data_provider.lower() == "binance" and settings.scan_background:
+    # Start the background full-universe scanner for any live provider
+    # (binance/gate); the mock provider is fast enough to scan per request.
+    if settings.is_live_provider and settings.scan_background:
         scan_cache.start()
     yield
     scan_cache.stop()

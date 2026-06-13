@@ -59,9 +59,9 @@ def scan_market(
     )
 
     settings = get_settings()
-    # Default full-universe request on the live provider is served from the
+    # Default full-universe request on a live provider is served from the
     # background scanner's cache (a live full scan would blow the rate limits).
-    if selected_symbols is None and settings.data_provider.lower() == "binance" and settings.scan_background:
+    if selected_symbols is None and settings.is_live_provider and settings.scan_background:
         cached = scan_cache.latest
         if cached is not None:
             return cached
