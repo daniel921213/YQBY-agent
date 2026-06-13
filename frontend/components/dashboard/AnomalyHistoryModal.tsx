@@ -45,9 +45,9 @@ export function AnomalyHistoryModal({ onClose }: AnomalyHistoryModalProps) {
       {error ? (
         <div className="py-10 text-center text-sm text-short">{error}</div>
       ) : items === null ? (
-        <div className="py-10 text-center text-sm text-stone-400">載入中…</div>
+        <div className="py-10 text-center text-sm text-slate-400">載入中…</div>
       ) : items.length === 0 ? (
-        <div className="py-10 text-center text-sm text-stone-500">
+        <div className="py-10 text-center text-sm text-slate-500">
           目前還沒有結束的警報。系統運行一段時間後，消退的警報會在此累積。
         </div>
       ) : (
@@ -63,15 +63,15 @@ export function AnomalyHistoryModal({ onClose }: AnomalyHistoryModalProps) {
               >
                 <div className="flex items-center gap-2">
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
-                  <span className="text-sm font-medium text-stone-50">{item.symbol}</span>
-                  <span className="rounded-sm border border-white/10 px-1.5 py-px text-[10px] text-stone-400">
+                  <span className="text-sm font-medium text-slate-50">{item.symbol}</span>
+                  <span className="rounded-sm border border-white/10 px-1.5 py-px text-[10px] text-slate-400">
                     {item.category}
                   </span>
-                  <span className="ml-auto text-[11px] text-stone-500">
+                  <span className="ml-auto text-[11px] text-slate-500">
                     存活 {item.duration_minutes} 分 · 觸發 {item.trigger_count} 則
                   </span>
                 </div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-500">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
                   <span>
                     {formatPrice(item.first_seen_price)} → {formatPrice(item.last_price)}{" "}
                     <span className={percentTone(item.change_over_life)}>

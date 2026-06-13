@@ -12,11 +12,11 @@ interface OiQuadrantChartProps {
 // Quadrant semantics: X = 1h OI change, Y = 1h price change. The backend's
 // `side` uses the same sign convention, so dot position and colour always agree.
 const SIDE_META: Record<OiMoverSide, { color: string; desc: string }> = {
-  多頭建倉: { color: "#19d27b", desc: "價漲 · OI增" },
+  多頭建倉: { color: "#23dd8d", desc: "價漲 · OI增" },
   空頭平倉: { color: "#3fb6f6", desc: "價漲 · OI減" },
   多頭平倉: { color: "#f0b429", desc: "價跌 · OI減" },
-  空頭建倉: { color: "#ff4d57", desc: "價跌 · OI增" },
-  持平: { color: "#78716c", desc: "" }
+  空頭建倉: { color: "#ff5166", desc: "價跌 · OI增" },
+  持平: { color: "#64748b", desc: "" }
 };
 
 const SIDE_ORDER: OiMoverSide[] = ["多頭建倉", "空頭平倉", "多頭平倉", "空頭建倉"];
@@ -136,7 +136,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
   if (!movers.length) {
     return (
-      <div className="py-10 text-center text-sm text-stone-500">目前沒有明顯的 OI 異動。</div>
+      <div className="py-10 text-center text-sm text-slate-500">目前沒有明顯的 OI 異動。</div>
     );
   }
 
@@ -172,7 +172,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label className="flex items-center gap-2 text-xs text-stone-400">
+          <label className="flex items-center gap-2 text-xs text-slate-400">
             OI 門檻
             <input
               type="range"
@@ -188,7 +188,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             />
             <span className="w-12 tabular-nums text-ember">≥{oiThreshold}%</span>
           </label>
-          <label className="flex items-center gap-2 text-xs text-stone-400">
+          <label className="flex items-center gap-2 text-xs text-slate-400">
             漲跌門檻
             <input
               type="range"
@@ -204,8 +204,8 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             />
             <span className="w-12 tabular-nums text-long">≥{priceThreshold}%</span>
           </label>
-          <span className="text-xs text-stone-500">
-            符合 <span className="tabular-nums text-stone-200">{filtered.length}</span> 個
+          <span className="text-xs text-slate-500">
+            符合 <span className="tabular-nums text-slate-200">{filtered.length}</span> 個
           </span>
         </div>
       </div>
@@ -262,7 +262,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   y={M.top + PH + 16}
                   textAnchor="middle"
                   fontSize={10}
-                  fill="#78716c"
+                  fill="#64748b"
                   className="tabular-nums"
                 >
                   {pctLabel(v)}
@@ -284,7 +284,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   y={y(v) + 3}
                   textAnchor="end"
                   fontSize={10}
-                  fill="#78716c"
+                  fill="#64748b"
                   className="tabular-nums"
                 >
                   {pctLabel(v)}
@@ -328,7 +328,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             </g>
 
             {/* Axis titles */}
-            <text x={M.left + PW / 2} y={VH - 10} textAnchor="middle" fontSize={11} fill="#78716c">
+            <text x={M.left + PW / 2} y={VH - 10} textAnchor="middle" fontSize={11} fill="#64748b">
               持倉變化 (1H)
             </text>
             <text
@@ -336,7 +336,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               y={M.top + PH / 2}
               textAnchor="middle"
               fontSize={11}
-              fill="#78716c"
+              fill="#64748b"
               transform={`rotate(-90 14 ${M.top + PH / 2})`}
             >
               價格變化 (1H)
@@ -377,8 +377,8 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                       y={dy - r - 6}
                       textAnchor="middle"
                       fontSize={10.5}
-                      fill="#e7e5e4"
-                      stroke="#0a0908"
+                      fill="#e2e8f0"
+                      stroke="#04060c"
                       strokeWidth={3}
                       style={{ paintOrder: "stroke" }}
                     >
@@ -404,11 +404,11 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               }}
             >
               <div
-                className="rounded-md border bg-[#0c0a08]/95 p-2.5 text-xs shadow-2xl backdrop-blur"
+                className="rounded-md border bg-[#060b16]/95 p-2.5 text-xs shadow-2xl backdrop-blur"
                 style={{ borderColor: `${(SIDE_META[hovered.side] ?? SIDE_META.持平).color}66` }}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-stone-50">{hovered.symbol}</span>
+                  <span className="font-semibold text-slate-50">{hovered.symbol}</span>
                   <span style={{ color: (SIDE_META[hovered.side] ?? SIDE_META.持平).color }}>
                     {hovered.side}
                   </span>
@@ -436,14 +436,14 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                     tone={percentTone(hovered.change_24h)}
                   />
                 </dl>
-                <div className="mt-1.5 text-[10px] text-stone-500">點擊查看五支柱分析</div>
+                <div className="mt-1.5 text-[10px] text-slate-500">點擊查看五支柱分析</div>
               </div>
             </div>
           ) : null}
 
           {/* All filtered out */}
           {!filtered.length ? (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-stone-500">
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">
               沒有符合門檻的異動 — 調低門檻或重新顯示象限
             </div>
           ) : null}
@@ -451,7 +451,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
         {/* Intensity sidebar */}
         <aside className="flex flex-col gap-1 rounded-md border border-white/10 bg-graphite/40 p-3">
-          <div className="mb-1 text-[11px] text-stone-500">
+          <div className="mb-1 text-[11px] text-slate-500">
             異動強度 Top {Math.min(SIDEBAR_ROWS, ranked.length)} · 依 OI 變化金額
           </div>
           {ranked.slice(0, SIDEBAR_ROWS).map((m, i) => {
@@ -465,10 +465,10 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                 onMouseLeave={() => setHoveredSymbol(null)}
                 className="flex items-center gap-2 rounded-sm px-1.5 py-1.5 text-left transition hover:bg-steel/50"
               >
-                <span className="w-4 shrink-0 text-[11px] tabular-nums text-stone-600">{i + 1}</span>
+                <span className="w-4 shrink-0 text-[11px] tabular-nums text-slate-600">{i + 1}</span>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-stone-100">
+                  <span className="block truncate text-sm font-medium text-slate-100">
                     {shortSymbol(m.symbol)}
                   </span>
                   <span className="block text-[10px]" style={{ color: meta.color }}>
@@ -487,7 +487,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             );
           })}
           {!ranked.length ? (
-            <div className="py-6 text-center text-xs text-stone-600">無資料</div>
+            <div className="py-6 text-center text-xs text-slate-600">無資料</div>
           ) : null}
         </aside>
       </div>
@@ -498,8 +498,8 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 function TooltipRow({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <dt className="text-stone-500">{label}</dt>
-      <dd className={`tabular-nums ${tone ?? "text-stone-200"}`}>{value}</dd>
+      <dt className="text-slate-500">{label}</dt>
+      <dd className={`tabular-nums ${tone ?? "text-slate-200"}`}>{value}</dd>
     </div>
   );
 }

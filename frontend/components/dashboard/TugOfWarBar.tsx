@@ -18,7 +18,7 @@ export function TugOfWarBar({ long, short, size = "lg" }: TugOfWarBarProps) {
       {size === "lg" ? (
         <div className={`mb-1.5 flex items-center justify-between ${labelText}`}>
           <span className="font-medium text-long">多 {long.toFixed(1)}</span>
-          <span className="text-xs tracking-[0.16em] text-stone-500">力量對比</span>
+          <span className="text-xs tracking-[0.16em] text-slate-500">力量對比</span>
           <span className="font-medium text-short">空 {short.toFixed(1)}</span>
         </div>
       ) : null}

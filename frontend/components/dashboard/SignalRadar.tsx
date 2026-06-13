@@ -16,7 +16,7 @@ function pointAt(count: number, index: number, fraction: number): [number, numbe
 }
 
 export function SignalRadar({ pillars, direction }: SignalRadarProps) {
-  const tone = direction === "LONG" ? "#19d27b" : "#ff4d57";
+  const tone = direction === "LONG" ? "#23dd8d" : "#ff5166";
   const count = pillars.length;
   const values = pillars.map((p) => Math.max(p.strength, 0.04));
 
@@ -59,7 +59,7 @@ export function SignalRadar({ pillars, direction }: SignalRadarProps) {
         {pillars.map((p, i) => {
           const [x, y] = pointAt(count, i, 1.24);
           return (
-            <text key={p.pillar} x={x} y={y} fill="rgba(214,211,209,0.85)" fontSize={10}
+            <text key={p.pillar} x={x} y={y} fill="rgba(203,213,225,0.85)" fontSize={10}
               textAnchor="middle" dominantBaseline="middle">
               {p.pillar}
             </text>

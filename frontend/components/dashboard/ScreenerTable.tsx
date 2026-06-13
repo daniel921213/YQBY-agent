@@ -40,11 +40,11 @@ const PILLAR_COLS = [
 function PillarDot({ pillars, name }: { pillars: PillarScore[]; name: string }) {
   const p = pillars.find((x) => x.pillar === name);
   if (!p || p.direction === "NEUTRAL" || p.strength < 0.05) {
-    return <span className="text-stone-700">·</span>;
+    return <span className="text-slate-700">·</span>;
   }
   const strong = p.strength >= 0.5;
   const tone =
-    p.direction === "LONG" ? "text-long" : p.direction === "SHORT" ? "text-short" : "text-stone-500";
+    p.direction === "LONG" ? "text-long" : p.direction === "SHORT" ? "text-short" : "text-slate-500";
   return (
     <span className={`${tone} ${strong ? "" : "opacity-50"}`}>
       {p.direction === "LONG" ? "▲" : "▼"}
@@ -77,12 +77,12 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-500" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜尋幣種…"
-            className="h-8 w-44 rounded-md border border-white/10 bg-black/30 pl-8 pr-3 text-sm text-stone-50 outline-none transition placeholder:text-stone-600 focus:border-ember/60"
+            className="h-8 w-44 rounded-md border border-white/10 bg-obsidian/60 pl-8 pr-3 text-sm text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
           />
         </div>
 
@@ -93,7 +93,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
               type="button"
               onClick={() => setDir(d)}
               className={`px-3 py-1.5 text-xs transition ${
-                dir === d ? "bg-ember/15 text-ember" : "bg-graphite/60 text-stone-400 hover:text-stone-200"
+                dir === d ? "bg-ember/15 text-ember" : "bg-graphite/60 text-slate-400 hover:text-slate-200"
               }`}
             >
               {d === "ALL" ? "全部" : d === "LONG" ? "做多" : "做空"}
@@ -101,12 +101,12 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
           ))}
         </div>
 
-        <div className="inline-flex items-center gap-1 text-xs text-stone-500">
+        <div className="inline-flex items-center gap-1 text-xs text-slate-500">
           <span>排序</span>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-stone-200 outline-none focus:border-ember/60"
+            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-slate-200 outline-none focus:border-ember/60"
           >
             {SORTS.map((s) => (
               <option key={s.key} value={s.key}>
@@ -117,20 +117,20 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
           <button
             type="button"
             onClick={() => setDesc((v) => !v)}
-            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-stone-300 transition hover:border-ember/50 hover:text-ember"
+            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-slate-300 transition hover:border-ember/50 hover:text-ember"
             title={desc ? "由高到低" : "由低到高"}
           >
             {desc ? "▼" : "▲"}
           </button>
         </div>
 
-        <span className="ml-auto text-xs text-stone-500">{view.length} / {rows.length} 檔</span>
+        <span className="ml-auto text-xs text-slate-500">{view.length} / {rows.length} 檔</span>
       </div>
 
       <div className="overflow-x-auto rounded-md border border-white/10 bg-graphite/40">
         <table className="w-full min-w-[680px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-left text-[11px] tracking-wide text-stone-500">
+            <tr className="border-b border-white/10 text-left text-[11px] tracking-wide text-slate-500">
               <th className="px-3 py-2 font-medium">#</th>
               <th className="px-3 py-2 font-medium">幣種</th>
               <th className="px-3 py-2 text-right font-medium">價格</th>
@@ -153,15 +153,15 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                   r.symbol === selectedSymbol ? "bg-steel" : "hover:bg-steel/40"
                 }`}
               >
-                <td className="px-3 py-2 tabular-nums text-stone-500">{i + 1}</td>
-                <td className="px-3 py-2 font-medium text-stone-50">{r.symbol}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-stone-200">
+                <td className="px-3 py-2 tabular-nums text-slate-500">{i + 1}</td>
+                <td className="px-3 py-2 font-medium text-slate-50">{r.symbol}</td>
+                <td className="px-3 py-2 text-right tabular-nums text-slate-200">
                   {formatPrice(r.price)}
                 </td>
                 <td className={`px-3 py-2 text-right tabular-nums ${percentTone(r.change_24h)}`}>
                   {formatPercent(r.change_24h)}
                 </td>
-                <td className="px-3 py-2 text-right font-semibold tabular-nums text-stone-100">
+                <td className="px-3 py-2 text-right font-semibold tabular-nums text-slate-100">
                   {formatScore(r.score)}
                 </td>
                 <td className={`px-3 py-2 text-center text-xs ${directionTone(r.direction as EvidenceDirection)}`}>
@@ -177,7 +177,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
           </tbody>
         </table>
         {view.length === 0 ? (
-          <div className="py-8 text-center text-sm text-stone-500">沒有符合條件的幣種。</div>
+          <div className="py-8 text-center text-sm text-slate-500">沒有符合條件的幣種。</div>
         ) : null}
       </div>
     </div>

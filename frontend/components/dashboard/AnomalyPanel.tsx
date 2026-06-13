@@ -35,11 +35,11 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 pb-2">
-          <span className="inline-flex items-center gap-2 text-base font-semibold text-stone-50">
+          <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-50">
             <ShieldCheck className="h-4 w-4 text-ember" />
             高把握推薦
           </span>
-          <span className="text-xs text-stone-500">分數 ≥ 80（多支柱共振，少見）</span>
+          <span className="text-xs text-slate-500">分數 ≥ 80（多支柱共振，少見）</span>
         </div>
         {recs.length ? (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -53,7 +53,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
             ))}
           </div>
         ) : (
-          <div className="rounded-md border border-white/10 bg-graphite/40 px-4 py-2.5 text-xs text-stone-500">
+          <div className="rounded-md border border-white/10 bg-graphite/40 px-4 py-2.5 text-xs text-slate-500">
             目前沒有分數 ≥ 80 的高把握標的——這很正常，多支柱同時共振本來就少見。下方異常警報是現在值得留意的。
           </div>
         )}
@@ -61,7 +61,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 pb-2">
-          <span className="inline-flex items-center gap-2 text-base font-semibold text-stone-50">
+          <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-50">
             <AlertTriangle className="h-4 w-4 text-ember" />
             數據異常警報
           </span>
@@ -74,7 +74,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
                 className={`px-2.5 py-1 text-xs transition ${
                   cat === c.key
                     ? "bg-ember/15 text-ember"
-                    : "bg-graphite/60 text-stone-400 hover:text-stone-200"
+                    : "bg-graphite/60 text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {c.label}
@@ -90,7 +90,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
             <button
               type="button"
               onClick={onShowHistory}
-              className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-graphite/60 px-2.5 py-1 text-xs text-stone-300 transition hover:border-ember/50 hover:text-ember"
+              className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-graphite/60 px-2.5 py-1 text-xs text-slate-300 transition hover:border-ember/50 hover:text-ember"
             >
               <History className="h-3.5 w-3.5" />
               歷史紀錄
@@ -98,7 +98,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
           </div>
         </div>
 
-        <p className="-mt-1 text-xs text-stone-500">
+        <p className="-mt-1 text-xs text-slate-500">
           分數為異常強度，非上漲機率——供判讀，非買賣訊號。依分數排序。
         </p>
 
@@ -115,7 +115,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
             ))}
           </div>
         ) : (
-          <div className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-sm text-stone-500">
+          <div className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-sm text-slate-500">
             {anomalies.length ? "此分類目前無異常。" : "目前沒有偵測到數據異常。"}
           </div>
         )}

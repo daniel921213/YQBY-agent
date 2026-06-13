@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  background: #070707;
+  background: #04060c;
 }
 
 * {
@@ -15,15 +15,28 @@ html,
 body {
   min-height: 100%;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(51, 31, 14, 0.7), rgba(7, 7, 7, 0.96) 34%),
-    #070707;
-  color: #f6f0e8;
+  color: #e6edf7;
 }
 
+/* 深空底：星點（前 8 層，各一顆）→ 兩片極淡星雲 → 深空黑。
+   attachment: fixed 讓星空釘在視窗上，內容在其上滑動。 */
 body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(190, 226, 255, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 64%, rgba(190, 226, 255, 0.32) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 41% 12%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
+    radial-gradient(1px 1px at 57% 38%, rgba(190, 226, 255, 0.28) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 66% 80%, rgba(190, 226, 255, 0.36) 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 16%, rgba(190, 226, 255, 0.44) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 87% 52%, rgba(190, 226, 255, 0.32) 50%, transparent 51%),
+    radial-gradient(1px 1px at 94% 86%, rgba(190, 226, 255, 0.28) 50%, transparent 51%),
+    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.16), transparent 62%),
+    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.12), transparent 60%),
+    #04060c;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 button,
@@ -33,16 +46,34 @@ select {
 }
 
 ::selection {
-  background: rgba(255, 155, 47, 0.28);
+  background: rgba(76, 194, 255, 0.3);
 }
 
+/* 冷藍金屬感卷軸 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1b2a44;
+  border: 2px solid #04060c;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #28406b;
+}
+
+/* 名稱沿用 ember-pulse（全站既有 class），光色已換成冰藍。 */
 @keyframes ember-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 155, 47, 0);
+    box-shadow: 0 0 0 0 rgba(76, 194, 255, 0);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(255, 155, 47, 0.16);
+    box-shadow: 0 0 0 3px rgba(76, 194, 255, 0.18);
   }
 }
 
@@ -57,10 +88,47 @@ select {
   }
 }
 
+/* 登入頁卡片後方「能量核」的呼吸光暈（transform 內含置中位移）。 */
+@keyframes core-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
 .animate-ember-pulse {
   animation: ember-pulse 2.6s ease-in-out infinite;
 }
 
 .animate-signal-rise {
   animation: signal-rise 0.35s ease-out both;
+}
+
+.animate-core-breathe {
+  animation: core-breathe 6.5s ease-in-out infinite;
+}
+
+/* hover 時一道高光從左掃到右（用在主要按鈕）。 */
+.glow-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.glow-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+}
+.glow-sweep:hover::after {
+  left: 130%;
 }

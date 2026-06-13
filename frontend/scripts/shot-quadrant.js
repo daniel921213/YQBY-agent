@@ -1,4 +1,4 @@
-// Dev-only helper: screenshot the OI quadrant map on the 數據榜單 tab.
+// Dev-only helper: screenshot the auth page + dashboard tabs for visual review.
 // Prereqs: backend on :8000 + `npm run start` on :3000, plus
 //   npm i --no-save playwright && npx playwright install chromium
 // Usage: node scripts/shot-quadrant.js
@@ -23,16 +23,21 @@ const { chromium } = require("playwright");
     }
   });
   const page = await ctx.newPage();
+
+  // Auth page (the guard only checks localStorage, /login still renders).
+  await page.goto("http://localhost:3000/login", { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: "scripts/login.png", fullPage: false });
+
+  // Dashboard: default 異常警報 tab.
   await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "scripts/dash-anomaly.png", fullPage: false });
+
+  // 數據榜單 tab with the OI quadrant map.
   await page.getByRole("button", { name: /數據榜單/ }).click();
   await page.waitForTimeout(1200);
   await page.screenshot({ path: "scripts/quadrant-tab.png", fullPage: true });
-
-  // Hover a bubble to capture the tooltip state too.
-  const dot = page.locator("svg[aria-label='OI 四象限異動圖'] g.cursor-pointer").first();
-  await dot.hover();
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: "scripts/quadrant-hover.png", fullPage: false });
 
   await browser.close();
   console.log("done");

@@ -12,7 +12,7 @@ export function formatCompactNumber(value: number): string {
 export function directionTone(direction: "LONG" | "SHORT" | "NEUTRAL"): string {
   if (direction === "LONG") return "text-long";
   if (direction === "SHORT") return "text-short";
-  return "text-stone-400";
+  return "text-slate-400";
 }
 
 export function directionLabel(direction: "LONG" | "SHORT" | "NEUTRAL"): string {
@@ -49,7 +49,7 @@ export function formatPercent(fraction: number, decimals = 2): string {
 export function percentTone(fraction: number): string {
   if (fraction > 0.0005) return "text-long";
   if (fraction < -0.0005) return "text-short";
-  return "text-stone-400";
+  return "text-slate-400";
 }
 
 export function formatRelativeTime(minutes: number): string {

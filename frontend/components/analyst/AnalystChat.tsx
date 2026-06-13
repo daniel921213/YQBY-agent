@@ -67,15 +67,15 @@ export function AnalystChat() {
   }
 
   const panel = (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-ember/25 bg-[#0d0b09]">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-ember/25 bg-[#070b16]">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Bot className="h-4 w-4 text-ember" />
-        <span className="text-sm font-semibold text-stone-50">YQBY 分析師</span>
+        <span className="text-sm font-semibold text-slate-50">YQBY 分析師</span>
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           title={expanded ? "縮小" : "放大"}
-          className="ml-auto text-stone-400 transition hover:text-ember"
+          className="ml-auto text-slate-400 transition hover:text-ember"
         >
           {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </button>
@@ -84,11 +84,11 @@ export function AnalystChat() {
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
         {messages.length === 0 && pending === null ? (
           <div className="space-y-3">
-            <p className="flex items-center gap-2 text-sm text-stone-300">
+            <p className="flex items-center gap-2 text-sm text-slate-300">
               <Sparkles className="h-4 w-4 text-ember" />
               問我市場、某個幣、或哪些異常。
             </p>
-            <p className="text-xs leading-5 text-stone-600">
+            <p className="text-xs leading-5 text-slate-600">
               分數=訊號異常強度，非上漲機率；數據判讀，非投資建議。
             </p>
             <div className="flex flex-col gap-2">
@@ -97,7 +97,7 @@ export function AnalystChat() {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-md border border-white/10 bg-graphite/60 px-3 py-2 text-left text-xs text-stone-300 transition hover:border-ember/40"
+                  className="rounded-md border border-white/10 bg-graphite/60 px-3 py-2 text-left text-xs text-slate-300 transition hover:border-ember/40"
                 >
                   {s}
                 </button>
@@ -108,13 +108,13 @@ export function AnalystChat() {
           messages.map((m, i) =>
             m.role === "user" ? (
               <div key={i} className="flex justify-end">
-                <div className="max-w-[88%] whitespace-pre-wrap rounded-lg bg-ember/15 px-3 py-2 text-sm leading-6 text-stone-50">
+                <div className="max-w-[88%] whitespace-pre-wrap rounded-lg bg-ember/15 px-3 py-2 text-sm leading-6 text-slate-50">
                   {m.content}
                 </div>
               </div>
             ) : (
               <div key={i} className="flex justify-start">
-                <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-stone-200">
+                <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-slate-200">
                   <div className={MD_CLASS}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                   </div>
@@ -126,7 +126,7 @@ export function AnalystChat() {
 
         {pending !== null ? (
           <div className="flex justify-start">
-            <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-stone-200">
+            <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-slate-200">
               <div className={MD_CLASS}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{pending.slice(0, shown)}</ReactMarkdown>
               </div>
@@ -136,7 +136,7 @@ export function AnalystChat() {
 
         {loading ? (
           <div className="flex justify-start">
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-sm text-stone-400">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-sm text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               分析中…
             </div>
@@ -155,7 +155,7 @@ export function AnalystChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="輸入問題…"
-          className="flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-stone-50 outline-none transition placeholder:text-stone-600 focus:border-ember/60"
+          className="flex-1 rounded-md border border-white/10 bg-obsidian/60 px-3 py-2 text-sm text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
         />
         <button
           type="submit"

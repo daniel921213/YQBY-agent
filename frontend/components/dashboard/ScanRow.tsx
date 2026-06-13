@@ -42,7 +42,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
     >
       <div className="flex items-center gap-2">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
-        <span className="truncate text-sm font-medium text-stone-50">{item.symbol}</span>
+        <span className="truncate text-sm font-medium text-slate-50">{item.symbol}</span>
         {showCategory ? (
           <span
             className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${CATEGORY_TONE[item.category]}`}
@@ -55,7 +55,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
             新
           </span>
         ) : null}
-        <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-stone-500">
+        <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-slate-500">
           {tracked ? (
             <>
               <Clock className="h-3 w-3" />
@@ -66,7 +66,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
       </div>
 
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm font-semibold tabular-nums text-stone-100">
+        <span className="text-sm font-semibold tabular-nums text-slate-100">
           {formatPrice(item.price)}
         </span>
         <span className={`text-xs font-medium tabular-nums ${percentTone(item.change_24h)}`}>
@@ -75,7 +75,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
       </div>
 
       {tracked ? (
-        <div className="flex items-center justify-between gap-2 text-[11px] text-stone-500">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
           <span className="truncate">
             首次 {formatPrice(item.first_seen_price)} →{" "}
             <span className={percentTone(item.change_since_first)}>
@@ -87,7 +87,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
 
       <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-1.5">
         <span
-          className="inline-flex items-center gap-1.5 text-[11px] text-stone-500"
+          className="inline-flex items-center gap-1.5 text-[11px] text-slate-500"
           title="近 1 小時內觸發次數（同一輪掃描只計一次）"
         >
           <Zap className="h-3 w-3 text-ember/80" />
@@ -95,8 +95,8 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
           <FrequencyTier tier={item.frequency_tier} />
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="text-[11px] text-stone-500">{item.confluence_pillars}/5</span>
-          <span className="w-9 text-right text-sm font-semibold tabular-nums text-stone-100">
+          <span className="text-[11px] text-slate-500">{item.confluence_pillars}/5</span>
+          <span className="w-9 text-right text-sm font-semibold tabular-nums text-slate-100">
             {formatScore(item.score)}
           </span>
         </span>

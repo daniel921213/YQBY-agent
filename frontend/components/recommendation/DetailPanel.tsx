@@ -50,7 +50,7 @@ export function DetailPanel({
   if (!analysis) {
     return (
       <ModalFrame title={symbol} onClose={onClose}>
-        <div className="flex h-64 items-center justify-center text-sm text-stone-300">
+        <div className="flex h-64 items-center justify-center text-sm text-slate-300">
           {error ?? (loading ? "載入分析中" : "尚無分析資料")}
         </div>
       </ModalFrame>
@@ -73,7 +73,7 @@ export function DetailPanel({
             <h2 className={`mt-2 text-3xl font-semibold ${directionTone}`}>
               {directionLabel(direction)} {analysis.recommendation.score.toFixed(1)}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-stone-300">
+            <p className="mt-2 text-sm leading-6 text-slate-300">
               {rec.confluence_pillars}/5 支柱同向（原始 {rec.raw_score.toFixed(1)} × 共振{" "}
               {rec.confluence_multiplier.toFixed(2)} = {rec.score.toFixed(1)}），信心{" "}
               {confidenceLabel(rec.confidence_level)}
@@ -115,24 +115,24 @@ export function DetailPanel({
 
         <div className="grid gap-4 md:grid-cols-[260px_1fr]">
           <div className="flex flex-col items-center justify-center border border-white/10 bg-graphite/85 p-4">
-            <div className="mb-1 self-start text-sm font-medium text-stone-100">五支柱雷達</div>
+            <div className="mb-1 self-start text-sm font-medium text-slate-100">五支柱雷達</div>
             <SignalRadar pillars={pillars} direction={direction} />
           </div>
 
           <div className="flex flex-col justify-center gap-5 border border-white/10 bg-graphite/85 p-4">
             <div>
-              <div className="mb-2 text-sm font-medium text-stone-100">支柱強弱</div>
+              <div className="mb-2 text-sm font-medium text-slate-100">支柱強弱</div>
               <PillarList pillars={pillars} />
             </div>
             <div>
-              <div className="mb-3 text-sm font-medium text-stone-100">多空力量對比</div>
+              <div className="mb-3 text-sm font-medium text-slate-100">多空力量對比</div>
               <TugOfWarBar long={longScore} short={shortScore} size="lg" />
             </div>
           </div>
         </div>
 
         <div>
-          <div className="mb-3 text-sm font-medium text-stone-100">分數拆解與理由</div>
+          <div className="mb-3 text-sm font-medium text-slate-100">分數拆解與理由</div>
           <IndicatorEvidenceList evidence={analysis.evidence} />
         </div>
       </section>
@@ -151,16 +151,16 @@ function ModalFrame({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
-      <div className="animate-signal-rise w-full max-w-4xl rounded-md border border-ember/25 bg-[#0d0b09] shadow-[0_30px_120px_rgba(0,0,0,0.58)]">
+      <div className="animate-signal-rise w-full max-w-4xl rounded-md border border-ember/25 bg-[#070b16] shadow-[0_30px_120px_rgba(0,0,0,0.58)]">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <div className="text-xs tracking-[0.18em] text-ember">訊號詳情</div>
-            <div className="mt-1 text-xl font-semibold text-stone-50">{title}</div>
+            <div className="mt-1 text-xl font-semibold text-slate-50">{title}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-stone-300 transition hover:border-ember/60 hover:text-ember"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-slate-300 transition hover:border-ember/60 hover:text-ember"
             title="關閉"
           >
             <X className="h-4 w-4" />
@@ -175,8 +175,8 @@ function ModalFrame({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-black/20 px-3 py-2">
-      <div className="text-xs text-stone-500">{label}</div>
-      <div className="mt-1 font-medium text-stone-100">{value}</div>
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 font-medium text-slate-100">{value}</div>
     </div>
   );
 }

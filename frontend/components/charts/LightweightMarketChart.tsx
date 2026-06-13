@@ -24,8 +24,8 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
     const instance = createChart(container, {
       autoSize: true,
       layout: {
-        background: { type: ColorType.Solid, color: "#18212c" },
-        textColor: "#a8b3c4"
+        background: { type: ColorType.Solid, color: "#0a111f" },
+        textColor: "#8fa9c9"
       },
       grid: {
         vertLines: { color: "rgba(255,255,255,0.04)" },
@@ -44,13 +44,14 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
       }
     });
 
+    // 單一光源敘事：漲 = 發光冰藍，跌 = 暗冷鋼藍（亮度只給上漲）。
     const candleSeries = instance.addCandlestickSeries({
-      upColor: "#8cc7ff",
-      downColor: "#b89d5b",
-      borderUpColor: "#8cc7ff",
-      borderDownColor: "#b89d5b",
-      wickUpColor: "#8cc7ff",
-      wickDownColor: "#b89d5b"
+      upColor: "#6fc6ff",
+      downColor: "#42507a",
+      borderUpColor: "#6fc6ff",
+      borderDownColor: "#42507a",
+      wickUpColor: "#6fc6ff",
+      wickDownColor: "#42507a"
     });
 
     const cvdSeries = instance.addLineSeries({

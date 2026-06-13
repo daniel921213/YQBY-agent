@@ -57,8 +57,8 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
-          <span className="text-sm font-semibold text-stone-100">OI 異動 · 四象限地圖</span>
-          <span className="text-xs text-stone-500">
+          <span className="text-sm font-semibold text-slate-100">OI 異動 · 四象限地圖</span>
+          <span className="text-xs text-slate-500">
             1H 持倉變化 × 價格變化 · 氣泡大小 = 變化金額 · 點擊幣種看分析
           </span>
         </div>
@@ -86,7 +86,7 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-graphite/70 p-3">
-      <div className="text-sm font-medium text-stone-100">{title}</div>
+      <div className="text-sm font-medium text-slate-100">{title}</div>
       {children}
     </div>
   );
@@ -103,7 +103,7 @@ function SubList({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <div className="text-[11px] text-stone-500">{label}</div>
+      <div className="text-[11px] text-slate-500">{label}</div>
       {rows.map((r) => (
         <button
           key={r.symbol}
@@ -111,8 +111,8 @@ function SubList({
           onClick={() => onSelect(r.symbol)}
           className="flex items-center justify-between gap-2 rounded-sm px-1.5 py-1 text-left transition hover:bg-steel/50"
         >
-          <span className="truncate text-sm text-stone-200">{r.symbol}</span>
-          <span className={`shrink-0 text-xs tabular-nums ${r.tone ?? "text-stone-400"}`}>
+          <span className="truncate text-sm text-slate-200">{r.symbol}</span>
+          <span className={`shrink-0 text-xs tabular-nums ${r.tone ?? "text-slate-400"}`}>
             {r.value}
           </span>
         </button>

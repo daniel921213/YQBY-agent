@@ -21,7 +21,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (authed === null) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-3 text-stone-400">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-3 text-slate-400">
         <span className="inline-flex items-center gap-2 text-xs tracking-[0.32em] text-ember">
           <Radar className="h-4 w-4" />
           YQBY

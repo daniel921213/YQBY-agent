@@ -70,7 +70,7 @@ function Dashboard() {
             {scanError}
           </section>
         ) : !scan ? (
-          <section className="flex h-36 items-center justify-center rounded-md border border-white/10 bg-graphite/60 text-sm text-stone-400">
+          <section className="flex h-36 items-center justify-center rounded-md border border-white/10 bg-graphite/60 text-sm text-slate-400">
             {scanLoading ? "掃描中…" : "目前沒有掃描資料"}
           </section>
         ) : (
@@ -83,14 +83,14 @@ function Dashboard() {
                   onClick={() => setTab(t.key)}
                   className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm transition ${
                     tab === t.key
-                      ? "border-ember text-stone-50"
-                      : "border-transparent text-stone-500 hover:text-stone-300"
+                      ? "border-ember text-slate-50"
+                      : "border-transparent text-slate-500 hover:text-slate-300"
                   }`}
                 >
                   {t.icon}
                   {t.label}
                   {typeof t.count === "number" ? (
-                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-[11px] tabular-nums text-stone-400">
+                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-[11px] tabular-nums text-slate-400">
                       {t.count}
                     </span>
                   ) : null}
@@ -142,19 +142,19 @@ function Dashboard() {
         <button
           type="button"
           onClick={() => setAnalystOpen(true)}
-          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-ember/40 bg-ember/15 px-4 py-2.5 text-sm font-medium text-ember shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur transition hover:bg-ember/25"
+          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-ember/40 bg-ember/15 px-4 py-2.5 text-sm font-medium text-ember shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(76,194,255,0.25)] backdrop-blur transition hover:bg-ember/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(76,194,255,0.4)]"
         >
           <Bot className="h-4 w-4" />
           分析師
         </button>
       ) : (
-        <div className="fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 border-l border-white/10 bg-[#0d0b09] p-3 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+        <div className="fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 border-l border-ember/15 bg-[#070b16]/92 p-3 shadow-[0_0_80px_rgba(0,0,0,0.7)] backdrop-blur-md">
           <div className="flex items-center justify-between">
             <span className="text-xs tracking-[0.18em] text-ember">YQBY 分析師</span>
             <button
               type="button"
               onClick={() => setAnalystOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-stone-300 transition hover:border-ember/60 hover:text-ember"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-slate-300 transition hover:border-ember/60 hover:text-ember"
               title="收合"
             >
               <X className="h-4 w-4" />

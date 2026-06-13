@@ -23,7 +23,7 @@ export function AccountMenu() {
     return (
       <Link
         href="/login"
-        className="inline-flex h-10 items-center gap-2 rounded-md border border-white/10 bg-graphite px-3 text-sm text-stone-300 transition hover:border-ember/60 hover:text-ember"
+        className="inline-flex h-10 items-center gap-2 rounded-md border border-white/10 bg-graphite px-3 text-sm text-slate-300 transition hover:border-ember/60 hover:text-ember"
       >
         <LogIn className="h-4 w-4" />
         登入
@@ -32,7 +32,7 @@ export function AccountMenu() {
   }
 
   return (
-    <div className="inline-flex h-10 items-center gap-2 rounded-md border border-ember/25 bg-graphite px-3 text-sm text-stone-100">
+    <div className="inline-flex h-10 items-center gap-2 rounded-md border border-ember/25 bg-graphite px-3 text-sm text-slate-100">
       <UserRound className="h-4 w-4 text-ember" />
       <span className="max-w-[120px] truncate">{uid}</span>
       <button
@@ -43,7 +43,7 @@ export function AccountMenu() {
           router.replace("/login");
         }}
         title="登出"
-        className="ml-1 text-stone-400 transition hover:text-short"
+        className="ml-1 text-slate-400 transition hover:text-short"
       >
         <LogOut className="h-4 w-4" />
       </button>

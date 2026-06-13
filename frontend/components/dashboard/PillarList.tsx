@@ -15,7 +15,7 @@ function dirWord(direction: string): string {
 function chipTone(direction: string): string {
   if (direction === "LONG") return "border-long/30 bg-long/5 text-long";
   if (direction === "SHORT") return "border-short/30 bg-short/5 text-short";
-  return "border-white/10 text-stone-500";
+  return "border-white/10 text-slate-500";
 }
 
 export function PillarList({ pillars }: { pillars: PillarScore[] }) {
@@ -23,9 +23,9 @@ export function PillarList({ pillars }: { pillars: PillarScore[] }) {
     <div className="divide-y divide-white/5">
       {pillars.map((p) => (
         <div key={p.pillar} className="flex items-center justify-between py-2.5">
-          <span className="text-sm text-stone-300">{p.pillar}</span>
+          <span className="text-sm text-slate-300">{p.pillar}</span>
           {p.direction === "NEUTRAL" || p.strength < 0.05 ? (
-            <span className="text-xs text-stone-600">—</span>
+            <span className="text-xs text-slate-600">—</span>
           ) : (
             <span
               className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${chipTone(p.direction)}`}
