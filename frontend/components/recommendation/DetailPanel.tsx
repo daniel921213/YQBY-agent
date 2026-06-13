@@ -67,7 +67,7 @@ export function DetailPanel({
   return (
     <ModalFrame title={analysis.recommendation.symbol} onClose={onClose}>
       <section className="grid max-h-[78vh] gap-5 overflow-y-auto pr-1">
-        <div className="grid gap-4 border border-white/10 bg-graphite/85 p-4 md:grid-cols-[1fr_240px] md:items-center">
+        <div className="grid gap-4 surface rounded-lg p-4 md:grid-cols-[1fr_240px] md:items-center">
           <div>
             <div className="text-xs tracking-[0.16em] text-ember">交易方向</div>
             <h2 className={`mt-2 text-3xl font-semibold ${directionTone}`}>
@@ -114,12 +114,12 @@ export function DetailPanel({
         </div>
 
         <div className="grid gap-4 md:grid-cols-[260px_1fr]">
-          <div className="flex flex-col items-center justify-center border border-white/10 bg-graphite/85 p-4">
+          <div className="flex flex-col items-center justify-center surface rounded-lg p-4">
             <div className="mb-1 self-start text-sm font-medium text-slate-100">五支柱雷達</div>
             <SignalRadar pillars={pillars} direction={direction} />
           </div>
 
-          <div className="flex flex-col justify-center gap-5 border border-white/10 bg-graphite/85 p-4">
+          <div className="flex flex-col justify-center gap-5 surface rounded-lg p-4">
             <div>
               <div className="mb-2 text-sm font-medium text-slate-100">支柱強弱</div>
               <PillarList pillars={pillars} />
@@ -151,7 +151,7 @@ function ModalFrame({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
-      <div className="animate-signal-rise w-full max-w-4xl rounded-md border border-ember/25 bg-[#070b16] shadow-[0_30px_120px_rgba(0,0,0,0.58)]">
+      <div className="glass-panel animate-signal-rise w-full max-w-4xl rounded-xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <div className="text-xs tracking-[0.18em] text-ember">訊號詳情</div>
@@ -174,7 +174,7 @@ function ModalFrame({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-white/10 bg-black/20 px-3 py-2">
+    <div className="surface-sunken rounded-md px-3 py-2">
       <div className="text-xs text-slate-500">{label}</div>
       <div className="mt-1 font-medium text-slate-100">{value}</div>
     </div>

@@ -70,7 +70,7 @@ function Dashboard() {
             {scanError}
           </section>
         ) : !scan ? (
-          <section className="flex h-36 items-center justify-center rounded-md border border-white/10 bg-graphite/60 text-sm text-slate-400">
+          <section className="surface-sunken flex h-36 items-center justify-center rounded-lg text-sm text-slate-400">
             {scanLoading ? "掃描中…" : "目前沒有掃描資料"}
           </section>
         ) : (
@@ -148,7 +148,7 @@ function Dashboard() {
           分析師
         </button>
       ) : (
-        <div className="fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 border-l border-ember/15 bg-[#070b16]/92 p-3 shadow-[0_0_80px_rgba(0,0,0,0.7)] backdrop-blur-md">
+        <div className="glass-panel fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs tracking-[0.18em] text-ember">YQBY 分析師</span>
             <button

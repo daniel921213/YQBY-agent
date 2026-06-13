@@ -59,7 +59,7 @@ export function AnomalyHistoryModal({ onClose }: AnomalyHistoryModalProps) {
             return (
               <li
                 key={`${item.symbol}-${item.first_seen_ts}-${i}`}
-                className="rounded-md border border-white/10 bg-graphite/70 px-3 py-2.5"
+                className="surface rounded-lg px-3 py-2.5"
               >
                 <div className="flex items-center gap-2">
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />

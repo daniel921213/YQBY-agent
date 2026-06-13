@@ -59,7 +59,7 @@ function Stat({
   valueClass?: string;
 }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-graphite/70 px-3 py-1.5">
+    <div className="surface lift inline-flex items-center gap-2 rounded-md px-3 py-1.5">
       {icon}
       <span className="text-[11px] text-slate-500">{label}</span>
       <span className={`text-sm font-medium tabular-nums ${valueClass ?? "text-slate-100"}`}>

@@ -23,11 +23,7 @@ interface RecommendationCardProps {
 export function RecommendationCard({ item, selected, onClick }: RecommendationCardProps) {
   const isLong = item.direction === "LONG";
   const tone = isLong ? "text-long" : "text-short";
-  const border = selected
-    ? isLong
-      ? "border-long/60 bg-steel"
-      : "border-short/60 bg-steel"
-    : "border-white/10 bg-graphite/85 hover:border-ember/45 hover:bg-steel/70";
+  const surfaceClass = selected ? "surface-raised signal-glow" : "surface-raised lift";
   const Icon = isLong ? ArrowUpRight : ArrowDownRight;
   const pulse = item.is_anomaly && !selected ? "animate-ember-pulse" : "";
 
@@ -35,7 +31,7 @@ export function RecommendationCard({ item, selected, onClick }: RecommendationCa
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-md border px-4 py-4 text-left shadow-[0_18px_48px_rgba(0,0,0,0.2)] transition ${border} ${pulse}`}
+      className={`w-full rounded-xl px-4 py-4 text-left transition ${surfaceClass} ${pulse}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>

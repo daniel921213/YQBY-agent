@@ -22,7 +22,7 @@ export function MarketHeader({
   const scannedCount = scan?.breadth?.total ?? 0;
 
   return (
-    <header className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <header className="glass-panel sticky top-2 z-20 flex flex-col gap-5 rounded-xl px-4 py-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p className="inline-flex items-center gap-2 text-xs tracking-[0.18em] text-ember [text-shadow:0_0_16px_rgba(76,194,255,0.55)]">
           <Radar className="h-4 w-4" />
@@ -39,17 +39,17 @@ export function MarketHeader({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex h-10 items-center gap-2 rounded-md border border-ember/25 bg-graphite px-3 text-sm text-slate-100">
+        <div className="surface inline-flex h-10 items-center gap-2 rounded-md px-3 text-sm text-slate-100">
           <Activity className="h-4 w-4 text-ember" />
           {anomalyCount} / {scannedCount} 異常
         </div>
-        <div className="h-10 rounded-md border border-white/10 bg-graphite px-3 py-2 text-sm text-slate-300">
+        <div className="surface h-10 rounded-md px-3 py-2 text-sm text-slate-300">
           {updatedLabel}
         </div>
         <button
           type="button"
           onClick={onRefresh}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-graphite text-slate-300 transition hover:border-ember/60 hover:text-ember disabled:opacity-50"
+          className="surface lift inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-300 hover:text-ember disabled:opacity-50"
           disabled={loading}
           title="重新掃描"
         >

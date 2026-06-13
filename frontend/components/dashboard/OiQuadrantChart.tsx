@@ -212,7 +212,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
         {/* Quadrant map */}
-        <div className="relative overflow-hidden rounded-md border border-white/10 bg-graphite/40">
+        <div className="surface-sunken relative overflow-hidden rounded-lg">
           <svg
             viewBox={`0 0 ${VW} ${VH}`}
             className="block h-auto w-full select-none"
@@ -450,7 +450,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
         </div>
 
         {/* Intensity sidebar */}
-        <aside className="flex flex-col gap-1 rounded-md border border-white/10 bg-graphite/40 p-3">
+        <aside className="surface flex flex-col gap-1 rounded-lg p-3">
           <div className="mb-1 text-[11px] text-slate-500">
             異動強度 Top {Math.min(SIDEBAR_ROWS, ranked.length)} · 依 OI 變化金額
           </div>

@@ -27,7 +27,7 @@ export function ModalShell({
       onClick={onClose}
     >
       <div
-        className={`animate-signal-rise flex max-h-[82vh] w-full ${widthClass} flex-col rounded-md border border-ember/25 bg-[#070b16] shadow-[0_30px_120px_rgba(0,0,0,0.58)]`}
+        className={`glass-panel animate-signal-rise flex max-h-[82vh] w-full ${widthClass} flex-col rounded-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">

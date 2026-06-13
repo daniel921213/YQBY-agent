@@ -93,7 +93,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
               type="button"
               onClick={() => setDir(d)}
               className={`px-3 py-1.5 text-xs transition ${
-                dir === d ? "bg-ember/15 text-ember" : "bg-graphite/60 text-slate-400 hover:text-slate-200"
+                dir === d ? "bg-ember/15 text-ember" : "bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               }`}
             >
               {d === "ALL" ? "全部" : d === "LONG" ? "做多" : "做空"}
@@ -106,7 +106,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-slate-200 outline-none focus:border-ember/60"
+            className="surface h-8 rounded-md px-2 text-slate-200 outline-none focus:border-ember/60"
           >
             {SORTS.map((s) => (
               <option key={s.key} value={s.key}>
@@ -117,7 +117,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
           <button
             type="button"
             onClick={() => setDesc((v) => !v)}
-            className="h-8 rounded-md border border-white/10 bg-graphite/60 px-2 text-slate-300 transition hover:border-ember/50 hover:text-ember"
+            className="surface lift h-8 rounded-md px-2 text-slate-300 hover:text-ember"
             title={desc ? "由高到低" : "由低到高"}
           >
             {desc ? "▼" : "▲"}
@@ -127,10 +127,10 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
         <span className="ml-auto text-xs text-slate-500">{view.length} / {rows.length} 檔</span>
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-white/10 bg-graphite/40">
+      <div className="surface-sunken overflow-x-auto rounded-lg">
         <table className="w-full min-w-[680px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-left text-[11px] tracking-wide text-slate-500">
+            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
               <th className="px-3 py-2 font-medium">#</th>
               <th className="px-3 py-2 font-medium">幣種</th>
               <th className="px-3 py-2 text-right font-medium">價格</th>
@@ -150,7 +150,9 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                 key={r.symbol}
                 onClick={() => onSelect(r.symbol)}
                 className={`cursor-pointer border-b border-white/5 last:border-0 transition ${
-                  r.symbol === selectedSymbol ? "bg-steel" : "hover:bg-steel/40"
+                  r.symbol === selectedSymbol
+                    ? "bg-ember/10 shadow-[inset_2px_0_0_0_#4cc2ff]"
+                    : "hover:bg-ember/[0.06]"
                 }`}
               >
                 <td className="px-3 py-2 tabular-nums text-slate-500">{i + 1}</td>

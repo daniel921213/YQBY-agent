@@ -67,7 +67,7 @@ export function AnalystChat() {
   }
 
   const panel = (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-ember/25 bg-[#070b16]">
+    <div className="surface flex h-full flex-col overflow-hidden rounded-lg">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Bot className="h-4 w-4 text-ember" />
         <span className="text-sm font-semibold text-slate-50">YQBY 分析師</span>
@@ -97,7 +97,7 @@ export function AnalystChat() {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-md border border-white/10 bg-graphite/60 px-3 py-2 text-left text-xs text-slate-300 transition hover:border-ember/40"
+                  className="surface lift rounded-md px-3 py-2 text-left text-xs text-slate-300"
                 >
                   {s}
                 </button>
@@ -114,7 +114,7 @@ export function AnalystChat() {
               </div>
             ) : (
               <div key={i} className="flex justify-start">
-                <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-slate-200">
+                <div className="max-w-[92%] overflow-x-auto rounded-lg surface-sunken px-3 py-2 text-slate-200">
                   <div className={MD_CLASS}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                   </div>
@@ -126,7 +126,7 @@ export function AnalystChat() {
 
         {pending !== null ? (
           <div className="flex justify-start">
-            <div className="max-w-[92%] overflow-x-auto rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-slate-200">
+            <div className="max-w-[92%] overflow-x-auto rounded-lg surface-sunken px-3 py-2 text-slate-200">
               <div className={MD_CLASS}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{pending.slice(0, shown)}</ReactMarkdown>
               </div>
@@ -136,7 +136,7 @@ export function AnalystChat() {
 
         {loading ? (
           <div className="flex justify-start">
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-graphite/70 px-3 py-2 text-sm text-slate-400">
+            <div className="surface-sunken inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               分析中…
             </div>

@@ -85,7 +85,7 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-white/10 bg-graphite/70 p-3">
+    <div className="surface flex flex-col gap-3 rounded-lg p-3.5">
       <div className="text-sm font-medium text-slate-100">{title}</div>
       {children}
     </div>

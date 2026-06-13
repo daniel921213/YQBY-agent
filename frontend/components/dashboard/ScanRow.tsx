@@ -26,11 +26,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
   const isLong = item.direction === "LONG";
   const tone = isLong ? "text-long" : "text-short";
   const Icon = isLong ? ArrowUpRight : ArrowDownRight;
-  const border = selected
-    ? isLong
-      ? "border-long/50 bg-steel"
-      : "border-short/50 bg-steel"
-    : "border-white/10 bg-graphite/70 hover:border-ember/40 hover:bg-steel/60";
+  const surfaceClass = selected ? "surface-raised signal-glow" : "surface lift";
 
   const tracked = item.first_seen_ts !== null;
 
@@ -38,7 +34,7 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full flex-col gap-2 rounded-md border px-3 py-2.5 text-left transition ${border}`}
+      className={`flex w-full flex-col gap-2 rounded-lg px-3 py-2.5 text-left transition ${surfaceClass}`}
     >
       <div className="flex items-center gap-2">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
