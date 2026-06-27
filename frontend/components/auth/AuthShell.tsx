@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Radar } from "lucide-react";
+import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 
 interface AuthShellProps {
   title: string;
@@ -11,6 +12,7 @@ interface AuthShellProps {
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <SpaceParticleField variant="auth" />
       {/* 氛圍層（純色彩光效，無圖形）：一道斜射光束 + 卡片後方呼吸的能量核 */}
       <div
         aria-hidden
@@ -25,7 +27,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         className="animate-core-breathe pointer-events-none absolute left-1/2 top-1/2 h-[620px] w-[620px] rounded-full bg-[radial-gradient(closest-side,rgba(76,194,255,0.16),rgba(76,194,255,0.05)_45%,transparent_72%)]"
       />
 
-      <div className="relative w-full max-w-sm">
+      <div className="relative z-10 w-full max-w-sm">
         <Link
           href="/"
           className="mb-8 flex flex-col items-center gap-2 text-center transition hover:opacity-90"

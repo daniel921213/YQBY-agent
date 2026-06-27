@@ -224,9 +224,186 @@ select {
   left: 130%;
 }
 
+.space-particle-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 78% 12%, rgba(76, 194, 255, 0.16), transparent 30%),
+    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.1), transparent 34%);
+}
+
+.space-particle-field::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  opacity: 0.22;
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(76, 194, 255, 0.1) 48%, transparent 54%),
+    linear-gradient(145deg, transparent 0 56%, rgba(143, 169, 201, 0.08) 61%, transparent 67%);
+  transform: translate3d(-2%, 0, 0);
+  animation: cosmic-sweep 22s ease-in-out infinite alternate;
+}
+
+.space-particle-auth {
+  opacity: 1.18;
+}
+
+.space-nebula,
+.space-stars,
+.space-drift-particles,
+.space-scanline {
+  position: absolute;
+  inset: 0;
+}
+
+.space-nebula {
+  filter: blur(20px);
+  opacity: 0.36;
+  transform: translate3d(0, 0, 0);
+}
+
+.space-nebula-a {
+  background:
+    radial-gradient(closest-side at 68% 28%, rgba(76, 194, 255, 0.2), transparent 70%),
+    radial-gradient(closest-side at 28% 62%, rgba(56, 130, 220, 0.12), transparent 74%);
+  animation: nebula-drift-a 18s ease-in-out infinite alternate;
+}
+
+.space-nebula-b {
+  background:
+    radial-gradient(closest-side at 52% 78%, rgba(143, 169, 201, 0.12), transparent 72%),
+    radial-gradient(closest-side at 86% 68%, rgba(76, 194, 255, 0.1), transparent 76%);
+  animation: nebula-drift-b 24s ease-in-out infinite alternate;
+}
+
+.space-stars-far {
+  opacity: 0.46;
+  background-image:
+    radial-gradient(circle, rgba(230, 237, 247, 0.62) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(76, 194, 255, 0.48) 0 1px, transparent 1.5px);
+  background-position: 0 0, 42px 74px;
+  background-size: 180px 180px, 260px 260px;
+  animation: star-drift-far 80s linear infinite;
+}
+
+.space-stars-near {
+  opacity: 0.36;
+  background-image:
+    radial-gradient(circle, rgba(230, 237, 247, 0.82) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(76, 194, 255, 0.62) 0 1.2px, transparent 1.8px);
+  background-position: 18px 36px, 110px 20px;
+  background-size: 320px 320px, 430px 430px;
+  animation: star-drift-near 55s linear infinite;
+}
+
+.space-drift-particles {
+  opacity: 0.72;
+  background:
+    radial-gradient(circle at 10% 24%, rgba(76, 194, 255, 0.7) 0 1.5px, transparent 2.4px),
+    radial-gradient(circle at 22% 72%, rgba(230, 237, 247, 0.65) 0 1px, transparent 2px),
+    radial-gradient(circle at 42% 18%, rgba(76, 194, 255, 0.64) 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 62% 48%, rgba(230, 237, 247, 0.52) 0 1px, transparent 2px),
+    radial-gradient(circle at 79% 31%, rgba(76, 194, 255, 0.7) 0 1.4px, transparent 2.4px),
+    radial-gradient(circle at 88% 78%, rgba(230, 237, 247, 0.56) 0 1px, transparent 2px);
+  animation: particle-float 12s ease-in-out infinite alternate;
+}
+
+.space-scanline {
+  opacity: 0.12;
+  background:
+    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.45), transparent),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 32px,
+      rgba(76, 194, 255, 0.08) 33px,
+      transparent 34px
+    );
+  transform: translateY(-60%);
+  animation: scanline-pass 11s ease-in-out infinite;
+}
+
+@keyframes cosmic-sweep {
+  from {
+    transform: translate3d(-4%, -1%, 0) rotate(0.001deg);
+  }
+  to {
+    transform: translate3d(4%, 1%, 0) rotate(0.001deg);
+  }
+}
+
+@keyframes nebula-drift-a {
+  from {
+    transform: translate3d(-1.5%, 0.5%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1%, -1%, 0) scale(1.04);
+  }
+}
+
+@keyframes nebula-drift-b {
+  from {
+    transform: translate3d(1%, -1%, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(-1.5%, 1%, 0) scale(1);
+  }
+}
+
+@keyframes star-drift-far {
+  from {
+    background-position: 0 0, 42px 74px;
+  }
+  to {
+    background-position: 180px 360px, 302px 594px;
+  }
+}
+
+@keyframes star-drift-near {
+  from {
+    background-position: 18px 36px, 110px 20px;
+  }
+  to {
+    background-position: -302px 516px, -320px 450px;
+  }
+}
+
+@keyframes particle-float {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.5;
+  }
+  to {
+    transform: translate3d(0, -18px, 0);
+    opacity: 0.82;
+  }
+}
+
+@keyframes scanline-pass {
+  0%,
+  18% {
+    transform: translateY(-70%);
+  }
+  58% {
+    transform: translateY(78%);
+  }
+  100% {
+    transform: translateY(78%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-ember-pulse,
-  .animate-core-breathe {
+  .animate-core-breathe,
+  .space-particle-field::before,
+  .space-nebula-a,
+  .space-nebula-b,
+  .space-stars-far,
+  .space-stars-near,
+  .space-drift-particles,
+  .space-scanline {
     animation: none;
   }
   .lift {

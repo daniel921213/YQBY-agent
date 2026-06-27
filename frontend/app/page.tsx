@@ -11,6 +11,7 @@ import { DataRankings } from "@/components/dashboard/DataRankings";
 import { AnomalyHistoryModal } from "@/components/dashboard/AnomalyHistoryModal";
 import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useMarketScan } from "@/hooks/useMarketScan";
 
@@ -54,8 +55,9 @@ function Dashboard() {
   ];
 
   return (
-    <main className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+    <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+      <SpaceParticleField />
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
         <MarketHeader
           onRefresh={refresh}
           updatedLabel={updatedLabel}
