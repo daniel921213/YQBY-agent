@@ -29,7 +29,7 @@ export function MarketHeader({
           日內波段雷達
         </p>
         <h1 className="mt-2 bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-2xl font-semibold text-transparent sm:text-3xl">
-          全市場異常訊號面板
+          ERT_DATA
         </h1>
         {scan?.breadth ? (
           <div className="mt-4">

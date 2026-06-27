@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "全市場異常訊號面板",
+  title: "ERT_DATA",
   description: "加密貨幣日內波段量化雷達"
 };
 
