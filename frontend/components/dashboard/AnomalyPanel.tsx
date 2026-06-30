@@ -8,7 +8,7 @@ import {
   History,
   ShieldCheck
 } from "lucide-react";
-import type { ScanItem, TradeDirection } from "@/lib/types";
+import type { AnomalyCategory, ScanItem, TradeDirection } from "@/lib/types";
 import { ScanRow } from "@/components/dashboard/ScanRow";
 import {
   formatPercent,
@@ -24,15 +24,17 @@ interface AnomalyPanelProps {
   onShowHistory: () => void;
 }
 
-const CATEGORIES: { key: string; label: string }[] = [
+type CategoryFilter = "ALL" | AnomalyCategory;
+
+const CATEGORIES: { key: CategoryFilter; label: string }[] = [
   { key: "ALL", label: "全部" },
-  { key: "頧?", label: "順勢多" },
-  { key: "頧征", label: "順勢空" },
-  { key: "?撮??", label: "反轉背離" }
+  { key: "轉多", label: "順勢多" },
+  { key: "轉空", label: "順勢空" },
+  { key: "疑似反轉", label: "反轉背離" }
 ];
 
 export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }: AnomalyPanelProps) {
-  const [cat, setCat] = useState("ALL");
+  const [cat, setCat] = useState<CategoryFilter>("ALL");
 
   const recs = useMemo(() => items.filter((item) => item.is_recommend), [items]);
   const longRecs = useMemo(
