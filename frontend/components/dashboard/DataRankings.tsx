@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, RadioTower, Zap } from "lucide-react";
 import type { OiMover, OiMoverSide, ScreenerRow } from "@/lib/types";
 import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
@@ -45,9 +45,9 @@ interface SqueezeSignal {
   liqUsd1h: number; // 被擠壓那一方的實際爆倉金額
 }
 
-const TRANSITION_ROWS = 6;
-const SQUEEZE_ROWS = 4;
-// 指數低於這條線就不上榜——安靜的市場該顯示「沒有風險」，而不是硬湊前四名。
+const TRANSITION_ROWS = 8;
+const SQUEEZE_ROWS = 6;
+// 指數低於這條線就不上榜——安靜的市場該顯示「沒有風險」，而不是硬湊名單。
 const SQUEEZE_MIN_SCORE = 40;
 
 const SIDE_META: Record<OiMoverSide, { color: string; text: string; bg: string }> = {
@@ -69,7 +69,24 @@ const PARTICLES = [
   { left: "94%", top: "82%", size: 2, delay: "0.6s", opacity: 0.26 }
 ];
 
+type RadarTab = "transition" | "squeeze";
+
+const TAB_META: Record<RadarTab, { icon: React.ReactNode; title: string; description: string }> = {
+  transition: {
+    icon: <RadioTower className="h-3.5 w-3.5" />,
+    title: "象限轉換監控",
+    description: "基準＝上一輪掃描（約 5 分鐘）；切換象限的幣優先，其餘依 1H 動能排序"
+  },
+  squeeze: {
+    icon: <Zap className="h-3.5 w-3.5" />,
+    title: "擠壓風險雷達",
+    description: "價格 × OI × 費率 × 散戶偏離 × 實際爆倉；指數 ≥ 40 才上榜"
+  }
+};
+
 export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) {
+  const [tab, setTab] = useState<RadarTab>("transition");
+
   const enriched = useMemo(() => {
     const rowsBySymbol = new Map(universe.map((row) => [row.symbol, row]));
     return movers.map<EnrichedMover>((mover) => {
@@ -90,6 +107,11 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
 
   const squeezeSignals = useMemo(() => buildSqueezeSignals(enriched), [enriched]);
 
+  const counts: Record<RadarTab, number> = {
+    transition: transitionSignals.length,
+    squeeze: squeezeSignals.length
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
@@ -102,10 +124,49 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
         <OiQuadrantChart movers={movers} onSelect={onSelect} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-        <TransitionPanel signals={transitionSignals} onSelect={onSelect} />
-        <SqueezePanel signals={squeezeSignals} onSelect={onSelect} />
-      </div>
+      {/* 單一全寬面板 + 內部 TAB：兩份榜單同一種表格節奏，不再左右互相拖累。 */}
+      <section className="surface relative overflow-hidden rounded-lg p-4">
+        <PanelParticles />
+        <div className="relative z-10 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div className="inline-flex overflow-hidden rounded-md border border-white/10">
+              {(Object.keys(TAB_META) as RadarTab[]).map((key) => {
+                const meta = TAB_META[key];
+                const active = tab === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTab(key)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm transition ${
+                      active
+                        ? "bg-ember/15 text-ember"
+                        : "bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                    }`}
+                  >
+                    {meta.icon}
+                    {meta.title}
+                    <span
+                      className={`rounded-sm px-1.5 py-0.5 text-[11px] tabular-nums ${
+                        active ? "bg-ember/15 text-ember" : "bg-white/5 text-slate-500"
+                      }`}
+                    >
+                      {counts[key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <span className="text-xs text-slate-500">{TAB_META[tab].description}</span>
+          </div>
+
+          {tab === "transition" ? (
+            <TransitionTable signals={transitionSignals} onSelect={onSelect} />
+          ) : (
+            <SqueezeTable signals={squeezeSignals} onSelect={onSelect} />
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -241,121 +302,179 @@ function shortSymbol(symbol: string): string {
   return symbol.replace(/USDT$/, "");
 }
 
-function TransitionPanel({
+const TH_CLASS = "px-3 py-2 font-medium";
+const TD_CLASS = "px-3 py-2.5";
+
+function TransitionTable({
   signals,
   onSelect
 }: {
   signals: TransitionSignal[];
   onSelect: (symbol: string) => void;
 }) {
+  if (!signals.length) {
+    return <EmptyState text="目前沒有足夠的 OI 轉換資料" />;
+  }
   return (
-    <section className="surface relative overflow-hidden rounded-lg p-4">
-      <PanelParticles />
-      <div className="relative z-10 flex flex-col gap-3">
-        <PanelHeader
-          icon={<RadioTower className="h-4 w-4" />}
-          title="象限轉換監控"
-          description="基準＝上一輪掃描（約 5 分鐘）；切換象限的幣優先，其餘依 1H 動能排序"
-          count={`${signals.length} 檔`}
-        />
-
-        {signals.length ? (
-          <div className="flex flex-col gap-2">
-            {signals.map((signal) => (
-              <TransitionRow key={signal.symbol} signal={signal} onSelect={onSelect} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState text="目前沒有足夠的 OI 轉換資料" />
-        )}
-      </div>
-    </section>
+    <div className="surface-sunken overflow-x-auto rounded-lg">
+      <table className="w-full min-w-[760px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
+            <th className={TH_CLASS}>幣種</th>
+            <th className={TH_CLASS}>路徑</th>
+            <th className={`${TH_CLASS} text-right`}>OI 1H</th>
+            <th className={`${TH_CLASS} text-right`}>價格 1H</th>
+            <th className={`${TH_CLASS} text-right`}>費率</th>
+            <th className={`${TH_CLASS} text-right`}>1H 爆倉</th>
+            <th className={`${TH_CLASS} text-right`}>動能</th>
+          </tr>
+        </thead>
+        <tbody>
+          {signals.map((signal) => {
+            const changed = Boolean(signal.previousSide);
+            return (
+              <tr
+                key={signal.symbol}
+                onClick={() => onSelect(signal.symbol)}
+                title={signal.reason}
+                className={`cursor-pointer border-b border-white/5 transition last:border-0 hover:bg-ember/[0.06] ${
+                  changed ? "bg-ember/[0.04]" : ""
+                }`}
+              >
+                <td className={`${TD_CLASS} font-semibold text-slate-50`}>
+                  {shortSymbol(signal.symbol)}
+                </td>
+                <td className={TD_CLASS}>
+                  {signal.previousSide ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <SideChip side={signal.previousSide} muted />
+                      <ArrowRight className="h-3.5 w-3.5 text-ember" />
+                      <SideChip side={signal.side} />
+                      <span className="animate-ember-pulse rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+                        切換
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <SideChip side={signal.side} />
+                      <span className="text-[11px] text-slate-500">{signal.label}</span>
+                    </span>
+                  )}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums ${percentTone(signal.oiChange)}`}>
+                  {formatPercent(signal.oiChange)}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums ${percentTone(signal.priceChange)}`}>
+                  {formatPercent(signal.priceChange)}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums ${percentTone(signal.fundingRate)}`}>
+                  {formatPercent(signal.fundingRate, 4)}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums text-slate-300`}>
+                  {signal.liqUsd1h > 0 ? `$${formatCompactNumber(signal.liqUsd1h)}` : "--"}
+                </td>
+                <td className={`${TD_CLASS} text-right font-semibold tabular-nums text-ember`}>
+                  {Math.max(10, Math.min(99, Math.round(signal.priority)))}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-function TransitionRow({
-  signal,
+function SqueezeTable({
+  signals,
   onSelect
 }: {
-  signal: TransitionSignal;
+  signals: SqueezeSignal[];
   onSelect: (symbol: string) => void;
 }) {
-  const meta = SIDE_META[signal.side];
-  const changed = Boolean(signal.previousSide);
-  const strength = Math.max(10, Math.min(99, Math.round(signal.priority)));
-
+  if (!signals.length) {
+    return <EmptyState text="目前沒有明顯擠壓風險（所有幣種指數低於 40）" />;
+  }
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(signal.symbol)}
-      title={signal.reason}
-      className={`group relative overflow-hidden rounded-md border p-3 text-left transition hover:border-ember/40 hover:bg-ember/[0.055] ${
-        changed ? "border-ember/30 bg-ember/[0.05]" : "border-white/8 bg-white/[0.025]"
-      }`}
-    >
-      <span
-        className="pointer-events-none absolute inset-y-3 left-0 w-px opacity-80"
-        style={{ background: meta.color, boxShadow: `0 0 18px ${meta.color}` }}
-      />
-
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-base font-semibold text-slate-100">
-            {shortSymbol(signal.symbol)}
-          </span>
-
-          {signal.previousSide ? (
-            <span className="inline-flex items-center gap-1.5">
-              <SideChip side={signal.previousSide} muted />
-              <ArrowRight className="h-3.5 w-3.5 text-ember" />
-              <SideChip side={signal.side} />
-              <span className="animate-ember-pulse rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
-                切換
-              </span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5">
-              <SideChip side={signal.side} />
-              <span className="text-[11px] text-slate-500">{signal.label}</span>
-            </span>
-          )}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[11px] text-slate-500">動能</span>
-          <span className="w-7 text-right tabular-nums text-ember">{strength}</span>
-        </div>
-      </div>
-
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
-        <span>
-          OI 1H{" "}
-          <span className={`tabular-nums ${percentTone(signal.oiChange)}`}>
-            {formatPercent(signal.oiChange)}
-          </span>
-        </span>
-        <span>
-          價格 1H{" "}
-          <span className={`tabular-nums ${percentTone(signal.priceChange)}`}>
-            {formatPercent(signal.priceChange)}
-          </span>
-        </span>
-        <span>
-          費率{" "}
-          <span className={`tabular-nums ${percentTone(signal.fundingRate)}`}>
-            {formatPercent(signal.fundingRate, 4)}
-          </span>
-        </span>
-        {signal.liqUsd1h > 0 ? (
-          <span>
-            1H 爆倉{" "}
-            <span className="tabular-nums text-slate-300">
-              ${formatCompactNumber(signal.liqUsd1h)}
-            </span>
-          </span>
-        ) : null}
-      </div>
-    </button>
+    <div className="surface-sunken overflow-x-auto rounded-lg">
+      <table className="w-full min-w-[760px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
+            <th className={TH_CLASS}>幣種</th>
+            <th className={TH_CLASS}>類型</th>
+            <th className={TH_CLASS}>指數</th>
+            <th className={`${TH_CLASS} text-right`}>爆倉 1H</th>
+            <th className={`${TH_CLASS} text-right`}>價格 1H</th>
+            <th className={`${TH_CLASS} text-right`}>費率</th>
+            <th className={`${TH_CLASS} text-right`} title="散戶多空比相對其近 9 小時常態的偏離">
+              散戶偏離
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {signals.map((signal) => {
+            const isShortSqueeze = signal.kind === "軋空";
+            const tone = isShortSqueeze ? "text-long" : "text-short";
+            const color = isShortSqueeze ? "#23dd8d" : "#ff5166";
+            return (
+              <tr
+                key={`${signal.symbol}-${signal.kind}`}
+                onClick={() => onSelect(signal.symbol)}
+                title={signal.reason}
+                className="cursor-pointer border-b border-white/5 transition last:border-0 hover:bg-ember/[0.06]"
+              >
+                <td className={`${TD_CLASS} font-semibold text-slate-50`}>
+                  {shortSymbol(signal.symbol)}
+                </td>
+                <td className={TD_CLASS}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      isShortSqueeze ? "bg-long/10 text-long" : "bg-short/10 text-short"
+                    }`}
+                  >
+                    {signal.kind}
+                  </span>
+                </td>
+                <td className={TD_CLASS}>
+                  <span className="inline-flex items-center gap-2.5">
+                    <span className={`w-6 text-right font-semibold tabular-nums ${tone}`}>
+                      {signal.score}
+                    </span>
+                    <span className="h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.07]">
+                      <span
+                        className="block h-full rounded-full"
+                        style={{
+                          width: `${signal.score}%`,
+                          background: `linear-gradient(90deg, ${color}55, ${color})`,
+                          boxShadow: `0 0 10px ${color}66`
+                        }}
+                      />
+                    </span>
+                  </span>
+                </td>
+                <td
+                  className={`${TD_CLASS} text-right tabular-nums ${
+                    signal.liqUsd1h > 0 ? tone : "text-slate-500"
+                  }`}
+                >
+                  {signal.liqUsd1h > 0 ? `$${formatCompactNumber(signal.liqUsd1h)}` : "--"}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums ${percentTone(signal.priceChange)}`}>
+                  {formatPercent(signal.priceChange)}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums ${percentTone(signal.fundingRate)}`}>
+                  {formatPercent(signal.fundingRate, 4)}
+                </td>
+                <td className={`${TD_CLASS} text-right tabular-nums text-slate-300`}>
+                  {signal.ratioDeviation >= 0 ? "+" : ""}
+                  {signal.ratioDeviation.toFixed(2)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -369,150 +488,6 @@ function SideChip({ side, muted = false }: { side: OiMoverSide; muted?: boolean 
     >
       {side}
     </span>
-  );
-}
-
-function SqueezePanel({
-  signals,
-  onSelect
-}: {
-  signals: SqueezeSignal[];
-  onSelect: (symbol: string) => void;
-}) {
-  return (
-    <section className="surface relative overflow-hidden rounded-lg p-4">
-      <PanelParticles />
-      <div className="relative z-10 flex flex-col gap-3">
-        <PanelHeader
-          icon={<Zap className="h-4 w-4" />}
-          title="擠壓風險雷達"
-          description="價格 × OI × 費率 × 散戶偏離 × 實際爆倉；指數 ≥ 40 才上榜"
-          count={`${signals.length} 檔`}
-        />
-
-        {signals.length ? (
-          <div className="flex flex-col gap-2">
-            {signals.map((signal) => (
-              <SqueezeRow
-                key={`${signal.symbol}-${signal.kind}`}
-                signal={signal}
-                onSelect={onSelect}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState text="目前沒有明顯擠壓風險（所有幣種指數低於 40）" />
-        )}
-      </div>
-    </section>
-  );
-}
-
-function SqueezeRow({
-  signal,
-  onSelect
-}: {
-  signal: SqueezeSignal;
-  onSelect: (symbol: string) => void;
-}) {
-  const isShortSqueeze = signal.kind === "軋空";
-  const tone = isShortSqueeze ? "text-long" : "text-short";
-  const color = isShortSqueeze ? "#23dd8d" : "#ff5166";
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(signal.symbol)}
-      title={signal.reason}
-      className="group rounded-md border border-white/8 bg-white/[0.025] p-3 text-left transition hover:border-ember/40 hover:bg-ember/[0.055]"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-              isShortSqueeze ? "bg-long/10 text-long" : "bg-short/10 text-short"
-            }`}
-          >
-            {signal.kind}
-          </span>
-          <span className="truncate text-base font-semibold text-slate-100">
-            {shortSymbol(signal.symbol)}
-          </span>
-        </div>
-        <span className={`shrink-0 text-lg font-semibold tabular-nums ${tone}`}>
-          {signal.score}
-        </span>
-      </div>
-
-      {/* 連續量表：一眼看出風險強度，比分段點更快讀。 */}
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
-            width: `${signal.score}%`,
-            background: `linear-gradient(90deg, ${color}55, ${color})`,
-            boxShadow: `0 0 12px ${color}66`
-          }}
-        />
-      </div>
-
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
-        <span>
-          {isShortSqueeze ? "空單爆倉 1H" : "多單爆倉 1H"}{" "}
-          <span className={`tabular-nums ${signal.liqUsd1h > 0 ? tone : "text-slate-500"}`}>
-            {signal.liqUsd1h > 0 ? `$${formatCompactNumber(signal.liqUsd1h)}` : "--"}
-          </span>
-        </span>
-        <span>
-          價格 1H{" "}
-          <span className={`tabular-nums ${percentTone(signal.priceChange)}`}>
-            {formatPercent(signal.priceChange)}
-          </span>
-        </span>
-        <span>
-          費率{" "}
-          <span className={`tabular-nums ${percentTone(signal.fundingRate)}`}>
-            {formatPercent(signal.fundingRate, 4)}
-          </span>
-        </span>
-        <span title="散戶多空比相對其近 9 小時常態的偏離">
-          散戶偏離{" "}
-          <span className="tabular-nums text-slate-300">
-            {signal.ratioDeviation >= 0 ? "+" : ""}
-            {signal.ratioDeviation.toFixed(2)}
-          </span>
-        </span>
-      </div>
-    </button>
-  );
-}
-
-function PanelHeader({
-  icon,
-  title,
-  description,
-  count
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  count: string;
-}) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-3">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md border border-ember/25 bg-ember/10 text-ember shadow-[0_0_24px_rgba(76,194,255,0.14)]">
-          {icon}
-        </span>
-        <span>
-          <span className="block text-sm font-semibold text-slate-100">{title}</span>
-          <span className="mt-1 block text-xs leading-5 text-slate-500">{description}</span>
-        </span>
-      </div>
-      <span className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs tabular-nums text-slate-300">
-        {count}
-      </span>
-    </div>
   );
 }
 
