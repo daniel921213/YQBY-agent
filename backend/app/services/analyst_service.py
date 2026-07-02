@@ -97,7 +97,7 @@ def _tool_gate_query(url: str, method: str = "GET", body: Any = None) -> dict[st
         return {"error": f"{type(exc).__name__}: {exc}"}
 
 SYSTEM_PROMPT = (
-    "你是 YQBY Crypto Killer 的加密貨幣分析師，用繁體中文、簡潔專業地回答。\n\n"
+    "你是 CT_Trader（CONFLUENCE THEORY）的加密貨幣分析師，用繁體中文、簡潔專業地回答。\n\n"
     "【最重要】使用者的問題是要『答案』，不是功能介紹。"
     "回答任何關於市場、個別幣、或代幣的問題時，你『必須』先呼叫對應工具取得真實資料，再依資料回答。"
     "在還沒呼叫工具拿到資料前，絕不憑空作答，也不要列出你的功能清單或自我介紹。\n\n"
@@ -241,7 +241,7 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
     settings = get_settings()
     if not settings.anthropic_api_key:
         return {
-            "reply": "（YQBY 分析師尚未啟用：請在 backend/.env 設定 ANTHROPIC_API_KEY 後重啟後端。）",
+            "reply": "（CT_Trader 分析師尚未啟用：請在 backend/.env 設定 ANTHROPIC_API_KEY 後重啟後端。）",
             "tools_used": [],
         }
 

@@ -152,7 +152,7 @@ function Dashboard() {
       ) : (
         <div className="glass-panel fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 p-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs tracking-[0.18em] text-ember">YQBY 分析師</span>
+            <span className="text-xs tracking-[0.18em] text-ember">CT_Trader 分析師</span>
             <button
               type="button"
               onClick={() => setAnalystOpen(false)}

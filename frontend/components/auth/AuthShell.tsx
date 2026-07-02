@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Radar } from "lucide-react";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { ThemeToggle } from "@/lib/theme";
 
@@ -36,10 +35,13 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           href="/"
           className="mb-8 flex flex-col items-center gap-2 text-center transition hover:opacity-90"
         >
-          <span className="inline-flex items-center gap-2 text-xs tracking-[0.32em] text-ember [text-shadow:0_0_18px_rgba(76,194,255,0.65)]">
-            <Radar className="h-4 w-4" />
-            CT_Trader
-          </span>
+          {/* 品牌 logo（金色 CT Trader 字標，透明底）；柔和落影讓它在深淺兩種底上都立得住。 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="CT Trader"
+            className="h-24 w-auto [filter:drop-shadow(0_4px_16px_rgba(15,30,60,0.35))]"
+          />
           <span className="bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
             CONFLUENCE THEORY
           </span>
