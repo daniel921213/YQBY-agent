@@ -97,6 +97,17 @@ class AnomalyTracker:
         self._altseason_snapshots: deque[tuple[float, int]] = deque(
             maxlen=_ALTSEASON_SNAPSHOTS_MAXLEN
         )
+        # Per-symbol OI quadrant from the previous authoritative scan. Server-side
+        # so every client sees the same "象限切換" against the same baseline (the
+        # last ~5-min scan), instead of each browser keeping its own memory.
+        self._oi_sides: dict[str, str] = {}
+
+    def swap_oi_sides(self, sides: dict[str, str]) -> dict[str, str]:
+        """Store this scan's quadrant per symbol; return the previous scan's map."""
+        with self._lock:
+            previous = self._oi_sides
+            self._oi_sides = dict(sides)
+            return previous
 
     def record(self, items: list[ScanItem], now_ts: int | None = None) -> None:
         """Update lifecycle state from an authoritative scan and write the

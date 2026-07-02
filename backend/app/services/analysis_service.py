@@ -28,6 +28,11 @@ PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多�
 OI_MOVERS_CAP = 40
 # Below this score a screener row reads as 中性 rather than forcing 做多/做空.
 SCREENER_NEUTRAL_SCORE = 15.0
+# Quadrant deadband: with BOTH axes inside these bands nothing meaningful moved,
+# so the side is 持平 — otherwise sign noise around zero makes coins flap between
+# quadrants and every flap reads as a fake "象限切換".
+OI_SIDE_MIN_PRICE_MOVE = 0.0015  # |1h price| < 0.15%
+OI_SIDE_MIN_OI_MOVE = 0.005      # |1h OI| < 0.5%
 
 
 def _pillar_breakdown(evidence: list) -> list[PillarScore]:
@@ -63,6 +68,13 @@ def _bars_for(seconds: int, primary_timeframe: str) -> int:
     return max(1, seconds // timeframe_to_seconds(primary_timeframe))
 
 
+def _flow_sum(frame, column: str, bars: int) -> float:
+    """Sum of a per-bar flow column over the last `bars` bars (0 if absent)."""
+    if column not in frame.columns or not len(frame):
+        return 0.0
+    return float(frame[column].tail(bars).sum())
+
+
 def _price_and_change_24h(chart: MarketChartPayload, primary_timeframe: str) -> tuple[float, float]:
     candles = chart.candles
     if not candles:
@@ -95,6 +107,7 @@ def _oi_mover(
     price: float,
     change_24h: float,
     primary_timeframe: str,
+    metrics: MarketSnapshot | None,
 ) -> OiMover | None:
     oi = chart.open_interest
     if len(oi) < 2 or oi[-1].value <= 0:
@@ -103,26 +116,33 @@ def _oi_mover(
     prev = oi[-1 - bars_1h].value if len(oi) > bars_1h else oi[0].value
     total_oi = oi[-1].value
     oi_delta = total_oi - prev
+    oi_change_1h = pct_change(prev, total_oi)
 
     candles = chart.candles
     price_ref = candles[-1 - bars_1h].close if len(candles) > bars_1h else candles[0].close
     price_change_1h = pct_change(price_ref, price)
-    price_up = price_change_1h >= 0
-    oi_up = oi_delta >= 0
-    if oi_up:
-        side = "多頭建倉" if price_up else "空頭建倉"
+
+    if (
+        abs(price_change_1h) < OI_SIDE_MIN_PRICE_MOVE
+        and abs(oi_change_1h) < OI_SIDE_MIN_OI_MOVE
+    ):
+        side = "持平"
+    elif oi_delta >= 0:
+        side = "多頭建倉" if price_change_1h >= 0 else "空頭建倉"
     else:
-        side = "空頭平倉" if price_up else "多頭平倉"
+        side = "空頭平倉" if price_change_1h >= 0 else "多頭平倉"
 
     return OiMover(
         symbol=symbol,
         price=price,
-        oi_change_1h=round(pct_change(prev, total_oi), 6),
+        oi_change_1h=round(oi_change_1h, 6),
         oi_delta=round(oi_delta, 2),
         total_oi=round(total_oi, 2),
         change_24h=change_24h,
         price_change_1h=round(price_change_1h, 6),
         side=side,
+        long_liq_usd_1h=metrics.long_liq_usd_1h if metrics else 0.0,
+        short_liq_usd_1h=metrics.short_liq_usd_1h if metrics else 0.0,
     )
 
 
@@ -191,11 +211,17 @@ class AnalysisService:
         )
 
         last = primary.iloc[-1]
+        bars_1h = _bars_for(3_600, primary_timeframe)
         metrics = MarketSnapshot(
             funding_rate=float(last["funding_rate"]),
             top_trader_ratio=float(last["top_trader_long_short_ratio"]),
             account_ratio=float(last["account_long_short_ratio"]),
             open_interest=float(last["open_interest"]),
+            account_ratio_avg=round(
+                float(primary["account_long_short_ratio"].tail(36).mean()), 4
+            ),
+            long_liq_usd_1h=round(_flow_sum(primary, "long_liq_usd", bars_1h), 2),
+            short_liq_usd_1h=round(_flow_sum(primary, "short_liq_usd", bars_1h), 2),
         )
 
         return AnalysisResponse(
@@ -278,7 +304,7 @@ class AnalysisService:
             anomaly_count=sum(1 for a in analyses if _is_anomaly(a.recommendation)),
         )
 
-        oi_movers = self._build_oi_movers(analyses, primary_timeframe)
+        oi_movers = self._build_oi_movers(analyses, primary_timeframe, track=track)
         altseason = self._build_altseason(analyses, record=track)
         universe = self._build_universe(analyses, primary_timeframe)
 
@@ -321,6 +347,7 @@ class AnalysisService:
                     funding_rate=m.funding_rate if m else 0.0,
                     top_trader_ratio=m.top_trader_ratio if m else 1.0,
                     account_ratio=m.account_ratio if m else 1.0,
+                    account_ratio_avg=m.account_ratio_avg if m else 1.0,
                     oi_change_1h=_oi_change_1h(a.chart, primary_timeframe),
                     stage=a.stage,
                 )
@@ -330,16 +357,29 @@ class AnalysisService:
 
     @staticmethod
     def _build_oi_movers(
-        analyses: list[AnalysisResponse], primary_timeframe: str
+        analyses: list[AnalysisResponse], primary_timeframe: str, track: bool = False
     ) -> list[OiMover]:
         movers: list[OiMover] = []
         for a in analyses:
             price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
             mover = _oi_mover(
-                a.recommendation.symbol, a.chart, price, change_24h, primary_timeframe
+                a.recommendation.symbol, a.chart, price, change_24h,
+                primary_timeframe, a.metrics,
             )
             if mover is not None:
                 movers.append(mover)
+
+        # Quadrant-transition memory lives server-side (one baseline = the
+        # previous authoritative scan, identical for every client). Record ALL
+        # scanned symbols — not just the shipped top movers — so a coin that
+        # jumps into the top list still has a valid "previous" to compare with.
+        if track and movers:
+            previous = anomaly_tracker.swap_oi_sides({m.symbol: m.side for m in movers})
+            for m in movers:
+                before = previous.get(m.symbol)
+                if before and before != m.side and m.side != "持平":
+                    m.previous_side = before  # type: ignore[assignment]
+
         # Rank by 1h OI change in USD notional (open_interest is USD from both
         # live providers), like the reference's "依變化金額排序".
         movers.sort(key=lambda m: abs(m.oi_delta), reverse=True)

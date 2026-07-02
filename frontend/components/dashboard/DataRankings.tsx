@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ArrowRight, RadioTower, Zap } from "lucide-react";
 import type { OiMover, OiMoverSide, ScreenerRow } from "@/lib/types";
-import { formatPercent, percentTone } from "@/lib/format";
+import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
 import { OiQuadrantChart } from "@/components/dashboard/OiQuadrantChart";
 
 interface DataRankingsProps {
@@ -15,20 +15,20 @@ interface DataRankingsProps {
 interface EnrichedMover extends OiMover {
   funding_rate: number;
   account_ratio: number;
+  account_ratio_avg: number;
 }
 
 interface TransitionSignal {
   symbol: string;
   side: OiMoverSide;
   previousSide: OiMoverSide | null;
-  route: string;
   label: string;
   reason: string;
   priority: number;
   oiChange: number;
   priceChange: number;
   fundingRate: number;
-  accountRatio: number;
+  liqUsd1h: number;
 }
 
 type SqueezeKind = "軋空" | "殺多";
@@ -37,17 +37,18 @@ interface SqueezeSignal {
   symbol: string;
   kind: SqueezeKind;
   score: number;
-  side: OiMoverSide;
   reason: string;
   oiChange: number;
   priceChange: number;
   fundingRate: number;
-  accountRatio: number;
+  ratioDeviation: number;
+  liqUsd1h: number; // 被擠壓那一方的實際爆倉金額
 }
 
-const PREVIOUS_SIDE_STORAGE_KEY = "ert_data.previous_oi_sides";
 const TRANSITION_ROWS = 6;
 const SQUEEZE_ROWS = 4;
+// 指數低於這條線就不上榜——安靜的市場該顯示「沒有風險」，而不是硬湊前四名。
+const SQUEEZE_MIN_SCORE = 40;
 
 const SIDE_META: Record<OiMoverSide, { color: string; text: string; bg: string }> = {
   多頭建倉: { color: "#23dd8d", text: "text-long", bg: "bg-long/10" },
@@ -69,27 +70,6 @@ const PARTICLES = [
 ];
 
 export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) {
-  const [previousSides, setPreviousSides] = useState<Record<string, OiMoverSide>>({});
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(PREVIOUS_SIDE_STORAGE_KEY);
-      if (saved) setPreviousSides(JSON.parse(saved));
-    } catch {
-      setPreviousSides({});
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!movers.length) return;
-    try {
-      const nextSides = Object.fromEntries(movers.map((m) => [m.symbol, m.side]));
-      window.localStorage.setItem(PREVIOUS_SIDE_STORAGE_KEY, JSON.stringify(nextSides));
-    } catch {
-      // localStorage is only a soft memory layer; the panel still works without it.
-    }
-  }, [movers]);
-
   const enriched = useMemo(() => {
     const rowsBySymbol = new Map(universe.map((row) => [row.symbol, row]));
     return movers.map<EnrichedMover>((mover) => {
@@ -97,20 +77,18 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
       return {
         ...mover,
         funding_rate: row?.funding_rate ?? 0,
-        account_ratio: row?.account_ratio ?? 1
+        account_ratio: row?.account_ratio ?? 1,
+        account_ratio_avg: row?.account_ratio_avg ?? 1
       };
     });
   }, [movers, universe]);
 
   const transitionSignals = useMemo(
-    () => buildTransitionSignals(enriched, previousSides).slice(0, TRANSITION_ROWS),
-    [enriched, previousSides]
-  );
-
-  const squeezeSignals = useMemo(
-    () => buildSqueezeSignals(enriched).slice(0, SQUEEZE_ROWS),
+    () => buildTransitionSignals(enriched).slice(0, TRANSITION_ROWS),
     [enriched]
   );
+
+  const squeezeSignals = useMemo(() => buildSqueezeSignals(enriched), [enriched]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -124,7 +102,7 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
         <OiQuadrantChart movers={movers} onSelect={onSelect} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
         <TransitionPanel signals={transitionSignals} onSelect={onSelect} />
         <SqueezePanel signals={squeezeSignals} onSelect={onSelect} />
       </div>
@@ -132,107 +110,108 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
   );
 }
 
-function buildTransitionSignals(
-  movers: EnrichedMover[],
-  previousSides: Record<string, OiMoverSide>
-): TransitionSignal[] {
+function buildTransitionSignals(movers: EnrichedMover[]): TransitionSignal[] {
   return movers
+    .filter((mover) => mover.side !== "持平" || mover.previous_side)
     .map((mover) => {
-      const previousSide = previousSides[mover.symbol] ?? null;
-      const changed = Boolean(previousSide && previousSide !== mover.side);
+      const changed = Boolean(mover.previous_side);
+      const liqUsd1h = mover.long_liq_usd_1h + mover.short_liq_usd_1h;
       const momentum =
         Math.min(38, Math.abs(mover.oi_change_1h) * 560) +
         Math.min(30, Math.abs(mover.price_change_1h ?? 0) * 520) +
         Math.min(16, Math.abs(mover.change_24h) * 42) +
-        Math.min(12, Math.abs(mover.oi_delta) / Math.max(1, mover.total_oi) * 120);
-
+        Math.min(12, (Math.abs(mover.oi_delta) / Math.max(1, mover.total_oi)) * 120);
       const pressureBonus =
         Math.min(10, Math.abs(mover.funding_rate) * 28000) +
-        Math.min(8, Math.abs(mover.account_ratio - 1) * 10);
+        Math.min(8, (liqUsd1h / Math.max(1, mover.total_oi)) / 0.002 * 8);
       const priority = momentum + pressureBonus + (changed ? 45 : 0);
-      const route = changed
-        ? `${previousSide} → ${mover.side}`
-        : transitionRoute(mover);
 
       return {
         symbol: mover.symbol,
         side: mover.side,
-        previousSide: changed ? previousSide : null,
-        route,
-        label: changed ? "象限切換" : transitionLabel(mover),
+        previousSide: mover.previous_side,
+        label: changed ? "切換" : transitionLabel(mover),
         reason: transitionReason(mover, changed),
         priority,
         oiChange: mover.oi_change_1h,
         priceChange: mover.price_change_1h ?? 0,
         fundingRate: mover.funding_rate,
-        accountRatio: mover.account_ratio
+        liqUsd1h
       };
     })
     .sort((a, b) => b.priority - a.priority);
 }
 
 function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
-  const signals = movers.flatMap((mover) => {
+  const signals = movers.flatMap<SqueezeSignal>((mover) => {
     const priceChange = mover.price_change_1h ?? 0;
-    const oiStress = Math.min(23, Math.abs(mover.oi_change_1h) / 0.08 * 23);
+    const oiStress = Math.min(18, (Math.abs(mover.oi_change_1h) / 0.08) * 18);
+    // 散戶擁擠 = 偏離「這個幣自己的常態」，不是偏離 1.0 —— 加密散戶天生偏多，
+    // 用絕對值 1.0 當基準會讓殺多分數常駐虛高。
+    const ratioDeviation = mover.account_ratio - mover.account_ratio_avg;
+    // 實際爆倉：1 小時內爆掉 OI 的 0.2% 就拿滿分——從「推測會爆」升級成「已在爆」。
+    const shortLiqPts = Math.min(20, (mover.short_liq_usd_1h / Math.max(1, mover.total_oi)) / 0.002 * 20);
+    const longLiqPts = Math.min(20, (mover.long_liq_usd_1h / Math.max(1, mover.total_oi)) / 0.002 * 20);
+
     const shortSqueezeScore =
-      Math.min(28, Math.max(0, priceChange) / 0.08 * 28) +
+      Math.min(24, (Math.max(0, priceChange) / 0.08) * 24) +
       oiStress +
-      Math.min(18, Math.max(0, 1 - mover.account_ratio) / 0.35 * 18) +
-      Math.min(14, Math.max(0, 0.0002 - mover.funding_rate) / 0.00035 * 14) +
-      (mover.side === "空頭平倉" ? 17 : mover.side === "多頭建倉" ? 9 : 0);
+      Math.min(16, (Math.max(0, -ratioDeviation) / 0.3) * 16) +
+      Math.min(12, (Math.max(0, 0.0002 - mover.funding_rate) / 0.00035) * 12) +
+      shortLiqPts +
+      (mover.side === "空頭平倉" ? 14 : mover.side === "多頭建倉" ? 7 : 0);
 
     const longSqueezeScore =
-      Math.min(28, Math.max(0, -priceChange) / 0.08 * 28) +
+      Math.min(24, (Math.max(0, -priceChange) / 0.08) * 24) +
       oiStress +
-      Math.min(18, Math.max(0, mover.account_ratio - 1) / 0.35 * 18) +
-      Math.min(14, Math.max(0, mover.funding_rate + 0.0001) / 0.00045 * 14) +
-      (mover.side === "多頭平倉" ? 17 : mover.side === "空頭建倉" ? 9 : 0);
+      Math.min(16, (Math.max(0, ratioDeviation) / 0.3) * 16) +
+      Math.min(12, (Math.max(0, mover.funding_rate + 0.0001) / 0.00045) * 12) +
+      longLiqPts +
+      (mover.side === "多頭平倉" ? 14 : mover.side === "空頭建倉" ? 7 : 0);
 
     return [
       {
         symbol: mover.symbol,
         kind: "軋空" as const,
         score: clampScore(shortSqueezeScore),
-        side: mover.side,
         reason:
-          mover.side === "空頭平倉"
-            ? "價格上推且 OI 下降，空方停損回補正在放大"
-            : "價格逆勢上推，若散戶偏空延續，容易形成追價回補",
+          mover.short_liq_usd_1h > 0 && shortLiqPts >= 8
+            ? "空單已在實際爆倉，價格上推會加速回補"
+            : mover.side === "空頭平倉"
+              ? "價格上推且 OI 下降，空方停損回補正在放大"
+              : "價格逆勢上推，若空方擁擠延續，容易形成追價回補",
         oiChange: mover.oi_change_1h,
         priceChange,
         fundingRate: mover.funding_rate,
-        accountRatio: mover.account_ratio
+        ratioDeviation,
+        liqUsd1h: mover.short_liq_usd_1h
       },
       {
         symbol: mover.symbol,
         kind: "殺多" as const,
         score: clampScore(longSqueezeScore),
-        side: mover.side,
         reason:
-          mover.side === "多頭平倉"
-            ? "價格下壓且 OI 下降，多方降槓桿壓力正在釋放"
-            : "價格回落但 OI 增加，若多方仍擁擠，容易出現踩踏",
+          mover.long_liq_usd_1h > 0 && longLiqPts >= 8
+            ? "多單已在實際爆倉，價格下壓會引發踩踏"
+            : mover.side === "多頭平倉"
+              ? "價格下壓且 OI 下降，多方降槓桿壓力正在釋放"
+              : "價格回落但 OI 增加，若多方仍擁擠，容易出現踩踏",
         oiChange: mover.oi_change_1h,
         priceChange,
         fundingRate: mover.funding_rate,
-        accountRatio: mover.account_ratio
+        ratioDeviation,
+        liqUsd1h: mover.long_liq_usd_1h
       }
     ];
   });
 
   return signals
+    .filter((signal) => signal.score >= SQUEEZE_MIN_SCORE)
     .sort((a, b) => b.score - a.score)
-    .filter((signal, index, arr) => arr.findIndex((other) => other.symbol === signal.symbol) === index)
+    .filter(
+      (signal, index, arr) => arr.findIndex((other) => other.symbol === signal.symbol) === index
+    )
     .slice(0, SQUEEZE_ROWS);
-}
-
-function transitionRoute(mover: EnrichedMover): string {
-  if (mover.side === "多頭建倉") return "資金進場 → 多方推進";
-  if (mover.side === "空頭平倉") return "空方回補 → 接力觀察";
-  if (mover.side === "空頭建倉") return "空方增壓 → 下壓測試";
-  if (mover.side === "多頭平倉") return "多方降槓桿 → 風險釋放";
-  return "持平區 → 等待突破";
 }
 
 function transitionLabel(mover: EnrichedMover): string {
@@ -242,11 +221,11 @@ function transitionLabel(mover: EnrichedMover): string {
   if (mover.side === "多頭平倉") return "降槓桿";
   if (mover.side === "多頭建倉") return "主動增倉";
   if (mover.side === "空頭建倉") return "主動壓制";
-  return "結構觀察";
+  return "觀察";
 }
 
 function transitionReason(mover: EnrichedMover, changed: boolean): string {
-  if (changed) return "和上次掃描相比已切換象限，優先檢查是否為新一輪合約資金流向。";
+  if (changed) return "與上一輪掃描（約 5 分鐘前）相比已切換象限，優先檢查是否為新一輪資金流向。";
   if (mover.side === "多頭建倉") return "價格與 OI 同步上升，偏向多方主動推進。";
   if (mover.side === "空頭平倉") return "價格上升但 OI 減少，偏向空方回補或趨勢後段。";
   if (mover.side === "空頭建倉") return "價格下跌且 OI 上升，偏向空方主動加壓。";
@@ -276,12 +255,12 @@ function TransitionPanel({
         <PanelHeader
           icon={<RadioTower className="h-4 w-4" />}
           title="象限轉換監控"
-          description="記錄上次掃描象限，優先顯示結構切換與 OI 動能放大的幣種"
+          description="基準＝上一輪掃描（約 5 分鐘）；切換象限的幣優先，其餘依 1H 動能排序"
           count={`${signals.length} 檔`}
         />
 
         {signals.length ? (
-          <div className="grid gap-2 lg:grid-cols-2">
+          <div className="flex flex-col gap-2">
             {signals.map((signal) => (
               <TransitionRow key={signal.symbol} signal={signal} onSelect={onSelect} />
             ))}
@@ -291,6 +270,105 @@ function TransitionPanel({
         )}
       </div>
     </section>
+  );
+}
+
+function TransitionRow({
+  signal,
+  onSelect
+}: {
+  signal: TransitionSignal;
+  onSelect: (symbol: string) => void;
+}) {
+  const meta = SIDE_META[signal.side];
+  const changed = Boolean(signal.previousSide);
+  const strength = Math.max(10, Math.min(99, Math.round(signal.priority)));
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(signal.symbol)}
+      title={signal.reason}
+      className={`group relative overflow-hidden rounded-md border p-3 text-left transition hover:border-ember/40 hover:bg-ember/[0.055] ${
+        changed ? "border-ember/30 bg-ember/[0.05]" : "border-white/8 bg-white/[0.025]"
+      }`}
+    >
+      <span
+        className="pointer-events-none absolute inset-y-3 left-0 w-px opacity-80"
+        style={{ background: meta.color, boxShadow: `0 0 18px ${meta.color}` }}
+      />
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-base font-semibold text-slate-100">
+            {shortSymbol(signal.symbol)}
+          </span>
+
+          {signal.previousSide ? (
+            <span className="inline-flex items-center gap-1.5">
+              <SideChip side={signal.previousSide} muted />
+              <ArrowRight className="h-3.5 w-3.5 text-ember" />
+              <SideChip side={signal.side} />
+              <span className="animate-ember-pulse rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+                切換
+              </span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <SideChip side={signal.side} />
+              <span className="text-[11px] text-slate-500">{signal.label}</span>
+            </span>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-[11px] text-slate-500">動能</span>
+          <span className="w-7 text-right tabular-nums text-ember">{strength}</span>
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+        <span>
+          OI 1H{" "}
+          <span className={`tabular-nums ${percentTone(signal.oiChange)}`}>
+            {formatPercent(signal.oiChange)}
+          </span>
+        </span>
+        <span>
+          價格 1H{" "}
+          <span className={`tabular-nums ${percentTone(signal.priceChange)}`}>
+            {formatPercent(signal.priceChange)}
+          </span>
+        </span>
+        <span>
+          費率{" "}
+          <span className={`tabular-nums ${percentTone(signal.fundingRate)}`}>
+            {formatPercent(signal.fundingRate, 4)}
+          </span>
+        </span>
+        {signal.liqUsd1h > 0 ? (
+          <span>
+            1H 爆倉{" "}
+            <span className="tabular-nums text-slate-300">
+              ${formatCompactNumber(signal.liqUsd1h)}
+            </span>
+          </span>
+        ) : null}
+      </div>
+    </button>
+  );
+}
+
+function SideChip({ side, muted = false }: { side: OiMoverSide; muted?: boolean }) {
+  const meta = SIDE_META[side];
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] ${
+        muted ? "bg-white/5 text-slate-500" : `${meta.bg} ${meta.text}`
+      }`}
+    >
+      {side}
+    </span>
   );
 }
 
@@ -308,21 +386,104 @@ function SqueezePanel({
         <PanelHeader
           icon={<Zap className="h-4 w-4" />}
           title="擠壓風險雷達"
-          description="綜合價格 1H、OI、資金費率與散戶多空比"
+          description="價格 × OI × 費率 × 散戶偏離 × 實際爆倉；指數 ≥ 40 才上榜"
           count={`${signals.length} 檔`}
         />
 
         {signals.length ? (
           <div className="flex flex-col gap-2">
             {signals.map((signal) => (
-              <SqueezeRow key={`${signal.symbol}-${signal.kind}`} signal={signal} onSelect={onSelect} />
+              <SqueezeRow
+                key={`${signal.symbol}-${signal.kind}`}
+                signal={signal}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         ) : (
-          <EmptyState text="目前沒有明顯擠壓風險" />
+          <EmptyState text="目前沒有明顯擠壓風險（所有幣種指數低於 40）" />
         )}
       </div>
     </section>
+  );
+}
+
+function SqueezeRow({
+  signal,
+  onSelect
+}: {
+  signal: SqueezeSignal;
+  onSelect: (symbol: string) => void;
+}) {
+  const isShortSqueeze = signal.kind === "軋空";
+  const tone = isShortSqueeze ? "text-long" : "text-short";
+  const color = isShortSqueeze ? "#23dd8d" : "#ff5166";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(signal.symbol)}
+      title={signal.reason}
+      className="group rounded-md border border-white/8 bg-white/[0.025] p-3 text-left transition hover:border-ember/40 hover:bg-ember/[0.055]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              isShortSqueeze ? "bg-long/10 text-long" : "bg-short/10 text-short"
+            }`}
+          >
+            {signal.kind}
+          </span>
+          <span className="truncate text-base font-semibold text-slate-100">
+            {shortSymbol(signal.symbol)}
+          </span>
+        </div>
+        <span className={`shrink-0 text-lg font-semibold tabular-nums ${tone}`}>
+          {signal.score}
+        </span>
+      </div>
+
+      {/* 連續量表：一眼看出風險強度，比分段點更快讀。 */}
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${signal.score}%`,
+            background: `linear-gradient(90deg, ${color}55, ${color})`,
+            boxShadow: `0 0 12px ${color}66`
+          }}
+        />
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+        <span>
+          {isShortSqueeze ? "空單爆倉 1H" : "多單爆倉 1H"}{" "}
+          <span className={`tabular-nums ${signal.liqUsd1h > 0 ? tone : "text-slate-500"}`}>
+            {signal.liqUsd1h > 0 ? `$${formatCompactNumber(signal.liqUsd1h)}` : "--"}
+          </span>
+        </span>
+        <span>
+          價格 1H{" "}
+          <span className={`tabular-nums ${percentTone(signal.priceChange)}`}>
+            {formatPercent(signal.priceChange)}
+          </span>
+        </span>
+        <span>
+          費率{" "}
+          <span className={`tabular-nums ${percentTone(signal.fundingRate)}`}>
+            {formatPercent(signal.fundingRate, 4)}
+          </span>
+        </span>
+        <span title="散戶多空比相對其近 9 小時常態的偏離">
+          散戶偏離{" "}
+          <span className="tabular-nums text-slate-300">
+            {signal.ratioDeviation >= 0 ? "+" : ""}
+            {signal.ratioDeviation.toFixed(2)}
+          </span>
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -352,140 +513,6 @@ function PanelHeader({
         {count}
       </span>
     </div>
-  );
-}
-
-function TransitionRow({
-  signal,
-  onSelect
-}: {
-  signal: TransitionSignal;
-  onSelect: (symbol: string) => void;
-}) {
-  const meta = SIDE_META[signal.side];
-  const strength = Math.max(10, Math.min(99, Math.round(signal.priority)));
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(signal.symbol)}
-      className="group relative overflow-hidden rounded-md border border-white/8 bg-white/[0.025] p-3 text-left transition hover:border-ember/35 hover:bg-ember/[0.055]"
-    >
-      <span
-        className="pointer-events-none absolute inset-y-3 left-0 w-px opacity-80"
-        style={{ background: meta.color, boxShadow: `0 0 18px ${meta.color}` }}
-      />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-base font-semibold text-slate-100">
-              {shortSymbol(signal.symbol)}
-            </span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${meta.bg} ${meta.text}`}>
-              {signal.label}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-            {signal.previousSide ? (
-              <>
-                <span>{signal.previousSide}</span>
-                <ArrowRight className="h-3 w-3 text-slate-600" />
-                <span className={meta.text}>{signal.side}</span>
-              </>
-            ) : (
-              <span>{signal.route}</span>
-            )}
-          </div>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[11px] text-slate-500">動能</div>
-          <div className="tabular-nums text-ember">{strength}</div>
-        </div>
-      </div>
-
-      <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{signal.reason}</p>
-
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] sm:grid-cols-4">
-        <Metric label="OI 1H" value={formatPercent(signal.oiChange)} tone={percentTone(signal.oiChange)} />
-        <Metric label="價格 1H" value={formatPercent(signal.priceChange)} tone={percentTone(signal.priceChange)} />
-        <Metric label="資金費率" value={formatPercent(signal.fundingRate, 4)} tone={percentTone(signal.fundingRate)} />
-        <Metric label="散戶比" value={signal.accountRatio.toFixed(2)} />
-      </div>
-    </button>
-  );
-}
-
-function SqueezeRow({
-  signal,
-  onSelect
-}: {
-  signal: SqueezeSignal;
-  onSelect: (symbol: string) => void;
-}) {
-  const isShortSqueeze = signal.kind === "軋空";
-  const tone = isShortSqueeze ? "text-long" : "text-short";
-  const color = isShortSqueeze ? "#23dd8d" : "#ff5166";
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(signal.symbol)}
-      className="group rounded-md border border-white/8 bg-white/[0.025] p-3 text-left transition hover:border-ember/35 hover:bg-ember/[0.055]"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-flex h-2 w-2 shrink-0 rounded-full"
-              style={{ background: color, boxShadow: `0 0 14px ${color}` }}
-            />
-            <span className="truncate text-base font-semibold text-slate-100">
-              {shortSymbol(signal.symbol)}
-            </span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] ${isShortSqueeze ? "bg-long/10 text-long" : "bg-short/10 text-short"}`}>
-              {signal.kind}
-            </span>
-          </div>
-          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{signal.reason}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[11px] text-slate-500">指數</div>
-          <div className={`tabular-nums ${tone}`}>{signal.score}</div>
-        </div>
-      </div>
-
-      <div className="mt-3 flex items-center gap-1">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <span
-            key={index}
-            className="h-1.5 flex-1 rounded-full"
-            style={{
-              background:
-                index < Math.ceil(signal.score / 12.5)
-                  ? color
-                  : "rgba(255,255,255,0.07)",
-              boxShadow: index < Math.ceil(signal.score / 12.5) ? `0 0 10px ${color}55` : "none"
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
-        <Metric label="價格 1H" value={formatPercent(signal.priceChange)} tone={percentTone(signal.priceChange)} />
-        <Metric label="OI 1H" value={formatPercent(signal.oiChange)} tone={percentTone(signal.oiChange)} />
-        <Metric label="費率" value={formatPercent(signal.fundingRate, 4)} tone={percentTone(signal.fundingRate)} />
-        <Metric label="散戶比" value={signal.accountRatio.toFixed(2)} />
-      </div>
-    </button>
-  );
-}
-
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <span className="flex min-w-0 items-center justify-between gap-2">
-      <span className="truncate text-slate-600">{label}</span>
-      <span className={`shrink-0 tabular-nums ${tone ?? "text-slate-300"}`}>{value}</span>
-    </span>
   );
 }
 

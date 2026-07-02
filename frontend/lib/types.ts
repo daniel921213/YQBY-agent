@@ -69,6 +69,9 @@ export interface MarketSnapshot {
   top_trader_ratio: number;
   account_ratio: number;
   open_interest: number;
+  account_ratio_avg: number;
+  long_liq_usd_1h: number;
+  short_liq_usd_1h: number;
 }
 
 export interface AnalysisResponse {
@@ -139,6 +142,11 @@ export interface OiMover {
   change_24h: number;
   price_change_1h: number;
   side: OiMoverSide;
+  // 上一輪後端掃描的象限（與現在不同時才有值）——象限切換的依據。
+  previous_side: OiMoverSide | null;
+  // 近 1 小時真實爆倉金額（USD）。
+  long_liq_usd_1h: number;
+  short_liq_usd_1h: number;
 }
 
 export interface ScreenerRow {
@@ -153,6 +161,7 @@ export interface ScreenerRow {
   funding_rate: number;
   top_trader_ratio: number;
   account_ratio: number;
+  account_ratio_avg: number;
   oi_change_1h: number;
   stage: Stage;
 }

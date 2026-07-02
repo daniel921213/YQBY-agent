@@ -15,6 +15,15 @@ _DERIVATIVE_DEFAULTS = {
     "funding_rate": 0.0,
 }
 
+# Flow columns (per-bar amounts, not levels): a gap means "nothing happened",
+# so they fill with 0 — ffill would duplicate one bar's liquidations across
+# the gap and inflate the totals. Gate provides these; Binance's public liq
+# feed was retired, so the fallback provider reads 0 = "no data".
+_DERIVATIVE_FLOW_DEFAULTS = {
+    "long_liq_usd": 0.0,
+    "short_liq_usd": 0.0,
+}
+
 
 def _build_sources() -> tuple[MarketDataSource, DerivativesDataSource]:
     provider = get_settings().data_provider.lower()
@@ -83,5 +92,11 @@ class MarketDataService:
                 merged[column] = default
             else:
                 merged[column] = merged[column].ffill().bfill().fillna(default)
+
+        for column, default in _DERIVATIVE_FLOW_DEFAULTS.items():
+            if column not in merged.columns:
+                merged[column] = default
+            else:
+                merged[column] = merged[column].fillna(default)
 
         return add_cvd_columns(merged)

@@ -48,6 +48,12 @@ class MarketSnapshot(BaseModel):
     top_trader_ratio: float = 1.0
     account_ratio: float = 1.0
     open_interest: float = 0.0
+    # Retail ratio's own recent baseline (~9h mean). Crypto retail is chronically
+    # long-biased, so crowding must be read as deviation from THIS, not from 1.0.
+    account_ratio_avg: float = 1.0
+    # Real liquidation notionals over the last hour (0 when the provider has none).
+    long_liq_usd_1h: float = 0.0
+    short_liq_usd_1h: float = 0.0
 
 
 class AnalysisResponse(BaseModel):
@@ -118,6 +124,9 @@ class AltseasonIndex(BaseModel):
     previous_index: int | None = None
 
 
+OiSide = Literal["多頭建倉", "空頭建倉", "多頭平倉", "空頭平倉", "持平"]
+
+
 class OiMover(BaseModel):
     """One point of the OI movement quadrant map (1h open-interest × price)."""
 
@@ -130,7 +139,14 @@ class OiMover(BaseModel):
     # Price change over the same 1h window — the quadrant chart's Y axis and
     # what `side` is classified from (OI Δ sign × price Δ sign).
     price_change_1h: float = 0.0
-    side: Literal["多頭建倉", "空頭建倉", "多頭平倉", "空頭平倉", "持平"]
+    side: OiSide
+    # Quadrant in the PREVIOUS authoritative scan when it differs from `side` —
+    # tracked server-side so every client sees the same transitions. None =>
+    # no change (or first sighting).
+    previous_side: OiSide | None = None
+    # Real liquidations over the last hour (squeeze radar's confirmation).
+    long_liq_usd_1h: float = 0.0
+    short_liq_usd_1h: float = 0.0
 
 
 class ScreenerRow(BaseModel):
@@ -149,6 +165,7 @@ class ScreenerRow(BaseModel):
     funding_rate: float
     top_trader_ratio: float
     account_ratio: float
+    account_ratio_avg: float = 1.0
     oi_change_1h: float
     stage: Stage = "觀察"
 

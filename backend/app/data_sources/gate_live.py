@@ -82,6 +82,11 @@ def _stats_frame(stats: list[dict], frame_seconds: int) -> pd.DataFrame:
                 ),
                 "top_trader_long_short_ratio": float(s.get("top_lsr_account", 1.0) or 1.0),
                 "account_long_short_ratio": float(s.get("lsr_account", 1.0) or 1.0),
+                # Real per-interval liquidation notionals: long_liq = busted longs
+                # (forced sells on dumps), short_liq = busted shorts (forced buys
+                # on pumps) — the squeeze radar's confirmation signal.
+                "long_liq_usd": float(s.get("long_liq_usd", 0.0) or 0.0),
+                "short_liq_usd": float(s.get("short_liq_usd", 0.0) or 0.0),
                 "_time": int(s["time"]),
             }
             for s in stats
@@ -97,6 +102,8 @@ def _stats_frame(stats: list[dict], frame_seconds: int) -> pd.DataFrame:
             open_interest=("open_interest", "last"),
             top_trader_long_short_ratio=("top_trader_long_short_ratio", "last"),
             account_long_short_ratio=("account_long_short_ratio", "last"),
+            long_liq_usd=("long_liq_usd", "sum"),
+            short_liq_usd=("short_liq_usd", "sum"),
         )
     ).sort_values("timestamp")
 
@@ -207,6 +214,8 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
                     "open_interest": [],
                     "top_trader_long_short_ratio": [],
                     "account_long_short_ratio": [],
+                    "long_liq_usd": [],
+                    "short_liq_usd": [],
                     "funding_rate": [],
                 }
             )
@@ -217,6 +226,8 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
                 "open_interest",
                 "top_trader_long_short_ratio",
                 "account_long_short_ratio",
+                "long_liq_usd",
+                "short_liq_usd",
             ]
         ]
 

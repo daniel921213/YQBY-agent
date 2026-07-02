@@ -48,6 +48,21 @@ class CoinglassMockDataSource(DerivativesDataSource):
             account_ratio[-24:] -= 0.14 * bias
             funding_rate[-18:] -= 0.00022 * bias
 
+        # Synthetic per-bar liquidation notionals: mostly quiet with sparse
+        # spikes; the recent window leans toward the losing side of the symbol's
+        # drift (bullish lean => shorts getting blown out), mirroring live data.
+        liq_scale = oi_base * 1e-6
+        long_liq = np.abs(rng.normal(0.2, 0.5, limit)) * liq_scale
+        short_liq = np.abs(rng.normal(0.2, 0.5, limit)) * liq_scale
+        spikes = rng.random(limit) < 0.06
+        long_liq[spikes] *= rng.uniform(8, 30, spikes.sum())
+        short_liq[spikes] *= rng.uniform(8, 30, spikes.sum())
+        if limit > 60:
+            if bias > 0:
+                short_liq[-12:] *= 6.0
+            else:
+                long_liq[-12:] *= 6.0
+
         return pd.DataFrame(
             {
                 "timestamp": timestamps.astype("int64"),
@@ -55,5 +70,7 @@ class CoinglassMockDataSource(DerivativesDataSource):
                 "top_trader_long_short_ratio": np.clip(top_trader_ratio, 0.45, 2.2),
                 "account_long_short_ratio": np.clip(account_ratio, 0.35, 2.5),
                 "funding_rate": funding_rate.astype(float),
+                "long_liq_usd": long_liq.astype(float),
+                "short_liq_usd": short_liq.astype(float),
             }
         )
