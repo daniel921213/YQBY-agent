@@ -38,10 +38,10 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         >
           <span className="inline-flex items-center gap-2 text-xs tracking-[0.32em] text-ember [text-shadow:0_0_18px_rgba(76,194,255,0.65)]">
             <Radar className="h-4 w-4" />
-            YQBY
+            CT_Trader
           </span>
           <span className="bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
-            Crypto Killer
+            CONFLUENCE THEORY
           </span>
         </Link>
 
