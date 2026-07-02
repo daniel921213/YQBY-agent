@@ -254,7 +254,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   y1={M.top}
                   x2={x(v)}
                   y2={M.top + PH}
-                  stroke="rgba(255,255,255,0.05)"
+                  stroke="var(--chart-grid)"
                   strokeDasharray="3 5"
                 />
                 <text
@@ -276,7 +276,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   y1={y(v)}
                   x2={M.left + PW}
                   y2={y(v)}
-                  stroke="rgba(255,255,255,0.05)"
+                  stroke="var(--chart-grid)"
                   strokeDasharray="3 5"
                 />
                 <text
@@ -293,9 +293,9 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             ))}
 
             {/* Zero cross axes */}
-            <line x1={cx0} y1={M.top} x2={cx0} y2={M.top + PH} stroke="rgba(255,255,255,0.16)" />
-            <line x1={M.left} y1={cy0} x2={M.left + PW} y2={cy0} stroke="rgba(255,255,255,0.16)" />
-            <rect x={M.left} y={M.top} width={PW} height={PH} fill="none" stroke="rgba(255,255,255,0.08)" />
+            <line x1={cx0} y1={M.top} x2={cx0} y2={M.top + PH} stroke="var(--chart-axis)" />
+            <line x1={M.left} y1={cy0} x2={M.left + PW} y2={cy0} stroke="var(--chart-axis)" />
+            <rect x={M.left} y={M.top} width={PW} height={PH} fill="none" stroke="var(--chart-frame)" />
 
             {/* Quadrant corner labels */}
             <g fontWeight={600} fontSize={12}>
@@ -377,8 +377,8 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                       y={dy - r - 6}
                       textAnchor="middle"
                       fontSize={10.5}
-                      fill="#e2e8f0"
-                      stroke="#04060c"
+                      fill="var(--chart-label-ink)"
+                      stroke="var(--chart-label-halo)"
                       strokeWidth={3}
                       style={{ paintOrder: "stroke" }}
                     >

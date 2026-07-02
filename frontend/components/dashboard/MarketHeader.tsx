@@ -5,6 +5,7 @@ import { RefreshCw, Activity, Radar } from "lucide-react";
 import type { ScanResponse } from "@/lib/types";
 import { SentimentBand } from "@/components/dashboard/SentimentBand";
 import { AccountMenu } from "@/components/auth/AccountMenu";
+import { ThemeToggle } from "@/lib/theme";
 
 interface MarketHeaderProps {
   onRefresh: () => void;
@@ -81,6 +82,7 @@ export function MarketHeader({
         >
           <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
         </button>
+        <ThemeToggle />
         <AccountMenu />
       </div>
     </header>

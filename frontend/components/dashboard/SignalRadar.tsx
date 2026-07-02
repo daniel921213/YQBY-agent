@@ -16,7 +16,10 @@ function pointAt(count: number, index: number, fraction: number): [number, numbe
 }
 
 export function SignalRadar({ pillars, direction }: SignalRadarProps) {
-  const tone = direction === "LONG" ? "#23dd8d" : "#ff5166";
+  // 走 CSS 變數，深淺模式自動換色（淺色時多空色深一階以保持對比）。
+  const tone = direction === "LONG" ? "rgb(var(--c-long))" : "rgb(var(--c-short))";
+  const toneFill =
+    direction === "LONG" ? "rgb(var(--c-long) / 0.14)" : "rgb(var(--c-short) / 0.14)";
   const count = pillars.length;
   const values = pillars.map((p) => Math.max(p.strength, 0.04));
 
@@ -36,7 +39,7 @@ export function SignalRadar({ pillars, direction }: SignalRadarProps) {
             key={ring}
             points={pillars.map((_, i) => pointAt(count, i, ring).join(",")).join(" ")}
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
+            stroke="var(--chart-frame)"
             strokeWidth={1}
           />
         ))}
@@ -45,11 +48,11 @@ export function SignalRadar({ pillars, direction }: SignalRadarProps) {
           const [x, y] = pointAt(count, i, 1);
           return (
             <line key={i} x1={CENTER} y1={CENTER} x2={x} y2={y}
-              stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+              stroke="var(--chart-frame)" strokeWidth={1} />
           );
         })}
 
-        <polygon points={shape} fill={`${tone}22`} stroke={tone} strokeWidth={1.75} />
+        <polygon points={shape} fill={toneFill} stroke={tone} strokeWidth={1.75} />
 
         {values.map((v, i) => {
           const [x, y] = pointAt(count, i, v);
@@ -59,7 +62,7 @@ export function SignalRadar({ pillars, direction }: SignalRadarProps) {
         {pillars.map((p, i) => {
           const [x, y] = pointAt(count, i, 1.24);
           return (
-            <text key={p.pillar} x={x} y={y} fill="rgba(203,213,225,0.85)" fontSize={10}
+            <text key={p.pillar} x={x} y={y} fill="var(--chart-ink)" fontSize={10}
               textAnchor="middle" dominantBaseline="middle">
               {p.pillar}
             </text>

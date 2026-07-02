@@ -12,7 +12,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-Hant">
+    <html lang="zh-Hant" suppressHydrationWarning>
+      <head>
+        {/* 首屏前套用已儲存的主題，避免深→淺閃爍。 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(localStorage.getItem("yqby.theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}'
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

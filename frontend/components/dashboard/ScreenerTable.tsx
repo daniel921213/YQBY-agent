@@ -156,7 +156,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                 onClick={() => onSelect(row.symbol)}
                 className={`cursor-pointer border-b border-white/5 last:border-0 transition ${
                   row.symbol === selectedSymbol
-                    ? "bg-ember/10 shadow-[inset_2px_0_0_0_#4cc2ff]"
+                    ? "bg-ember/10 shadow-[inset_2px_0_0_0_rgb(var(--c-ember))]"
                     : "hover:bg-ember/[0.06]"
                 }`}
               >

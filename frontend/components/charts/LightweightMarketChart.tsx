@@ -8,6 +8,7 @@ import {
   type UTCTimestamp
 } from "lightweight-charts";
 import type { MarketChartPayload } from "@/lib/types";
+import { useThemeMode } from "@/lib/theme";
 
 interface LightweightMarketChartProps {
   chart: MarketChartPayload;
@@ -16,26 +17,33 @@ interface LightweightMarketChartProps {
 export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  // 主題切換時整張圖重建（lightweight-charts 的顏色在建立時決定）。
+  const theme = useThemeMode();
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // 圖表顏色跟著 globals.css 的 --chart-* 變數走，深淺模式共用同一套語意。
+    const css = getComputedStyle(document.documentElement);
+    const token = (name: string, fallback: string) =>
+      css.getPropertyValue(name).trim() || fallback;
 
     const container = containerRef.current;
     const instance = createChart(container, {
       autoSize: true,
       layout: {
-        background: { type: ColorType.Solid, color: "#0a111f" },
-        textColor: "#8fa9c9"
+        background: { type: ColorType.Solid, color: token("--chart-bg", "#0e1729") },
+        textColor: token("--chart-ink", "#8fa9c9")
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.04)" },
-        horzLines: { color: "rgba(255,255,255,0.04)" }
+        vertLines: { color: token("--chart-grid", "rgba(255,255,255,0.04)") },
+        horzLines: { color: token("--chart-grid", "rgba(255,255,255,0.04)") }
       },
       rightPriceScale: {
-        borderColor: "rgba(255,255,255,0.08)"
+        borderColor: token("--chart-frame", "rgba(255,255,255,0.08)")
       },
       timeScale: {
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: token("--chart-frame", "rgba(255,255,255,0.08)"),
         timeVisible: true,
         secondsVisible: false
       },
@@ -45,17 +53,19 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
     });
 
     // 單一光源敘事：漲 = 發光冰藍，跌 = 暗冷鋼藍（亮度只給上漲）。
+    const up = token("--chart-up", "#6fc6ff");
+    const down = token("--chart-down", "#42507a");
     const candleSeries = instance.addCandlestickSeries({
-      upColor: "#6fc6ff",
-      downColor: "#42507a",
-      borderUpColor: "#6fc6ff",
-      borderDownColor: "#42507a",
-      wickUpColor: "#6fc6ff",
-      wickDownColor: "#42507a"
+      upColor: up,
+      downColor: down,
+      borderUpColor: up,
+      borderDownColor: down,
+      wickUpColor: up,
+      wickDownColor: down
     });
 
     const cvdSeries = instance.addLineSeries({
-      color: "#d6e7ff",
+      color: token("--chart-cvd", "#d6e7ff"),
       lineWidth: 2,
       priceScaleId: "cvd"
     });
@@ -65,7 +75,7 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
         top: 0.72,
         bottom: 0.06
       },
-      borderColor: "rgba(140,199,255,0.12)"
+      borderColor: token("--chart-frame", "rgba(140,199,255,0.12)")
     });
 
     candleSeries.setData(
@@ -92,7 +102,7 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
       instance.remove();
       chartRef.current = null;
     };
-  }, [chart]);
+  }, [chart, theme]);
 
   return <div ref={containerRef} className="h-[420px] w-full" />;
 }

@@ -2,9 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────────────
+   主題變數。深色是預設（品牌本色），html[data-theme="light"] 換值。
+   RGB 三元組供 tailwind 帶 alpha 使用；--chart-* 供 SVG / 圖表庫讀取。
+   ────────────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
-  background: #070c18;
+
+  --c-obsidian: 7 12 24;
+  --c-graphite: 14 23 41;
+  --c-steel: 27 44 74;
+  --c-ember: 76 194 255;
+  --c-copper: 156 181 213;
+  --c-long: 35 221 141;
+  --c-short: 255 81 102;
+  --c-ink: 255 255 255;
+  --c-amber: 253 224 71;
+  --c-red-soft: 254 226 226;
+
+  --c-slate-50: 248 250 252;
+  --c-slate-100: 241 245 249;
+  --c-slate-200: 226 232 240;
+  --c-slate-300: 203 213 225;
+  --c-slate-400: 148 163 184;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 71 85 105;
+  --c-slate-700: 51 65 85;
+  --c-slate-800: 30 41 59;
+  --c-slate-900: 15 23 42;
+  --c-slate-950: 2 6 23;
+
+  /* 圖表 tokens（K 線圖、雷達圖、四象限圖共用） */
+  --chart-bg: #0e1729;
+  --chart-ink: #8fa9c9;
+  --chart-grid: rgba(255, 255, 255, 0.05);
+  --chart-axis: rgba(255, 255, 255, 0.16);
+  --chart-frame: rgba(255, 255, 255, 0.08);
+  --chart-up: #6fc6ff;
+  --chart-down: #42507a;
+  --chart-cvd: #d6e7ff;
+  --chart-label-ink: #e2e8f0;
+  --chart-label-halo: #04060c;
+
+  background: rgb(var(--c-obsidian));
+}
+
+/* 淺色模式：同一套品牌語言（冰藍 × 冷藍灰），亮度反轉、彩度校正到
+   白底可讀（ember 深一階、多空色深一階），slate 刻度整組對調。 */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --c-obsidian: 234 240 249;
+  --c-graphite: 255 255 255;
+  --c-steel: 216 228 243;
+  --c-ember: 2 132 199;
+  --c-copper: 77 106 134;
+  --c-long: 4 120 87;
+  --c-short: 220 38 38;
+  --c-ink: 15 23 42;
+  --c-amber: 180 83 9;
+  --c-red-soft: 127 29 29;
+
+  --c-slate-50: 2 6 23;
+  --c-slate-100: 15 23 42;
+  --c-slate-200: 30 41 59;
+  --c-slate-300: 51 65 85;
+  --c-slate-400: 71 85 105;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 148 163 184;
+  --c-slate-700: 203 213 225;
+  --c-slate-800: 226 232 240;
+  --c-slate-900: 241 245 249;
+  --c-slate-950: 248 250 252;
+
+  --chart-bg: #ffffff;
+  --chart-ink: #64748b;
+  --chart-grid: rgba(15, 30, 60, 0.07);
+  --chart-axis: rgba(15, 30, 60, 0.22);
+  --chart-frame: rgba(15, 30, 60, 0.12);
+  --chart-up: #0284c7;
+  --chart-down: #94a3b8;
+  --chart-cvd: #1e3a5f;
+  --chart-label-ink: #1e293b;
+  --chart-label-halo: #ffffff;
 }
 
 * {
@@ -16,6 +96,10 @@ body {
   min-height: 100%;
   margin: 0;
   color: #e6edf7;
+}
+
+html[data-theme="light"] body {
+  color: #142238;
 }
 
 /* 深空底：星點（8 顆）→ 兩片極淡星雲 → 深空黑。fixed 讓星空釘在視窗、內容在其上滑動。 */
@@ -36,6 +120,20 @@ body {
     #070c18;
   background-repeat: no-repeat;
   background-attachment: fixed;
+}
+
+/* 淺色頁底：冷藍紙感 + 同位置的兩片極淡藍暈（星點交給粒子層）。 */
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.12), transparent 62%),
+    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.09), transparent 60%),
+    #eaf0f9;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html[data-theme="light"] body::before {
+  opacity: 0.03;
 }
 
 /* 全站顆粒噪點：疊在最上層、不擋互動，用 soft-light 把數位漸層的塑膠平滑感壓掉，
@@ -60,6 +158,9 @@ select {
 ::selection {
   background: rgba(76, 194, 255, 0.3);
 }
+html[data-theme="light"] ::selection {
+  background: rgba(2, 132, 199, 0.22);
+}
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -75,6 +176,13 @@ select {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #33507f;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #b7c8e0;
+  border-color: #eaf0f9;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #8fabd0;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -154,6 +262,62 @@ select {
       inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
       0 0 0 1px rgba(76, 194, 255, 0.45),
       0 0 32px -4px rgba(76, 194, 255, 0.4);
+  }
+
+  /* ── 淺色模式的材質系統：白卡 + 柔和景深陰影取代發光邊。
+        層次語言不變（sunken < surface < raised < glass），只換光源方向。 ── */
+  html[data-theme="light"] .surface {
+    background: linear-gradient(180deg, #ffffff, #f4f8fd);
+    border: 1px solid rgba(15, 30, 60, 0.09);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+      0 1px 2px rgba(15, 30, 60, 0.05),
+      0 14px 34px -18px rgba(30, 58, 110, 0.22);
+  }
+
+  html[data-theme="light"] .surface-sunken {
+    background: linear-gradient(180deg, #e9eff8, #eef3fa);
+    border: 1px solid rgba(15, 30, 60, 0.07);
+    box-shadow: inset 0 1px 6px rgba(15, 30, 60, 0.06);
+  }
+
+  html[data-theme="light"] .surface-raised {
+    background: linear-gradient(180deg, #ffffff, #f7fafe);
+    border: 1px solid rgba(15, 30, 60, 0.11);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 1),
+      0 2px 4px rgba(15, 30, 60, 0.06),
+      0 22px 48px -20px rgba(30, 58, 110, 0.28);
+  }
+
+  html[data-theme="light"] .glass-bar {
+    background: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(15, 30, 60, 0.08);
+    box-shadow: 0 1px 0 0 rgba(2, 132, 199, 0.14), 0 14px 30px -18px rgba(30, 58, 110, 0.2);
+  }
+
+  html[data-theme="light"] .glass-panel {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(15, 30, 60, 0.1);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+      0 30px 80px -20px rgba(30, 58, 110, 0.3);
+  }
+
+  html[data-theme="light"] .lift:hover {
+    border-color: rgba(2, 132, 199, 0.45);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+      0 2px 4px rgba(15, 30, 60, 0.06),
+      0 18px 40px -18px rgba(30, 58, 110, 0.26),
+      0 0 24px -8px rgba(2, 132, 199, 0.35);
+  }
+
+  html[data-theme="light"] .signal-glow {
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+      0 0 0 1px rgba(2, 132, 199, 0.5),
+      0 0 28px -6px rgba(2, 132, 199, 0.35);
   }
 }
 
@@ -450,6 +614,68 @@ select {
   100% {
     transform: translateY(78%);
   }
+}
+
+/* 登入卡在淺色模式換成柔和藍灰景深（原本寫死的深黑暈在淺底上像髒污）。 */
+html[data-theme="light"] .auth-card {
+  box-shadow:
+    0 30px 90px rgba(30, 58, 110, 0.22),
+    0 0 48px rgba(2, 132, 199, 0.1) !important;
+}
+
+/* 分析師聊天的 markdown 在淺色模式改用亮底 prose 色板（元件不用動）。 */
+html[data-theme="light"] .prose-invert {
+  --tw-prose-body: #1e293b;
+  --tw-prose-headings: #0f172a;
+  --tw-prose-lead: #334155;
+  --tw-prose-links: #0284c7;
+  --tw-prose-bold: #0f172a;
+  --tw-prose-counters: #64748b;
+  --tw-prose-bullets: #94a3b8;
+  --tw-prose-hr: rgba(15, 30, 60, 0.12);
+  --tw-prose-quotes: #0f172a;
+  --tw-prose-quote-borders: rgba(15, 30, 60, 0.16);
+  --tw-prose-captions: #64748b;
+  --tw-prose-code: #0f172a;
+  --tw-prose-pre-code: #e2e8f0;
+  --tw-prose-pre-bg: #0f172a;
+  --tw-prose-th-borders: rgba(15, 30, 60, 0.2);
+  --tw-prose-td-borders: rgba(15, 30, 60, 0.12);
+}
+
+/* ── 淺色模式的星空：白色星塵翻轉成深藍微粒（invert 後 hue-rotate 180° 保住
+      冰藍色相），動畫層用 filter: opacity() 調權重（keyframes 會蓋掉 opacity 屬性）。 ── */
+html[data-theme="light"] .space-particle-field {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(2, 132, 199, 0.1), transparent 32%),
+    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.08), transparent 36%);
+}
+
+html[data-theme="light"] .space-particle-field::before {
+  opacity: 0.16;
+}
+
+html[data-theme="light"] .space-nebula {
+  opacity: 0.3;
+}
+
+html[data-theme="light"] .space-stars-far,
+html[data-theme="light"] .space-stars-near {
+  filter: invert(1) hue-rotate(180deg);
+  opacity: 0.16;
+}
+
+html[data-theme="light"] .space-stars-twinkle,
+html[data-theme="light"] .space-drift-particles {
+  filter: invert(1) hue-rotate(180deg) opacity(0.38);
+}
+
+html[data-theme="light"] .space-grid {
+  opacity: 0.16;
+}
+
+html[data-theme="light"] .space-scanline {
+  opacity: 0.09;
 }
 
 @media (prefers-reduced-motion: reduce) {

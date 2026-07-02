@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Radar } from "lucide-react";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
+import { ThemeToggle } from "@/lib/theme";
 
 interface AuthShellProps {
   title: string;
@@ -13,6 +14,9 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <SpaceParticleField variant="auth" />
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
       {/* 氛圍層（純色彩光效，無圖形）：一道斜射光束 + 卡片後方呼吸的能量核 */}
       <div
         aria-hidden
@@ -41,7 +45,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           </span>
         </Link>
 
-        <div className="relative overflow-hidden rounded-xl border border-ember/20 bg-graphite/70 p-6 shadow-[0_30px_120px_rgba(2,8,22,0.85),0_0_48px_rgba(76,194,255,0.10)] backdrop-blur-md">
+        <div className="auth-card relative overflow-hidden rounded-xl border border-ember/20 bg-graphite/70 p-6 shadow-[0_30px_120px_rgba(2,8,22,0.85),0_0_48px_rgba(76,194,255,0.10)] backdrop-blur-md">
           {/* 卡片頂緣的金屬高光線 */}
           <div
             aria-hidden
