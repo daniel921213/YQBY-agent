@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { RefreshCw, Activity, Radar } from "lucide-react";
 import type { ScanResponse } from "@/lib/types";
 import { SentimentBand } from "@/components/dashboard/SentimentBand";
@@ -12,6 +13,24 @@ interface MarketHeaderProps {
   scan: ScanResponse | null;
 }
 
+// 即時時鐘：首次 render 留空避免 SSR/CSR 水合不一致，掛載後每秒更新。
+function useClock(): string {
+  const [now, setNow] = useState("");
+  useEffect(() => {
+    const formatter = new Intl.DateTimeFormat("zh-TW", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+    const tick = () => setNow(formatter.format(new Date()));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 export function MarketHeader({
   onRefresh,
   updatedLabel,
@@ -20,16 +39,23 @@ export function MarketHeader({
 }: MarketHeaderProps) {
   const anomalyCount = scan?.breadth?.anomaly_count ?? 0;
   const scannedCount = scan?.breadth?.total ?? 0;
+  const clock = useClock();
+  const altseason = scan?.altseason ?? null;
 
   return (
     <header className="glass-panel sticky top-2 z-20 flex flex-col gap-5 rounded-xl px-4 py-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <p className="inline-flex items-center gap-2 text-xs tracking-[0.18em] text-ember [text-shadow:0_0_16px_rgba(76,194,255,0.55)]">
-          <Radar className="h-4 w-4" />
-          日內波段雷達
+        {/* 環境 + 時間：市場環境（山寨/BTC 指數）搭配即時時鐘，取代靜態標語。 */}
+        <p className="inline-flex items-center gap-2 text-xs tracking-[0.18em]">
+          <Radar className="h-4 w-4 text-ember [filter:drop-shadow(0_0_8px_rgba(76,194,255,0.6))]" />
+          <span className="text-ember [text-shadow:0_0_16px_rgba(76,194,255,0.55)]">
+            環境 {altseason ? `${altseason.label} ${altseason.index}` : "--"}
+          </span>
+          <span className="text-slate-600">·</span>
+          <span className="tabular-nums text-slate-300">{clock || "--:--:--"}</span>
         </p>
         <h1 className="mt-2 bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-2xl font-semibold text-transparent sm:text-3xl">
-          ERT_DATA
+          CT_Killer
         </h1>
         {scan?.breadth ? (
           <div className="mt-4">

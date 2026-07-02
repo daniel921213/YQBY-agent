@@ -12,7 +12,9 @@ export function SpaceParticleField({ variant = "dashboard" }: SpaceParticleField
       <div className="space-nebula space-nebula-b" />
       <div className="space-stars space-stars-far" />
       <div className="space-stars space-stars-near" />
+      <div className="space-stars space-stars-twinkle" />
       <div className="space-drift-particles" />
+      <div className="space-grid" />
       <div className="space-scanline" />
     </div>
   );

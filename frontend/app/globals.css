@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: dark;
-  background: #04060c;
+  background: #070c18;
 }
 
 * {
@@ -23,17 +23,17 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   background:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(190, 226, 255, 0.5) 50%, transparent 51%),
-    radial-gradient(1px 1px at 28% 64%, rgba(190, 226, 255, 0.32) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 41% 12%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
-    radial-gradient(1px 1px at 57% 38%, rgba(190, 226, 255, 0.28) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 66% 80%, rgba(190, 226, 255, 0.36) 50%, transparent 51%),
-    radial-gradient(1px 1px at 75% 16%, rgba(190, 226, 255, 0.44) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 87% 52%, rgba(190, 226, 255, 0.32) 50%, transparent 51%),
-    radial-gradient(1px 1px at 94% 86%, rgba(190, 226, 255, 0.28) 50%, transparent 51%),
-    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.16), transparent 62%),
-    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.12), transparent 60%),
-    #04060c;
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(190, 226, 255, 0.62) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 64%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 41% 12%, rgba(190, 226, 255, 0.52) 50%, transparent 51%),
+    radial-gradient(1px 1px at 57% 38%, rgba(190, 226, 255, 0.38) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 66% 80%, rgba(190, 226, 255, 0.46) 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 16%, rgba(190, 226, 255, 0.54) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 87% 52%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
+    radial-gradient(1px 1px at 94% 86%, rgba(190, 226, 255, 0.38) 50%, transparent 51%),
+    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.22), transparent 62%),
+    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.17), transparent 60%),
+    #070c18;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -69,12 +69,12 @@ select {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1b2a44;
-  border: 2px solid #04060c;
+  background: #24365a;
+  border: 2px solid #070c18;
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #28406b;
+  background: #33507f;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -85,53 +85,53 @@ select {
   /* 標準面板：由上而下的受光漸層 + 頂緣鏡面高光 + 底緣暗線 + 景深陰影。
      大腦讀成「被上方的光照到、浮在背景上」= 有實體感。 */
   .surface {
-    background: linear-gradient(180deg, rgba(22, 34, 58, 0.62), rgba(9, 16, 30, 0.72));
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: linear-gradient(180deg, rgba(32, 48, 80, 0.66), rgba(13, 22, 40, 0.74));
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.32),
-      0 1px 2px rgba(0, 0, 0, 0.3),
-      0 18px 40px -16px rgba(2, 8, 22, 0.7);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3),
+      0 1px 2px rgba(0, 0, 0, 0.28),
+      0 18px 40px -16px rgba(3, 10, 26, 0.65);
   }
 
   /* 凹陷/次要表面：表格容器、空狀態等，比 .surface 暗一階、往內收。 */
   .surface-sunken {
-    background: linear-gradient(180deg, rgba(7, 13, 26, 0.66), rgba(5, 9, 20, 0.74));
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(180deg, rgba(12, 21, 40, 0.62), rgba(9, 15, 30, 0.72));
+    border: 1px solid rgba(255, 255, 255, 0.07);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
-      inset 0 1px 10px rgba(0, 0, 0, 0.35);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      inset 0 1px 10px rgba(0, 0, 0, 0.32);
   }
 
   /* 浮起卡片：亮一階、陰影更深更開，明顯「浮」在面板之上。 */
   .surface-raised {
-    background: linear-gradient(180deg, rgba(28, 42, 70, 0.66), rgba(12, 20, 36, 0.74));
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(180deg, rgba(40, 58, 94, 0.7), rgba(17, 28, 50, 0.76));
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.36),
-      0 2px 4px rgba(0, 0, 0, 0.34),
-      0 26px 56px -18px rgba(2, 8, 22, 0.78);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.16),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.34),
+      0 2px 4px rgba(0, 0, 0, 0.32),
+      0 26px 56px -18px rgba(3, 10, 26, 0.72);
   }
 
   /* 毛玻璃固定條（header）：內容從底下糊著滑過，底緣一條冰藍高光。 */
   .glass-bar {
-    background: rgba(7, 12, 24, 0.62);
+    background: rgba(12, 19, 36, 0.6);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 0 1px 0 0 rgba(76, 194, 255, 0.12), 0 14px 30px -18px rgba(2, 8, 22, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 0 0 rgba(76, 194, 255, 0.16), 0 14px 30px -18px rgba(3, 10, 26, 0.75);
   }
 
   /* 漂浮 chrome（側欄、彈窗、下拉）：真的浮在內容上，上玻璃才合理。 */
   .glass-panel {
-    background: rgba(10, 16, 30, 0.74);
+    background: rgba(15, 24, 44, 0.72);
     backdrop-filter: blur(22px) saturate(170%);
     -webkit-backdrop-filter: blur(22px) saturate(170%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-      0 30px 80px -20px rgba(0, 0, 0, 0.7);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      0 30px 80px -20px rgba(0, 0, 0, 0.65);
   }
 
   /* hover 抬升微互動：邊框透出冰藍、輕輕浮起，像玻璃被點亮。 */
@@ -231,94 +231,134 @@ select {
   pointer-events: none;
   overflow: hidden;
   background:
-    radial-gradient(circle at 78% 12%, rgba(76, 194, 255, 0.16), transparent 30%),
-    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.1), transparent 34%);
+    radial-gradient(circle at 78% 12%, rgba(76, 194, 255, 0.22), transparent 32%),
+    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.15), transparent 36%);
 }
 
+/* 斜向極光帶：帶寬拉到 ~20%，讀起來是「光」而不是一條線。 */
 .space-particle-field::before {
   content: "";
   position: absolute;
   inset: -20%;
-  opacity: 0.22;
+  opacity: 0.3;
   background:
-    linear-gradient(115deg, transparent 0 42%, rgba(76, 194, 255, 0.1) 48%, transparent 54%),
-    linear-gradient(145deg, transparent 0 56%, rgba(143, 169, 201, 0.08) 61%, transparent 67%);
+    linear-gradient(115deg, transparent 0 36%, rgba(76, 194, 255, 0.1) 46%, rgba(76, 194, 255, 0.05) 52%, transparent 60%),
+    linear-gradient(145deg, transparent 0 50%, rgba(143, 169, 201, 0.09) 60%, transparent 72%);
+  filter: blur(6px);
   transform: translate3d(-2%, 0, 0);
   animation: cosmic-sweep 22s ease-in-out infinite alternate;
 }
 
 .space-particle-auth {
-  opacity: 1.18;
+  opacity: 1;
 }
 
 .space-nebula,
 .space-stars,
 .space-drift-particles,
-.space-scanline {
+.space-scanline,
+.space-grid {
   position: absolute;
   inset: 0;
 }
 
 .space-nebula {
-  filter: blur(20px);
-  opacity: 0.36;
+  filter: blur(26px);
+  opacity: 0.52;
   transform: translate3d(0, 0, 0);
 }
 
 .space-nebula-a {
   background:
-    radial-gradient(closest-side at 68% 28%, rgba(76, 194, 255, 0.2), transparent 70%),
-    radial-gradient(closest-side at 28% 62%, rgba(56, 130, 220, 0.12), transparent 74%);
+    radial-gradient(closest-side at 68% 28%, rgba(76, 194, 255, 0.28), transparent 70%),
+    radial-gradient(closest-side at 28% 62%, rgba(56, 130, 220, 0.18), transparent 74%);
   animation: nebula-drift-a 18s ease-in-out infinite alternate;
 }
 
 .space-nebula-b {
   background:
-    radial-gradient(closest-side at 52% 78%, rgba(143, 169, 201, 0.12), transparent 72%),
-    radial-gradient(closest-side at 86% 68%, rgba(76, 194, 255, 0.1), transparent 76%);
+    radial-gradient(closest-side at 52% 78%, rgba(143, 169, 201, 0.18), transparent 72%),
+    radial-gradient(closest-side at 86% 68%, rgba(76, 194, 255, 0.16), transparent 76%);
   animation: nebula-drift-b 24s ease-in-out infinite alternate;
 }
 
 .space-stars-far {
-  opacity: 0.46;
+  opacity: 0.6;
   background-image:
-    radial-gradient(circle, rgba(230, 237, 247, 0.62) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(76, 194, 255, 0.48) 0 1px, transparent 1.5px);
+    radial-gradient(circle, rgba(230, 237, 247, 0.72) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(76, 194, 255, 0.58) 0 1px, transparent 1.5px);
   background-position: 0 0, 42px 74px;
   background-size: 180px 180px, 260px 260px;
   animation: star-drift-far 80s linear infinite;
 }
 
 .space-stars-near {
-  opacity: 0.36;
+  opacity: 0.5;
   background-image:
-    radial-gradient(circle, rgba(230, 237, 247, 0.82) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(76, 194, 255, 0.62) 0 1.2px, transparent 1.8px);
+    radial-gradient(circle, rgba(230, 237, 247, 0.9) 0 1.1px, transparent 1.7px),
+    radial-gradient(circle, rgba(76, 194, 255, 0.72) 0 1.3px, transparent 1.9px);
   background-position: 18px 36px, 110px 20px;
   background-size: 320px 320px, 430px 430px;
   animation: star-drift-near 55s linear infinite;
 }
 
-.space-drift-particles {
-  opacity: 0.72;
+/* 稀疏的「亮星」層：帶光暈、緩慢呼吸，是星空的視覺錨點。 */
+.space-stars-twinkle {
   background:
-    radial-gradient(circle at 10% 24%, rgba(76, 194, 255, 0.7) 0 1.5px, transparent 2.4px),
-    radial-gradient(circle at 22% 72%, rgba(230, 237, 247, 0.65) 0 1px, transparent 2px),
-    radial-gradient(circle at 42% 18%, rgba(76, 194, 255, 0.64) 0 1.2px, transparent 2.2px),
-    radial-gradient(circle at 62% 48%, rgba(230, 237, 247, 0.52) 0 1px, transparent 2px),
-    radial-gradient(circle at 79% 31%, rgba(76, 194, 255, 0.7) 0 1.4px, transparent 2.4px),
-    radial-gradient(circle at 88% 78%, rgba(230, 237, 247, 0.56) 0 1px, transparent 2px);
+    radial-gradient(circle at 16% 18%, rgba(190, 226, 255, 0.9) 0 1.6px, rgba(76, 194, 255, 0.25) 3px, transparent 6px),
+    radial-gradient(circle at 71% 9%, rgba(230, 237, 247, 0.85) 0 1.3px, rgba(76, 194, 255, 0.2) 2.6px, transparent 5px),
+    radial-gradient(circle at 89% 41%, rgba(190, 226, 255, 0.8) 0 1.5px, rgba(76, 194, 255, 0.22) 3px, transparent 6px),
+    radial-gradient(circle at 34% 55%, rgba(230, 237, 247, 0.75) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px),
+    radial-gradient(circle at 55% 84%, rgba(190, 226, 255, 0.85) 0 1.5px, rgba(76, 194, 255, 0.22) 3px, transparent 6px),
+    radial-gradient(circle at 8% 76%, rgba(230, 237, 247, 0.7) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px);
+  animation: star-twinkle 5.5s ease-in-out infinite alternate;
+}
+
+/* 漂浮粒子：每顆帶柔和冰藍光暈，數量加倍，是「元宇宙塵埃」的主體。 */
+.space-drift-particles {
+  opacity: 0.9;
+  background:
+    radial-gradient(circle at 10% 24%, rgba(76, 194, 255, 0.85) 0 1.6px, rgba(76, 194, 255, 0.2) 3.2px, transparent 5.5px),
+    radial-gradient(circle at 22% 72%, rgba(230, 237, 247, 0.75) 0 1.1px, rgba(76, 194, 255, 0.14) 2.4px, transparent 4.5px),
+    radial-gradient(circle at 42% 18%, rgba(76, 194, 255, 0.78) 0 1.3px, rgba(76, 194, 255, 0.18) 2.8px, transparent 5px),
+    radial-gradient(circle at 62% 48%, rgba(230, 237, 247, 0.62) 0 1.1px, rgba(76, 194, 255, 0.12) 2.2px, transparent 4px),
+    radial-gradient(circle at 79% 31%, rgba(76, 194, 255, 0.85) 0 1.5px, rgba(76, 194, 255, 0.2) 3px, transparent 5.5px),
+    radial-gradient(circle at 88% 78%, rgba(230, 237, 247, 0.66) 0 1.1px, rgba(76, 194, 255, 0.12) 2.2px, transparent 4px),
+    radial-gradient(circle at 31% 39%, rgba(76, 194, 255, 0.7) 0 1.2px, rgba(76, 194, 255, 0.15) 2.5px, transparent 4.5px),
+    radial-gradient(circle at 50% 66%, rgba(230, 237, 247, 0.58) 0 1px, rgba(76, 194, 255, 0.1) 2px, transparent 3.8px),
+    radial-gradient(circle at 70% 12%, rgba(76, 194, 255, 0.74) 0 1.3px, rgba(76, 194, 255, 0.16) 2.7px, transparent 5px),
+    radial-gradient(circle at 94% 56%, rgba(230, 237, 247, 0.6) 0 1px, rgba(76, 194, 255, 0.1) 2px, transparent 3.8px);
   animation: particle-float 12s ease-in-out infinite alternate;
 }
 
-.space-scanline {
-  opacity: 0.12;
+/* 元宇宙透視網格地平線：釘在畫面底部、往地平線收斂，格線緩慢向觀者流動。
+   遮罩讓它靠近地平線處淡出，存在感明確但不搶內容。 */
+.space-grid {
+  top: auto;
+  left: -30%;
+  right: -30%;
+  bottom: -6%;
+  height: 42%;
+  opacity: 0.26;
+  transform: perspective(640px) rotateX(62deg);
+  transform-origin: 50% 100%;
   background:
-    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.45), transparent),
+    repeating-linear-gradient(90deg, rgba(76, 194, 255, 0.4) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(76, 194, 255, 0.32) 0 1px, transparent 1px 56px),
+    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.05));
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 42%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 42%, #000 100%);
+  animation: grid-flow 8s linear infinite;
+}
+
+.space-scanline {
+  opacity: 0.18;
+  background:
+    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.5), transparent),
     repeating-linear-gradient(
       90deg,
       transparent 0 32px,
-      rgba(76, 194, 255, 0.08) 33px,
+      rgba(76, 194, 255, 0.1) 33px,
       transparent 34px
     );
   transform: translateY(-60%);
@@ -373,11 +413,29 @@ select {
 @keyframes particle-float {
   from {
     transform: translate3d(0, 0, 0);
-    opacity: 0.5;
+    opacity: 0.62;
   }
   to {
-    transform: translate3d(0, -18px, 0);
-    opacity: 0.82;
+    transform: translate3d(0, -26px, 0);
+    opacity: 0.95;
+  }
+}
+
+@keyframes star-twinkle {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0.95;
+  }
+}
+
+@keyframes grid-flow {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 0 0, 0 56px, 0 0;
   }
 }
 
@@ -402,8 +460,10 @@ select {
   .space-nebula-b,
   .space-stars-far,
   .space-stars-near,
+  .space-stars-twinkle,
   .space-drift-particles,
-  .space-scanline {
+  .space-scanline,
+  .space-grid {
     animation: none;
   }
   .lift {
