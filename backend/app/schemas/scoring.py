@@ -9,6 +9,10 @@ from app.schemas.market import MarketChartPayload
 TradeDirection = Literal["LONG", "SHORT"]
 ConfidenceLevel = Literal["LOW", "MEDIUM", "HIGH"]
 
+# Move-lifecycle stage (早期異動雷達). Answers "where in its life is this move"
+# so users can tell 剛開始異動 from 已經過熱 instead of reading a bare score.
+Stage = Literal["早期異動", "趨勢啟動", "趨勢延續", "過熱風險", "反轉警訊", "觀察"]
+
 
 class Recommendation(BaseModel):
     symbol: str
@@ -52,6 +56,9 @@ class AnalysisResponse(BaseModel):
     chart: MarketChartPayload
     meta: AnalysisMeta
     metrics: MarketSnapshot | None = None
+    # Lifecycle stage + the concrete facts that put the coin there ("為什麼被選出").
+    stage: Stage = "觀察"
+    stage_reasons: list[str] = []
 
 
 class PillarScore(BaseModel):
@@ -77,7 +84,8 @@ class ScanItem(BaseModel):
     score_gap: float
     is_anomaly: bool
     is_recommend: bool
-    category: Literal["轉多", "轉空", "疑似反轉"]
+    stage: Stage
+    stage_reasons: list[str] = []
     triggered_count: int
     pillars: list[PillarScore]
     top_evidence: list[EvidenceItem]
@@ -116,8 +124,8 @@ class OiMover(BaseModel):
     symbol: str
     price: float
     oi_change_1h: float          # fractional change over the last hour
-    oi_delta: float              # notional change (current OI units) over 1h
-    total_oi: float
+    oi_delta: float              # notional change in USD over 1h (cross-symbol comparable)
+    total_oi: float              # USD notional
     change_24h: float
     # Price change over the same 1h window — the quadrant chart's Y axis and
     # what `side` is classified from (OI Δ sign × price Δ sign).
@@ -142,6 +150,7 @@ class ScreenerRow(BaseModel):
     top_trader_ratio: float
     account_ratio: float
     oi_change_1h: float
+    stage: Stage = "觀察"
 
 
 class MarketBreadth(BaseModel):
@@ -169,7 +178,7 @@ class AnomalyHistoryItem(BaseModel):
 
     symbol: str
     direction: TradeDirection
-    category: Literal["轉多", "轉空", "疑似反轉"]
+    stage: Stage
     first_seen_ts: int
     resolved_ts: int
     duration_minutes: int

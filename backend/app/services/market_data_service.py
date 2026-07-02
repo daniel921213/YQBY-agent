@@ -73,6 +73,11 @@ class MarketDataService:
                 direction="nearest",
             )
 
+        # ffill covers in-series gaps with PAST values only. After ffill the sole
+        # remaining NaNs are the pre-coverage prefix (klines reach further back
+        # than the stats history); bfill flattens that prefix to the first real
+        # observation, which keeps pct-change reads across the boundary at zero
+        # instead of fabricating a jump. Indicators window well inside coverage.
         for column, default in _DERIVATIVE_DEFAULTS.items():
             if column not in merged.columns:
                 merged[column] = default

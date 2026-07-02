@@ -8,13 +8,16 @@ import {
   History,
   ShieldCheck
 } from "lucide-react";
-import type { AnomalyCategory, ScanItem, TradeDirection } from "@/lib/types";
+import type { ScanItem, Stage, TradeDirection } from "@/lib/types";
 import { ScanRow } from "@/components/dashboard/ScanRow";
 import {
+  STAGE_ORDER,
   formatPercent,
   formatPrice,
   formatScore,
-  percentTone
+  percentTone,
+  stageHint,
+  stagePriority
 } from "@/lib/format";
 
 interface AnomalyPanelProps {
@@ -24,17 +27,13 @@ interface AnomalyPanelProps {
   onShowHistory: () => void;
 }
 
-type CategoryFilter = "ALL" | AnomalyCategory;
+type StageFilter = "ALL" | Stage;
 
-const CATEGORIES: { key: CategoryFilter; label: string }[] = [
-  { key: "ALL", label: "全部" },
-  { key: "轉多", label: "順勢多" },
-  { key: "轉空", label: "順勢空" },
-  { key: "疑似反轉", label: "反轉背離" }
-];
+// 篩選 chips 依「越早期越前面」排（觀察不入列，僅在全部裡看得到）。
+const STAGE_FILTERS: StageFilter[] = ["ALL", ...STAGE_ORDER.filter((s) => s !== "觀察")];
 
 export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }: AnomalyPanelProps) {
-  const [cat, setCat] = useState<CategoryFilter>("ALL");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("ALL");
 
   const recs = useMemo(() => items.filter((item) => item.is_recommend), [items]);
   const longRecs = useMemo(
@@ -45,11 +44,27 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
     () => recs.filter((item) => item.direction === "SHORT").slice(0, 3),
     [recs]
   );
-  const anomalies = useMemo(() => items.filter((item) => !item.is_recommend), [items]);
+  const anomalies = useMemo(
+    () =>
+      [...items.filter((item) => !item.is_recommend)].sort(
+        (a, b) => stagePriority(a.stage) - stagePriority(b.stage) || b.score - a.score
+      ),
+    [items]
+  );
   const newCount = useMemo(() => anomalies.filter((item) => item.is_new).length, [anomalies]);
+  const stageCounts = useMemo(() => {
+    const counts = new Map<Stage, number>();
+    for (const item of anomalies) {
+      counts.set(item.stage, (counts.get(item.stage) ?? 0) + 1);
+    }
+    return counts;
+  }, [anomalies]);
   const view = useMemo(
-    () => (cat === "ALL" ? anomalies : anomalies.filter((item) => item.category === cat)),
-    [anomalies, cat]
+    () =>
+      stageFilter === "ALL"
+        ? anomalies
+        : anomalies.filter((item) => item.stage === stageFilter),
+    [anomalies, stageFilter]
   );
 
   return (
@@ -90,20 +105,27 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
             異常訊號
           </span>
           <div className="inline-flex overflow-hidden rounded-md border border-white/10">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category.key}
-                type="button"
-                onClick={() => setCat(category.key)}
-                className={`px-2.5 py-1 text-xs transition ${
-                  cat === category.key
-                    ? "bg-ember/15 text-ember"
-                    : "bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
+            {STAGE_FILTERS.map((filter) => {
+              const count = filter === "ALL" ? anomalies.length : stageCounts.get(filter) ?? 0;
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setStageFilter(filter)}
+                  title={filter === "ALL" ? "所有異常訊號" : stageHint(filter)}
+                  className={`px-2.5 py-1 text-xs transition ${
+                    stageFilter === filter
+                      ? "bg-ember/15 text-ember"
+                      : "bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  }`}
+                >
+                  {filter === "ALL" ? "全部" : filter}
+                  {count > 0 ? (
+                    <span className="ml-1 tabular-nums text-[10px] opacity-70">{count}</span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
           <div className="ml-auto flex items-center gap-2">
             {newCount > 0 ? (
@@ -123,7 +145,8 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
         </div>
 
         <p className="-mt-1 text-xs text-slate-500">
-          低於推薦門檻但仍有多因子共振的訊號會留在這裡，方便觀察後續是否升級。
+          依行情階段排序：早期異動（資金先行、價格未動）最先，已發酵的過熱與延續排後，
+          每張卡片都標出它被選出來的原因。
         </p>
 
         {view.length ? (
@@ -132,7 +155,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
               <ScanRow
                 key={item.symbol}
                 item={item}
-                showCategory
+                showStage
                 selected={item.symbol === selectedSymbol}
                 onClick={() => onSelect(item.symbol)}
               />

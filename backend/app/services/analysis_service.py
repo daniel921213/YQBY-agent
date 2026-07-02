@@ -31,14 +31,19 @@ SCREENER_NEUTRAL_SCORE = 15.0
 
 
 def _pillar_breakdown(evidence: list) -> list[PillarScore]:
-    """Collapse evidence to one row per pillar (its strongest contributing factor)."""
+    """Collapse evidence to one row per pillar (its strongest contributing factor).
+
+    Directional members take precedence: a pillar with e.g. directional momentum
+    plus a strong-but-NEUTRAL volume read should display the direction, not
+    neutral."""
     rows: list[PillarScore] = []
     for pillar in PILLAR_ORDER:
         members = [e for e in evidence if e.pillar == pillar]
         if not members:
             rows.append(PillarScore(pillar=pillar, direction="NEUTRAL", strength=0.0, score=0.0))
             continue
-        top = max(members, key=lambda e: e.strength)
+        directional = [e for e in members if e.direction != "NEUTRAL"]
+        top = max(directional or members, key=lambda e: e.strength)
         rows.append(
             PillarScore(
                 pillar=pillar,
@@ -130,20 +135,6 @@ def _is_anomaly(recommendation: Recommendation) -> bool:
     )
 
 
-_DIVERGENCE_KEYS = {"cvd_bullish_divergence", "cvd_bearish_divergence"}
-
-
-def _categorize(evidence: list[EvidenceItem], direction: str) -> str:
-    """轉多 / 轉空 / 疑似反轉.
-
-    A CVD price-volume divergence is the classic *reversal* tell, so its presence
-    flags 疑似反轉; otherwise the net direction is a continuation read.
-    """
-    if any(e.key in _DIVERGENCE_KEYS for e in evidence):
-        return "疑似反轉"
-    return "轉多" if direction == "LONG" else "轉空"
-
-
 class AnalysisService:
     def __init__(self) -> None:
         self.market_data = MarketDataService()
@@ -166,7 +157,7 @@ class AnalysisService:
             "BTCUSDT", primary_timeframe, lookback, with_derivatives=False
         )
 
-        recommendation, evidence = self.scoring.score(
+        recommendation, evidence, stage = self.scoring.score(
             symbol=symbol,
             primary=primary,
             btc=btc,
@@ -212,6 +203,8 @@ class AnalysisService:
             evidence=evidence,
             chart=chart,
             metrics=metrics,
+            stage=stage.stage,
+            stage_reasons=stage.reasons,
             meta=AnalysisMeta(
                 primary_timeframe=primary_timeframe,
                 trigger_timeframe=trigger_timeframe,
@@ -329,6 +322,7 @@ class AnalysisService:
                     top_trader_ratio=m.top_trader_ratio if m else 1.0,
                     account_ratio=m.account_ratio if m else 1.0,
                     oi_change_1h=_oi_change_1h(a.chart, primary_timeframe),
+                    stage=a.stage,
                 )
             )
         rows.sort(key=lambda row: row.score, reverse=True)
@@ -346,7 +340,8 @@ class AnalysisService:
             )
             if mover is not None:
                 movers.append(mover)
-        # Rank by notional 1h OI change, like the reference's "依變化金額排序".
+        # Rank by 1h OI change in USD notional (open_interest is USD from both
+        # live providers), like the reference's "依變化金額排序".
         movers.sort(key=lambda m: abs(m.oi_delta), reverse=True)
         return movers[:OI_MOVERS_CAP]
 
@@ -378,7 +373,8 @@ class AnalysisService:
             score_gap=round(score_gap, 2),
             is_anomaly=_is_anomaly(recommendation),
             is_recommend=recommendation.score >= RECOMMEND_SCORE,
-            category=_categorize(analysis.evidence, recommendation.direction),
+            stage=analysis.stage,
+            stage_reasons=analysis.stage_reasons,
             triggered_count=len(directional_evidence),
             pillars=_pillar_breakdown(analysis.evidence),
             top_evidence=directional_evidence[:3],

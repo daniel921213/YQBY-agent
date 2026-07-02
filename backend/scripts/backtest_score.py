@@ -60,7 +60,7 @@ def collect(symbols: list[str], days: int, horizon: int) -> list[Trade]:
             btc_slice = btc.iloc[: int(np.searchsorted(btc_ts, prim_ts[t], side="right"))]
             if len(btc_slice) < 100:
                 continue
-            rec, _ = engine.score(
+            rec, _, _ = engine.score(
                 symbol=symbol,
                 primary=prim.iloc[: t + 1],
                 btc=btc_slice,

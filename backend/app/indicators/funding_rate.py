@@ -8,6 +8,12 @@ from app.utils.numeric import clamp
 
 FundingBias = Literal["LONG", "SHORT", "NEUTRAL"]
 
+# The z-score needs this many *distinct* funding observations to mean anything.
+# Funding settles every 1/4/8h but is merged onto every candle, so the bar
+# series is a step function: computing σ over 3 near-identical steps produces
+# a microscopic denominator and spurious |z| > 1.8 readings.
+_MIN_EFFECTIVE_SETTLEMENTS = 5
+
 
 @dataclass(frozen=True)
 class FundingRateSignal:
@@ -19,17 +25,26 @@ class FundingRateSignal:
 
 def analyze_funding_rate_extreme(
     frame: pd.DataFrame,
-    lookback: int = 96,
+    lookback: int = 192,
     extreme_threshold: float = 0.00035,
 ) -> FundingRateSignal:
     recent = frame.tail(lookback)
     if len(recent) < 12:
         return FundingRateSignal("NEUTRAL", 0.0, "資金費率資料不足", "樣本不足")
 
-    latest = float(recent["funding_rate"].iloc[-1])
-    mean = float(recent["funding_rate"].mean())
-    std = float(recent["funding_rate"].std(ddof=0) or 1e-9)
-    z_score = (latest - mean) / std
+    series = recent["funding_rate"]
+    latest = float(series.iloc[-1])
+
+    # Collapse the bar-expanded step function back to (approximate) settlement
+    # observations, then only trust the z-score when there are enough of them.
+    settlements = series[series.ne(series.shift())]
+    z_score = 0.0
+    if len(settlements) >= _MIN_EFFECTIVE_SETTLEMENTS:
+        mean = float(settlements.mean())
+        std = float(settlements.std(ddof=0) or 0.0)
+        if std > 1e-9:
+            z_score = (latest - mean) / std
+
     threshold_strength = abs(latest) / max(extreme_threshold, 1e-9)
     z_strength = abs(z_score) / 2.5
     strength = clamp(max(threshold_strength, z_strength) * 0.65, 0.0, 1.0)

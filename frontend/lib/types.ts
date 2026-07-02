@@ -77,9 +77,12 @@ export interface AnalysisResponse {
   chart: MarketChartPayload;
   meta: AnalysisMeta;
   metrics: MarketSnapshot | null;
+  stage: Stage;
+  stage_reasons: string[];
 }
 
-export type AnomalyCategory = "轉多" | "轉空" | "疑似反轉";
+// 幣種所處的行情生命週期階段（早期異動雷達）。
+export type Stage = "早期異動" | "趨勢啟動" | "趨勢延續" | "過熱風險" | "反轉警訊" | "觀察";
 export type FrequencyTier = "low" | "mid" | "high";
 
 export interface ScanItem {
@@ -94,7 +97,8 @@ export interface ScanItem {
   score_gap: number;
   is_anomaly: boolean;
   is_recommend: boolean;
-  category: AnomalyCategory;
+  stage: Stage;
+  stage_reasons: string[];
   triggered_count: number;
   pillars: PillarScore[];
   top_evidence: EvidenceItem[];
@@ -150,6 +154,7 @@ export interface ScreenerRow {
   top_trader_ratio: number;
   account_ratio: number;
   oi_change_1h: number;
+  stage: Stage;
 }
 
 export interface ScanResponse {
@@ -165,7 +170,7 @@ export interface ScanResponse {
 export interface AnomalyHistoryItem {
   symbol: string;
   direction: TradeDirection;
-  category: AnomalyCategory;
+  stage: Stage;
   first_seen_ts: number;
   resolved_ts: number;
   duration_minutes: number;

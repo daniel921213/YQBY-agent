@@ -22,12 +22,19 @@ def test_scan_endpoint_returns_ranked_market_items() -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert len(payload["items"]) == 2
+    # Items = recommends + confluence-gated anomalies; with synthetic data not
+    # every requested symbol clears the gate, but at least one must.
+    assert 1 <= len(payload["items"]) <= 2
     assert payload["items"][0]["rank"] == 1
     assert payload["items"][0]["symbol"] in {"BTCUSDT", "ETHUSDT"}
     # New per-item spot reads are always present.
     assert payload["items"][0]["price"] > 0
     assert "change_24h" in payload["items"][0]
+    # Lifecycle stage + why-selected reasons power the 早期異動雷達 UI.
+    assert payload["items"][0]["stage"] in {
+        "早期異動", "趨勢啟動", "趨勢延續", "過熱風險", "反轉警訊", "觀察"
+    }
+    assert isinstance(payload["items"][0]["stage_reasons"], list)
 
 
 def test_scan_endpoint_includes_altseason_and_oi_movers() -> None:

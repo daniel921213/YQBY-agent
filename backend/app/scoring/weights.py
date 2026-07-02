@@ -5,13 +5,23 @@ from dataclasses import dataclass
 class ScoringWeights:
     # Five-pillar factor model. Weights sum to 100 and are a starting point —
     # re-calibrate with scripts/backtest.py once the new factors have history.
-    # Pillars: 市場結構 (cvd+oi), 動能 (momentum), 資金費率, 多空比, 相對強弱.
-    cvd_divergence: float = 14.0        # 市場結構
-    open_interest_relation: float = 14.0  # 市場結構
-    momentum: float = 20.0              # 動能 (1h + 4h)
-    funding_extreme: float = 10.0       # 資金費率
-    participant_contrast: float = 12.0  # 多空比
-    relative_strength: float = 30.0     # 相對 BTC 強弱 (alpha vs beta)
+    #
+    # Rebalanced (2026-07): momentum + relative strength were 50/100 combined
+    # yet both derive from the SAME price returns, so a coin already up big
+    # double-counted its way to 推薦 after the move — the opposite of an early
+    # radar. Price-only factors now total 28; order-flow / positioning factors
+    # (divergence, thrust, volume, funding, ratios) total 72.
+    #
+    # Pillars: 市場結構 (divergence + OI), 動能 (price momentum + volume surge
+    # + taker thrust), 資金費率, 多空比, 相對強弱.
+    cvd_divergence: float = 16.0          # 市場結構
+    open_interest_relation: float = 12.0  # 市場結構
+    momentum: float = 12.0                # 動能 (1h + 4h price)
+    volume_surge: float = 8.0             # 動能 (turnover expansion)
+    cvd_thrust: float = 10.0              # 動能 (net aggressive flow)
+    funding_extreme: float = 12.0         # 資金費率
+    participant_contrast: float = 14.0    # 多空比
+    relative_strength: float = 16.0       # 相對 BTC 強弱 (alpha vs beta)
 
 
 DEFAULT_WEIGHTS = ScoringWeights()

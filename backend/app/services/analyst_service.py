@@ -162,7 +162,8 @@ def _item(i: Any) -> dict[str, Any]:
         "score": round(i.score, 1),
         "direction": i.direction,
         "confluence": i.confluence_pillars,
-        "category": i.category,
+        "stage": i.stage,
+        "stage_reasons": i.stage_reasons[:3],
     }
 
 
@@ -190,8 +191,8 @@ def _tool_get_market_scan() -> dict[str, Any]:
         "short_count": scan.breadth.short_count,
         "recommendations": [_item(i) for i in scan.items if i.is_recommend],
         "anomalies": {
-            cat: [_item(i) for i in anomalies if i.category == cat][:15]
-            for cat in ("轉多", "轉空", "疑似反轉")
+            stage: [_item(i) for i in anomalies if i.stage == stage][:15]
+            for stage in ("早期異動", "趨勢啟動", "趨勢延續", "過熱風險", "反轉警訊", "觀察")
         },
     }
 

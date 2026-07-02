@@ -5,11 +5,11 @@ import pandas as pd
 from app.core.config import get_settings
 from app.data_sources.base import DerivativesDataSource, MarketDataSource
 from app.data_sources.gate_client import get_gate_client
+from app.utils.timeframes import timeframe_to_seconds
 
 # Gate's /futures/usdt/contract_stats only accepts these interval strings.
-_STATS_INTERVALS = {"5m", "15m", "1h", "4h", "1d"}
-# contract_stats caps history; keep both data sources requesting the same value
-# so the shared client cache serves the second call for free.
+_STATS_INTERVAL_SECONDS = {"5m": 300, "15m": 900, "1h": 3_600, "4h": 14_400, "1d": 86_400}
+# contract_stats caps history at 100 rows per request.
 _STATS_LIMIT_CAP = 100
 
 
@@ -26,25 +26,79 @@ def _to_display(contract: str) -> str:
     return contract.replace("_", "")
 
 
-def _normalize_stats_interval(timeframe: str) -> str:
-    return timeframe if timeframe in _STATS_INTERVALS else "15m"
+def _pick_stats_interval(frame_seconds: int) -> str | None:
+    """Largest supported stats interval that tiles the candle frame exactly.
+
+    Exact tiling lets us SUM taker flow buckets into candle-sized buckets
+    (flow is additive) instead of nearest-matching a finer/coarser series,
+    which would over/under-state per-candle flow. None => no compatible
+    interval (frame finer than 5m); callers fall back to the candle proxy.
+    """
+    candidates = [
+        (seconds, name)
+        for name, seconds in _STATS_INTERVAL_SECONDS.items()
+        if seconds <= frame_seconds and frame_seconds % seconds == 0
+    ]
+    if not candidates:
+        return None
+    return max(candidates)[1]
 
 
-def _fetch_contract_stats(contract: str, timeframe: str, limit: int) -> list[dict]:
+def _fetch_contract_stats(contract: str, timeframe: str, frame_bars: int) -> list[dict]:
     """Shared, cached contract_stats fetch (OI + long/short + taker sizes).
 
     Both the market source (taker sizes for CVD) and the derivatives source
     (OI / long-short ratios) call this with identical args, so the second hit is
     served from the HTTP client's TTL cache.
     """
+    frame_seconds = timeframe_to_seconds(timeframe)
+    interval = _pick_stats_interval(frame_seconds)
+    if interval is None:
+        return []
+    per_bar = frame_seconds // _STATS_INTERVAL_SECONDS[interval]
+    limit = min(frame_bars * per_bar, _STATS_LIMIT_CAP)
     return get_gate_client().get_json(
         "/futures/usdt/contract_stats",
-        params={
-            "contract": contract,
-            "interval": _normalize_stats_interval(timeframe),
-            "limit": min(limit, _STATS_LIMIT_CAP),
-        },
+        params={"contract": contract, "interval": interval, "limit": limit},
     )
+
+
+def _stats_frame(stats: list[dict], frame_seconds: int) -> pd.DataFrame:
+    """contract_stats rows -> one row per candle bucket.
+
+    Flow fields (taker sizes) are summed within the bucket; level fields
+    (OI, ratios) take the last observation of the bucket. `open_interest`
+    prefers Gate's USD notional so cross-symbol comparisons (OI movers map)
+    are apples-to-apples; the raw contract count differs wildly per symbol.
+    """
+    rows = pd.DataFrame(
+        [
+            {
+                "timestamp": (int(s["time"]) // frame_seconds) * frame_seconds,
+                "buy_volume": float(s.get("long_taker_size", 0.0) or 0.0),
+                "sell_volume": float(s.get("short_taker_size", 0.0) or 0.0),
+                "open_interest": float(
+                    s.get("open_interest_usd") or s.get("open_interest", 0.0) or 0.0
+                ),
+                "top_trader_long_short_ratio": float(s.get("top_lsr_account", 1.0) or 1.0),
+                "account_long_short_ratio": float(s.get("lsr_account", 1.0) or 1.0),
+                "_time": int(s["time"]),
+            }
+            for s in stats
+        ]
+    )
+    if rows.empty:
+        return rows
+    rows = rows.sort_values("_time")
+    return (
+        rows.groupby("timestamp", as_index=False).agg(
+            buy_volume=("buy_volume", "sum"),
+            sell_volume=("sell_volume", "sum"),
+            open_interest=("open_interest", "last"),
+            top_trader_long_short_ratio=("top_trader_long_short_ratio", "last"),
+            account_long_short_ratio=("account_long_short_ratio", "last"),
+        )
+    ).sort_values("timestamp")
 
 
 class GateLiveMarketDataSource(MarketDataSource):
@@ -94,39 +148,39 @@ class GateLiveMarketDataSource(MarketDataSource):
 
         frame = self._attach_taker_split(frame, contract, timeframe)
         return frame[
-            ["timestamp", "open", "high", "low", "close", "volume", "buy_volume", "sell_volume"]
+            [
+                "timestamp", "open", "high", "low", "close", "volume",
+                "buy_volume", "sell_volume", "cvd_proxy",
+            ]
         ]
 
     def _attach_taker_split(
         self, frame: pd.DataFrame, contract: str, timeframe: str
     ) -> pd.DataFrame:
+        frame_seconds = timeframe_to_seconds(timeframe)
         stats = _fetch_contract_stats(contract, timeframe, len(frame))
-        taker = pd.DataFrame(
-            [
-                {
-                    "timestamp": int(s["time"]),
-                    "buy_volume": float(s.get("long_taker_size", 0.0) or 0.0),
-                    "sell_volume": float(s.get("short_taker_size", 0.0) or 0.0),
-                }
-                for s in stats
-            ]
-        )
+        taker = _stats_frame(stats, frame_seconds)
         if taker.empty:
             # Fallback: approximate taker flow from candle direction (up bar =>
-            # buy-dominant). Lower fidelity but keeps CVD defined.
+            # buy-dominant). Lower fidelity but keeps CVD defined. cvd_proxy=1
+            # tells the scoring engine CVD here is price-derived, so CVD-based
+            # factors (divergence, thrust) must not treat it as real order flow.
             up = (frame["close"] >= frame["open"]).astype(float)
             frame["buy_volume"] = frame["volume"] * (0.3 + 0.4 * up)
             frame["sell_volume"] = frame["volume"] - frame["buy_volume"]
+            frame["cvd_proxy"] = 1.0
             return frame
 
-        merged = pd.merge_asof(
-            frame.sort_values("timestamp"),
-            taker.sort_values("timestamp"),
-            on="timestamp",
-            direction="nearest",
+        # Exact-bucket join (stats buckets are aligned to candle open times).
+        # Candles outside stats coverage (contract_stats caps at 100 rows, the
+        # kline history is longer) get zero flow — an honest "no data" flat CVD
+        # prefix instead of a fabricated slope from duplicating the oldest row.
+        merged = frame.merge(
+            taker[["timestamp", "buy_volume", "sell_volume"]], on="timestamp", how="left"
         )
-        merged["buy_volume"] = merged["buy_volume"].ffill().bfill().fillna(0.0)
-        merged["sell_volume"] = merged["sell_volume"].ffill().bfill().fillna(0.0)
+        merged["buy_volume"] = merged["buy_volume"].fillna(0.0)
+        merged["sell_volume"] = merged["sell_volume"].fillna(0.0)
+        merged["cvd_proxy"] = 0.0
         return merged
 
 
@@ -135,6 +189,7 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
 
     contract_stats gives OI + retail (lsr_account) + top-trader (top_lsr_account)
     ratios in one call; funding comes from the funding_rate endpoint.
+    open_interest is Gate's USD notional (open_interest_usd), NOT contract count.
     """
 
     def __init__(self) -> None:
@@ -142,8 +197,10 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
 
     def get_derivatives_metrics(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
         contract = _to_contract(symbol)
+        frame_seconds = timeframe_to_seconds(timeframe)
         stats = _fetch_contract_stats(contract, timeframe, limit)
-        if not stats:
+        levels = _stats_frame(stats, frame_seconds)
+        if levels.empty:
             return pd.DataFrame(
                 {
                     "timestamp": [],
@@ -154,21 +211,25 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
                 }
             )
 
-        oi = pd.DataFrame(
+        oi = levels[
             [
-                {
-                    "timestamp": int(s["time"]),
-                    "open_interest": float(s.get("open_interest", 0.0) or 0.0),
-                    "top_trader_long_short_ratio": float(s.get("top_lsr_account", 1.0) or 1.0),
-                    "account_long_short_ratio": float(s.get("lsr_account", 1.0) or 1.0),
-                }
-                for s in stats
+                "timestamp",
+                "open_interest",
+                "top_trader_long_short_ratio",
+                "account_long_short_ratio",
             ]
-        ).sort_values("timestamp")
+        ]
 
         funding = self._fetch_funding(contract, limit)
+        if funding.empty:
+            merged = oi.copy()
+            merged["funding_rate"] = 0.0
+            return merged
         merged = pd.merge_asof(
-            oi, funding.sort_values("timestamp"), on="timestamp", direction="nearest"
+            oi.sort_values("timestamp"),
+            funding.sort_values("timestamp"),
+            on="timestamp",
+            direction="backward",
         )
         return merged
 

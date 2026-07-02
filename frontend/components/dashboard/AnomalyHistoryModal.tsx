@@ -65,7 +65,7 @@ export function AnomalyHistoryModal({ onClose }: AnomalyHistoryModalProps) {
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
                   <span className="text-sm font-medium text-slate-50">{item.symbol}</span>
                   <span className="rounded-sm border border-white/10 px-1.5 py-px text-[10px] text-slate-400">
-                    {item.category}
+                    {item.stage}
                   </span>
                   <span className="ml-auto text-[11px] text-slate-500">
                     存活 {item.duration_minutes} 分 · 觸發 {item.trigger_count} 則

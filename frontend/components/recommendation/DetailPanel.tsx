@@ -9,7 +9,9 @@ import {
   directionLabel,
   formatPercent,
   formatPrice,
-  formatRelativeTime
+  formatRelativeTime,
+  stageHint,
+  stageTone
 } from "@/lib/format";
 
 const PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"];
@@ -20,7 +22,10 @@ function derivePillars(evidence: EvidenceItem[]): PillarScore[] {
     if (!members.length) {
       return { pillar, direction: "NEUTRAL", strength: 0, score: 0 };
     }
-    const top = members.reduce((a, b) => (b.strength > a.strength ? b : a));
+    // 方向性因子優先，避免「強但中性」的量能讀數蓋掉方向。
+    const directional = members.filter((e) => e.direction !== "NEUTRAL");
+    const pool = directional.length ? directional : members;
+    const top = pool.reduce((a, b) => (b.strength > a.strength ? b : a));
     return {
       pillar,
       direction: top.direction,
@@ -69,7 +74,15 @@ export function DetailPanel({
       <section className="grid max-h-[78vh] gap-5 overflow-y-auto pr-1">
         <div className="grid gap-4 surface rounded-lg p-4 md:grid-cols-[1fr_240px] md:items-center">
           <div>
-            <div className="text-xs tracking-[0.16em] text-ember">交易方向</div>
+            <div className="flex items-center gap-3">
+              <div className="text-xs tracking-[0.16em] text-ember">交易方向</div>
+              <span
+                title={stageHint(analysis.stage)}
+                className={`rounded-sm border px-2 py-0.5 text-xs font-medium ${stageTone(analysis.stage)}`}
+              >
+                {analysis.stage}
+              </span>
+            </div>
             <h2 className={`mt-2 text-3xl font-semibold ${directionTone}`}>
               {directionLabel(direction)} {analysis.recommendation.score.toFixed(1)}
             </h2>
@@ -78,6 +91,7 @@ export function DetailPanel({
               {rec.confluence_multiplier.toFixed(2)} = {rec.score.toFixed(1)}），信心{" "}
               {confidenceLabel(rec.confidence_level)}
             </p>
+            <p className="mt-1 text-xs text-slate-500">{stageHint(analysis.stage)}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-2">
@@ -112,6 +126,22 @@ export function DetailPanel({
             ) : null}
           </div>
         </div>
+
+        {analysis.stage_reasons.length ? (
+          <div className="surface rounded-lg p-4">
+            <div className="mb-2 text-sm font-medium text-slate-100">為什麼被選出</div>
+            <ul className="grid gap-1.5 sm:grid-cols-2">
+              {analysis.stage_reasons.map((reason) => (
+                <li
+                  key={reason}
+                  className="surface-sunken rounded-md px-3 py-2 text-sm text-slate-300"
+                >
+                  {reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-[260px_1fr]">
           <div className="flex flex-col items-center justify-center surface rounded-lg p-4">

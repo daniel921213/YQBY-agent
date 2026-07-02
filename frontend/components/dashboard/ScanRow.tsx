@@ -5,7 +5,9 @@ import {
   formatPrice,
   formatRelativeTime,
   formatScore,
-  percentTone
+  percentTone,
+  stageHint,
+  stageTone
 } from "@/lib/format";
 import { FrequencyTier } from "@/components/dashboard/FrequencyTier";
 
@@ -13,16 +15,10 @@ interface ScanRowProps {
   item: ScanItem;
   selected: boolean;
   onClick: () => void;
-  showCategory?: boolean;
+  showStage?: boolean;
 }
 
-const CATEGORY_TONE: Record<string, string> = {
-  轉多: "border-long/30 bg-long/5 text-long",
-  轉空: "border-short/30 bg-short/5 text-short",
-  疑似反轉: "border-ember/30 bg-ember/5 text-ember"
-};
-
-export function ScanRow({ item, selected, onClick, showCategory = false }: ScanRowProps) {
+export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowProps) {
   const isLong = item.direction === "LONG";
   const tone = isLong ? "text-long" : "text-short";
   const Icon = isLong ? ArrowUpRight : ArrowDownRight;
@@ -39,11 +35,12 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
       <div className="flex items-center gap-2">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
         <span className="truncate text-sm font-medium text-slate-50">{item.symbol}</span>
-        {showCategory ? (
+        {showStage ? (
           <span
-            className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${CATEGORY_TONE[item.category]}`}
+            title={stageHint(item.stage)}
+            className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${stageTone(item.stage)}`}
           >
-            {item.category}
+            {item.stage}
           </span>
         ) : null}
         {item.is_new ? (
@@ -69,6 +66,12 @@ export function ScanRow({ item, selected, onClick, showCategory = false }: ScanR
           {formatPercent(item.change_24h)}
         </span>
       </div>
+
+      {item.stage_reasons.length ? (
+        <div className="text-[11px] leading-4 text-slate-400" title={item.stage_reasons.join("；")}>
+          {item.stage_reasons.slice(0, 2).join(" · ")}
+        </div>
+      ) : null}
 
       {tracked ? (
         <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">

@@ -9,7 +9,9 @@ import {
   formatPercent,
   formatPrice,
   formatScore,
-  percentTone
+  percentTone,
+  stageHint,
+  stageTone
 } from "@/lib/format";
 
 interface ScreenerTableProps {
@@ -130,7 +132,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
       </div>
 
       <div className="surface-sunken overflow-x-auto rounded-lg">
-        <table className="w-full min-w-[680px] border-collapse text-sm">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
               <th className="px-3 py-2 font-medium">#</th>
@@ -139,6 +141,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
               <th className="px-3 py-2 text-right font-medium">24h</th>
               <th className="px-3 py-2 text-right font-medium">分數</th>
               <th className="px-3 py-2 text-center font-medium">方向</th>
+              <th className="px-3 py-2 text-center font-medium">階段</th>
               {PILLAR_LABELS.map((label) => (
                 <th key={label} className="px-2 py-2 text-center font-medium" title={label}>
                   {label}
@@ -170,6 +173,18 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                 </td>
                 <td className={`px-3 py-2 text-center text-xs ${directionTone(row.direction as EvidenceDirection)}`}>
                   {directionLabel(row.direction as EvidenceDirection)}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  {row.stage === "觀察" ? (
+                    <span className="text-xs text-slate-600">—</span>
+                  ) : (
+                    <span
+                      title={stageHint(row.stage)}
+                      className={`inline-block rounded-sm border px-1.5 py-px text-[10px] font-medium ${stageTone(row.stage)}`}
+                    >
+                      {row.stage}
+                    </span>
+                  )}
                 </td>
                 {PILLAR_LABELS.map((label, pillarIndex) => (
                   <td key={label} className="px-2 py-2 text-center">

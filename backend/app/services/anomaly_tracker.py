@@ -67,7 +67,7 @@ def _altseason_label(index: int) -> str:
 class _LiveEvent:
     symbol: str
     direction: str
-    category: str
+    stage: str
     first_seen_ts: int
     first_seen_price: float
     last_seen_ts: int
@@ -113,7 +113,7 @@ class AnomalyTracker:
                     event = _LiveEvent(
                         symbol=item.symbol,
                         direction=item.direction,
-                        category=item.category,
+                        stage=item.stage,
                         first_seen_ts=now,
                         first_seen_price=item.price,
                         last_seen_ts=now,
@@ -125,7 +125,7 @@ class AnomalyTracker:
                 else:
                     event.last_seen_ts = now
                     event.last_price = item.price
-                    event.category = item.category
+                    event.stage = item.stage
                     event.peak_score = max(event.peak_score, item.score)
                     is_new = False
 
@@ -152,7 +152,7 @@ class AnomalyTracker:
                 AnomalyHistoryItem(
                     symbol=event.symbol,
                     direction=event.direction,  # type: ignore[arg-type]
-                    category=event.category,  # type: ignore[arg-type]
+                    stage=event.stage,  # type: ignore[arg-type]
                     first_seen_ts=event.first_seen_ts,
                     resolved_ts=event.last_seen_ts,
                     duration_minutes=max(

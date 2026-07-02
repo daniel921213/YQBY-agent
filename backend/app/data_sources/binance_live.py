@@ -90,9 +90,11 @@ class BinanceLiveDerivativesDataSource(DerivativesDataSource):
         # /futures/data endpoints cap at 500 rows and ~30 days of history.
         stats_limit = min(limit, 500)
 
+        # sumOpenInterestValue = USDT notional, matching Gate's open_interest_usd
+        # so cross-symbol OI comparisons work regardless of provider.
         oi = self._fetch_stats(
             "/futures/data/openInterestHist", symbol, period, stats_limit,
-            value_field="sumOpenInterest", out_field="open_interest",
+            value_field="sumOpenInterestValue", out_field="open_interest",
         )
         top = self._fetch_stats(
             "/futures/data/topLongShortAccountRatio", symbol, period, stats_limit,

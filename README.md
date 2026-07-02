@@ -7,8 +7,10 @@
 - 5m 觸發週期
 - 15m 主分析週期
 - 1h 趨勢濾網
-- CVD / OI / 大戶散戶多空比 / Funding Rate
-- Long / Short recommendation scoring
+- CVD / OI / 大戶散戶多空比 / Funding Rate / 量能放大 / 主動買賣力道 / 波動壓縮
+- Long / Short recommendation scoring（五支柱共振）
+- 早期異動雷達：每個幣標上行情階段（早期異動 / 趨勢啟動 / 趨勢延續 / 過熱風險 / 反轉警訊）
+  與被選出的具體原因，目標是在價格發酵前抓到資金與量能先行的幣
 - Next.js dark dashboard + TradingView Lightweight Charts
 
 ## Backend
