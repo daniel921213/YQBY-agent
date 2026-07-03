@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
+import { AuthGlow } from "@/components/auth/AuthGlow";
 import { ThemeToggle } from "@/lib/theme";
 
 interface AuthShellProps {
@@ -11,29 +12,28 @@ interface AuthShellProps {
 
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+    <main className="auth-scene relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <SpaceParticleField variant="auth" />
+      {/* 氛圍層：金色軌道線 ×2 + 暖金能量核 + 斜向金光束 + 滑鼠 spotlight */}
+      <div aria-hidden className="auth-orbit auth-orbit-a" />
+      <div aria-hidden className="auth-orbit auth-orbit-b" />
+      <div
+        aria-hidden
+        className="auth-core animate-core-breathe pointer-events-none absolute left-1/2 top-1/2 h-[640px] w-[640px] rounded-full"
+      />
+      <div
+        aria-hidden
+        className="auth-beam pointer-events-none absolute left-[-30%] top-[32%] h-24 w-[160%] -rotate-[22deg]"
+      />
+      <AuthGlow />
       <div className="absolute right-4 top-4 z-20">
         <ThemeToggle />
       </div>
-      {/* 氛圍層（純色彩光效，無圖形）：一道斜射光束 + 卡片後方呼吸的能量核 */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-[-30%] top-[30%] h-28 w-[160%] -rotate-[22deg] bg-gradient-to-r from-transparent via-ember/[0.07] to-transparent blur-2xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-[-30%] top-[34%] h-px w-[160%] -rotate-[22deg] bg-gradient-to-r from-transparent via-ember/50 to-transparent"
-      />
-      <div
-        aria-hidden
-        className="animate-core-breathe pointer-events-none absolute left-1/2 top-1/2 h-[620px] w-[620px] rounded-full bg-[radial-gradient(closest-side,rgba(76,194,255,0.16),rgba(76,194,255,0.05)_45%,transparent_72%)]"
-      />
 
       <div className="relative z-10 w-full max-w-sm">
         <Link
           href="/"
-          className="mb-8 flex flex-col items-center gap-2 text-center transition hover:opacity-90"
+          className="mb-8 flex flex-col items-center gap-3 text-center transition hover:opacity-90"
         >
           {/* 品牌 logo（金色 CT Trader 字標，透明底）；柔和落影讓它在深淺兩種底上都立得住。 */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,17 +42,14 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
             alt="CT Trader"
             className="h-24 w-auto [filter:drop-shadow(0_4px_16px_rgba(15,30,60,0.35))]"
           />
-          <span className="bg-gradient-to-b from-white via-slate-200 to-slate-500 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
+          <span className="auth-title text-2xl font-semibold tracking-[0.08em]">
             CONFLUENCE THEORY
           </span>
         </Link>
 
-        <div className="auth-card relative overflow-hidden rounded-xl border border-ember/20 bg-graphite/70 p-6 shadow-[0_30px_120px_rgba(2,8,22,0.85),0_0_48px_rgba(76,194,255,0.10)] backdrop-blur-md">
-          {/* 卡片頂緣的金屬高光線 */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ember/60 to-transparent"
-          />
+        <div className="auth-card relative overflow-hidden rounded-xl p-6 backdrop-blur-md">
+          {/* 卡片頂緣金色髮絲高光 */}
+          <div aria-hidden className="auth-card-topline pointer-events-none absolute inset-x-0 top-0 h-px" />
           <h1 className="text-lg font-semibold text-slate-50">{title}</h1>
           <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
           <div className="mt-6">{children}</div>

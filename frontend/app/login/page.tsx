@@ -34,7 +34,7 @@ export default function LoginPage() {
       footer={
         <>
           還沒有帳號？{" "}
-          <Link href="/register" className="text-ember hover:underline">
+          <Link href="/register" className="auth-link">
             前往註冊
           </Link>
         </>

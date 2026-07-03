@@ -53,7 +53,7 @@ export default function RegisterPage() {
       footer={
         <>
           已經有帳號了？{" "}
-          <Link href="/login" className="text-ember hover:underline">
+          <Link href="/login" className="auth-link">
             前往登入
           </Link>
         </>

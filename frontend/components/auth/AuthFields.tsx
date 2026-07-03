@@ -26,7 +26,7 @@ export function Field({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full rounded-md border border-white/10 bg-obsidian/60 px-3 py-2.5 text-sm text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/70 focus:shadow-[0_0_0_3px_rgba(76,194,255,0.14),0_0_20px_rgba(76,194,255,0.20)]"
+        className="auth-input w-full rounded-md border border-white/10 bg-obsidian/60 px-3 py-2.5 text-sm text-slate-50 outline-none placeholder:text-slate-600"
       />
     </label>
   );
@@ -61,7 +61,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={loading}
-      className="glow-sweep inline-flex w-full items-center justify-center gap-2 rounded-md border border-ember/50 bg-gradient-to-r from-[#2f9fe8] via-[#4cc2ff] to-[#2f9fe8] px-4 py-2.5 text-sm font-semibold text-[#03101e] shadow-[0_8px_30px_rgba(76,194,255,0.35)] transition hover:brightness-110 hover:shadow-[0_8px_42px_rgba(76,194,255,0.55)] disabled:opacity-50"
+      className="auth-submit glow-sweep inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
       {children}
