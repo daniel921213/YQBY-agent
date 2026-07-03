@@ -343,16 +343,17 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* 登入頁卡片後方「能量核」的呼吸光暈（transform 內含置中位移）。 */
+/* 登入頁卡片後方「能量核」的呼吸光暈（transform 內含置中位移）。
+   擺幅刻意收窄：要的是「活著」的微光，不是明暗閃爍。 */
 @keyframes core-breathe {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.68;
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    opacity: 0.85;
-    transform: translate(-50%, -50%) scale(1.07);
+    opacity: 0.82;
+    transform: translate(-50%, -50%) scale(1.03);
   }
 }
 
@@ -365,7 +366,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-core-breathe {
-  animation: core-breathe 6.5s ease-in-out infinite;
+  animation: core-breathe 9s ease-in-out infinite;
 }
 
 /* hover 時一道高光從左掃到右（用在主要按鈕）。 */
