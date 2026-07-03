@@ -69,7 +69,7 @@ export function AnalystChat() {
   const panel = (
     <div className="surface flex h-full flex-col overflow-hidden rounded-lg">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-        <Bot className="h-4 w-4 text-ember" />
+        <Bot className="h-4 w-4 text-gold" />
         <span className="text-sm font-semibold text-slate-50">CT_Trader 分析師</span>
         <button
           type="button"

@@ -19,6 +19,8 @@
   --c-ink: 255 255 255;
   --c-amber: 253 224 71;
   --c-red-soft: 254 226 226;
+  --c-gold: 202 138 4;
+  --c-gold-hi: 240 200 118;
 
   --c-slate-50: 248 250 252;
   --c-slate-100: 241 245 249;
@@ -62,6 +64,8 @@ html[data-theme="light"] {
   --c-ink: 15 23 42;
   --c-amber: 180 83 9;
   --c-red-soft: 127 29 29;
+  --c-gold: 161 98 7;
+  --c-gold-hi: 202 138 4;
 
   --c-slate-50: 2 6 23;
   --c-slate-100: 15 23 42;
@@ -117,7 +121,8 @@ body {
     radial-gradient(1px 1px at 94% 86%, rgba(190, 226, 255, 0.38) 50%, transparent 51%),
     radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.22), transparent 62%),
     radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.17), transparent 60%),
-    #070c18;
+    radial-gradient(1000px 500px at 50% 118%, rgba(202, 138, 4, 0.05), transparent 60%),
+    #05070f;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -127,6 +132,7 @@ html[data-theme="light"] body {
   background:
     radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.12), transparent 62%),
     radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.09), transparent 60%),
+    radial-gradient(1000px 500px at 50% 118%, rgba(161, 98, 7, 0.04), transparent 60%),
     #eaf0f9;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -171,7 +177,7 @@ html[data-theme="light"] ::selection {
 }
 ::-webkit-scrollbar-thumb {
   background: #24365a;
-  border: 2px solid #070c18;
+  border: 2px solid #05070f;
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -196,7 +202,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, rgba(32, 48, 80, 0.66), rgba(13, 22, 40, 0.74));
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
       inset 0 -1px 0 0 rgba(0, 0, 0, 0.3),
       0 1px 2px rgba(0, 0, 0, 0.28),
       0 18px 40px -16px rgba(3, 10, 26, 0.65);
@@ -216,7 +222,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, rgba(40, 58, 94, 0.7), rgba(17, 28, 50, 0.76));
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.16),
+      inset 0 1px 0 0 rgba(255, 248, 235, 0.16),
       inset 0 -1px 0 0 rgba(0, 0, 0, 0.34),
       0 2px 4px rgba(0, 0, 0, 0.32),
       0 26px 56px -18px rgba(3, 10, 26, 0.72);
@@ -238,7 +244,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
     -webkit-backdrop-filter: blur(22px) saturate(170%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      inset 0 1px 0 0 rgba(255, 248, 235, 0.14),
       0 30px 80px -20px rgba(0, 0, 0, 0.65);
   }
 
@@ -250,7 +256,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
     transform: translateY(-2px);
     border-color: rgba(76, 194, 255, 0.4);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
       0 2px 4px rgba(0, 0, 0, 0.34),
       0 22px 46px -16px rgba(2, 8, 22, 0.7),
       0 0 28px -6px rgba(76, 194, 255, 0.3);
@@ -259,7 +265,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   /* 訊號光：只給「選中/推薦/active」的那一個，克制才顯貴。 */
   .signal-glow {
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
       0 0 0 1px rgba(76, 194, 255, 0.45),
       0 0 32px -4px rgba(76, 194, 255, 0.4);
   }
@@ -471,10 +477,10 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 .space-stars-twinkle {
   background:
     radial-gradient(circle at 16% 18%, rgba(190, 226, 255, 0.9) 0 1.6px, rgba(76, 194, 255, 0.25) 3px, transparent 6px),
-    radial-gradient(circle at 71% 9%, rgba(230, 237, 247, 0.85) 0 1.3px, rgba(76, 194, 255, 0.2) 2.6px, transparent 5px),
+    radial-gradient(circle at 71% 9%, rgba(240, 200, 118, 0.85) 0 1.4px, rgba(202, 138, 4, 0.22) 2.8px, transparent 5.5px),
     radial-gradient(circle at 89% 41%, rgba(190, 226, 255, 0.8) 0 1.5px, rgba(76, 194, 255, 0.22) 3px, transparent 6px),
     radial-gradient(circle at 34% 55%, rgba(230, 237, 247, 0.75) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px),
-    radial-gradient(circle at 55% 84%, rgba(190, 226, 255, 0.85) 0 1.5px, rgba(76, 194, 255, 0.22) 3px, transparent 6px),
+    radial-gradient(circle at 55% 84%, rgba(240, 200, 118, 0.8) 0 1.5px, rgba(202, 138, 4, 0.2) 3px, transparent 6px),
     radial-gradient(circle at 8% 76%, rgba(230, 237, 247, 0.7) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px);
   animation: star-twinkle 5.5s ease-in-out infinite alternate;
 }

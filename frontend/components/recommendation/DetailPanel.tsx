@@ -75,7 +75,7 @@ export function DetailPanel({
         <div className="grid gap-4 surface rounded-lg p-4 md:grid-cols-[1fr_240px] md:items-center">
           <div>
             <div className="flex items-center gap-3">
-              <div className="text-xs tracking-[0.16em] text-ember">交易方向</div>
+              <div className="text-xs tracking-[0.16em] text-gold">交易方向</div>
               <span
                 title={stageHint(analysis.stage)}
                 className={`rounded-sm border px-2 py-0.5 text-xs font-medium ${stageTone(analysis.stage)}`}
@@ -184,7 +184,7 @@ function ModalFrame({
       <div className="glass-panel animate-signal-rise w-full max-w-4xl rounded-xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <div className="text-xs tracking-[0.18em] text-ember">訊號詳情</div>
+            <div className="text-xs tracking-[0.18em] text-gold">訊號詳情</div>
             <div className="mt-1 text-xl font-semibold text-slate-50">{title}</div>
           </div>
           <button

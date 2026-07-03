@@ -85,7 +85,7 @@ function Dashboard() {
                   onClick={() => setTab(t.key)}
                   className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm transition ${
                     tab === t.key
-                      ? "border-ember text-slate-50"
+                      ? "border-gold text-slate-50"
                       : "border-transparent text-slate-500 hover:text-slate-300"
                   }`}
                 >
@@ -144,7 +144,7 @@ function Dashboard() {
         <button
           type="button"
           onClick={() => setAnalystOpen(true)}
-          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-ember/40 bg-ember/15 px-4 py-2.5 text-sm font-medium text-ember shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(76,194,255,0.25)] backdrop-blur transition hover:bg-ember/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(76,194,255,0.4)]"
+          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(202,138,4,0.3)] backdrop-blur transition hover:bg-gold/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(202,138,4,0.45)]"
         >
           <Bot className="h-4 w-4" />
           分析師
@@ -152,7 +152,7 @@ function Dashboard() {
       ) : (
         <div className="glass-panel fixed right-0 top-0 z-40 flex h-screen w-full max-w-[400px] flex-col gap-2 p-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs tracking-[0.18em] text-ember">CT_Trader 分析師</span>
+            <span className="text-xs tracking-[0.18em] text-gold">CT_Trader 分析師</span>
             <button
               type="button"
               onClick={() => setAnalystOpen(false)}

@@ -23,6 +23,8 @@ const config: Config = {
         steel: v("--c-steel"), // 抬升/hover 表面
         ember: v("--c-ember"), // 冰藍主強調色
         copper: v("--c-copper"), // 冷銀藍金屬
+        gold: v("--c-gold"),
+        goldhi: v("--c-gold-hi"),
         long: v("--c-long"),
         short: v("--c-short"),
         white: v("--c-ink"),

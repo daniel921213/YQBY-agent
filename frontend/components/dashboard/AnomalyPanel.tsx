@@ -72,7 +72,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 pb-2">
           <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-50">
-            <ShieldCheck className="h-4 w-4 text-ember" />
+            <ShieldCheck className="h-4 w-4 text-gold" />
             高分推薦
           </span>
           <span className="text-xs text-slate-500">
@@ -187,7 +187,7 @@ function RecommendationLane({
   const isLong = direction === "LONG";
   const Icon = isLong ? ArrowUpRight : ArrowDownRight;
   const tone = isLong ? "text-long" : "text-short";
-  const ring = isLong ? "border-long/20" : "border-short/20";
+  const ring = "border-gold/25";
   const glow = isLong ? "from-long/10" : "from-short/10";
 
   return (
@@ -252,8 +252,8 @@ function RecommendationRow({
       }`}
     >
       <div className="flex items-center gap-1">
-        <span className="text-sm font-semibold tabular-nums text-slate-300">{rank}</span>
-        <span className="text-[11px] text-ember">●</span>
+        <span className="text-sm font-semibold tabular-nums text-gold">{rank}</span>
+        <span className="text-[11px] text-gold">●</span>
       </div>
 
       <div className="truncate text-sm font-semibold text-slate-50">{item.symbol}</div>
