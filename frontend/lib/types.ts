@@ -104,7 +104,12 @@ export interface ScanItem {
   stage_reasons: string[];
   triggered_count: number;
   pillars: PillarScore[];
-  top_evidence: EvidenceItem[];
+  // 本輪快照的完整因子拆解（已依分數排序）——詳情視窗直接讀這份，
+  // 解釋的分數才會跟卡片/排名完全一致。
+  evidence: EvidenceItem[];
+  // 共振細節（分數 = 原始 × 乘數），與 Recommendation 同義。
+  raw_score: number;
+  confluence_multiplier: number;
   price: number;
   change_24h: number;
   first_seen_ts: number | null;
@@ -171,6 +176,8 @@ export interface ScanResponse {
   scanned_symbols: string[];
   breadth: MarketBreadth;
   meta: AnalysisMeta;
+  // 本輪掃描完成的 epoch 秒——快取最多供應 5 分鐘，資料年齡以這個為準。0 = 暖機中。
+  generated_at: number;
   altseason: AltseasonIndex | null;
   oi_movers: OiMover[];
   universe: ScreenerRow[];

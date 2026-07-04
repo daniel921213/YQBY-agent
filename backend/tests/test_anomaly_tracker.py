@@ -24,7 +24,7 @@ def _item(symbol: str, price: float, direction: str = "LONG") -> ScanItem:
         stage_reasons=["量能 2.5× 異常放大"],
         triggered_count=3,
         pillars=[],
-        top_evidence=[],
+        evidence=[],
         price=price,
     )
 

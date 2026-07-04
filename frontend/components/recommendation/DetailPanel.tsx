@@ -3,7 +3,15 @@ import { IndicatorEvidenceList } from "@/components/dashboard/IndicatorEvidenceL
 import { SignalRadar } from "@/components/dashboard/SignalRadar";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
 import { PillarList } from "@/components/dashboard/PillarList";
-import type { AnalysisResponse, EvidenceItem, PillarScore, ScanItem } from "@/lib/types";
+import type {
+  AnalysisResponse,
+  ConfidenceLevel,
+  EvidenceItem,
+  PillarScore,
+  ScanItem,
+  Stage,
+  TradeDirection
+} from "@/lib/types";
 import {
   confidenceLabel,
   directionLabel,
@@ -35,9 +43,66 @@ function derivePillars(evidence: EvidenceItem[]): PillarScore[] {
   });
 }
 
+// 兩種資料來源收斂成同一個顯示模型：警報清單上的幣整份用掃描快照（跟卡片、
+// 排名同一輪、同一個分數）；不在清單上的幣才用點開當下的即時分析。
+interface DetailView {
+  symbol: string;
+  stage: Stage;
+  stageReasons: string[];
+  direction: TradeDirection;
+  score: number;
+  rawScore: number;
+  multiplier: number;
+  confluencePillars: number;
+  confidence: ConfidenceLevel;
+  longScore: number;
+  shortScore: number;
+  pillars: PillarScore[];
+  evidence: EvidenceItem[];
+}
+
+function viewFromScanItem(item: ScanItem): DetailView {
+  return {
+    symbol: item.symbol,
+    stage: item.stage,
+    stageReasons: item.stage_reasons,
+    direction: item.direction,
+    score: item.score,
+    rawScore: item.raw_score,
+    multiplier: item.confluence_multiplier,
+    confluencePillars: item.confluence_pillars,
+    confidence: item.confidence_level,
+    longScore: item.long_score,
+    shortScore: item.short_score,
+    pillars: item.pillars,
+    evidence: item.evidence
+  };
+}
+
+function viewFromAnalysis(analysis: AnalysisResponse): DetailView {
+  const rec = analysis.recommendation;
+  return {
+    symbol: rec.symbol,
+    stage: analysis.stage,
+    stageReasons: analysis.stage_reasons,
+    direction: rec.direction,
+    score: rec.score,
+    rawScore: rec.raw_score,
+    multiplier: rec.confluence_multiplier,
+    confluencePillars: rec.confluence_pillars,
+    confidence: rec.confidence_level,
+    longScore: rec.long_score,
+    shortScore: rec.short_score,
+    pillars: derivePillars(analysis.evidence),
+    evidence: analysis.evidence
+  };
+}
+
 interface DetailPanelProps {
   analysis: AnalysisResponse | null;
   selectedScanItem: ScanItem | null;
+  // 本輪掃描完成的 epoch 秒（快照模式的資料時間點標示用）。
+  scanGeneratedAt: number | null;
   loading: boolean;
   error: string | null;
   symbol: string;
@@ -47,12 +112,19 @@ interface DetailPanelProps {
 export function DetailPanel({
   analysis,
   selectedScanItem,
+  scanGeneratedAt,
   loading,
   error,
   symbol,
   onClose
 }: DetailPanelProps) {
-  if (!analysis) {
+  const view = selectedScanItem
+    ? viewFromScanItem(selectedScanItem)
+    : analysis
+      ? viewFromAnalysis(analysis)
+      : null;
+
+  if (!view) {
     return (
       <ModalFrame title={symbol} onClose={onClose}>
         <div className="flex h-64 items-center justify-center text-sm text-slate-300">
@@ -62,36 +134,41 @@ export function DetailPanel({
     );
   }
 
-  const rec = analysis.recommendation;
-  const longScore = rec.long_score;
-  const shortScore = rec.short_score;
-  const direction = rec.direction;
-  const directionTone = direction === "LONG" ? "text-long" : "text-short";
-  const pillars = derivePillars(analysis.evidence);
+  const directionTone = view.direction === "LONG" ? "text-long" : "text-short";
+  // 資料時間點只標一次：快照模式顯示本輪掃描多久前，即時模式標「即時分析」。
+  const scanMinutes =
+    selectedScanItem && scanGeneratedAt
+      ? Math.max(0, Math.floor((Date.now() / 1000 - scanGeneratedAt) / 60))
+      : null;
 
   return (
-    <ModalFrame title={analysis.recommendation.symbol} onClose={onClose}>
+    <ModalFrame title={view.symbol} onClose={onClose}>
       <section className="grid max-h-[78vh] gap-5 overflow-y-auto pr-1">
         <div className="grid gap-4 surface rounded-lg p-4 md:grid-cols-[1fr_240px] md:items-center">
           <div>
             <div className="flex items-center gap-3">
               <div className="text-xs tracking-[0.16em] text-gold">交易方向</div>
               <span
-                title={stageHint(analysis.stage)}
-                className={`rounded-sm border px-2 py-0.5 text-xs font-medium ${stageTone(analysis.stage)}`}
+                title={stageHint(view.stage)}
+                className={`rounded-sm border px-2 py-0.5 text-xs font-medium ${stageTone(view.stage)}`}
               >
-                {analysis.stage}
+                {view.stage}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                {scanMinutes !== null
+                  ? `本輪掃描 · ${formatRelativeTime(scanMinutes)}`
+                  : "即時分析"}
               </span>
             </div>
             <h2 className={`mt-2 text-3xl font-semibold ${directionTone}`}>
-              {directionLabel(direction)} {analysis.recommendation.score.toFixed(1)}
+              {directionLabel(view.direction)} {view.score.toFixed(1)}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              {rec.confluence_pillars}/5 支柱同向（原始 {rec.raw_score.toFixed(1)} × 共振{" "}
-              {rec.confluence_multiplier.toFixed(2)} = {rec.score.toFixed(1)}），信心{" "}
-              {confidenceLabel(rec.confidence_level)}
+              {view.confluencePillars}/5 支柱同向（原始 {view.rawScore.toFixed(1)} × 共振{" "}
+              {view.multiplier.toFixed(2)} = {view.score.toFixed(1)}），信心{" "}
+              {confidenceLabel(view.confidence)}
             </p>
-            <p className="mt-1 text-xs text-slate-500">{stageHint(analysis.stage)}</p>
+            <p className="mt-1 text-xs text-slate-500">{stageHint(view.stage)}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-2">
@@ -105,7 +182,7 @@ export function DetailPanel({
               value={selectedScanItem ? formatPercent(selectedScanItem.change_24h) : "--"}
             />
             <Metric
-              label="觸發指標"
+              label="同向指標"
               value={selectedScanItem ? `${selectedScanItem.triggered_count} 個` : "--"}
             />
             {selectedScanItem?.first_seen_ts ? (
@@ -127,11 +204,11 @@ export function DetailPanel({
           </div>
         </div>
 
-        {analysis.stage_reasons.length ? (
+        {view.stageReasons.length ? (
           <div className="surface rounded-lg p-4">
             <div className="mb-2 text-sm font-medium text-slate-100">為什麼被選出</div>
             <ul className="grid gap-1.5 sm:grid-cols-2">
-              {analysis.stage_reasons.map((reason) => (
+              {view.stageReasons.map((reason) => (
                 <li
                   key={reason}
                   className="surface-sunken rounded-md px-3 py-2 text-sm text-slate-300"
@@ -146,24 +223,24 @@ export function DetailPanel({
         <div className="grid gap-4 md:grid-cols-[260px_1fr]">
           <div className="flex flex-col items-center justify-center surface rounded-lg p-4">
             <div className="mb-1 self-start text-sm font-medium text-slate-100">五支柱雷達</div>
-            <SignalRadar pillars={pillars} direction={direction} />
+            <SignalRadar pillars={view.pillars} direction={view.direction} />
           </div>
 
           <div className="flex flex-col justify-center gap-5 surface rounded-lg p-4">
             <div>
               <div className="mb-2 text-sm font-medium text-slate-100">支柱強弱</div>
-              <PillarList pillars={pillars} />
+              <PillarList pillars={view.pillars} />
             </div>
             <div>
               <div className="mb-3 text-sm font-medium text-slate-100">多空力量對比</div>
-              <TugOfWarBar long={longScore} short={shortScore} size="lg" />
+              <TugOfWarBar long={view.longScore} short={view.shortScore} size="lg" />
             </div>
           </div>
         </div>
 
         <div>
           <div className="mb-3 text-sm font-medium text-slate-100">分數拆解與理由</div>
-          <IndicatorEvidenceList evidence={analysis.evidence} />
+          <IndicatorEvidenceList evidence={view.evidence} />
         </div>
       </section>
     </ModalFrame>

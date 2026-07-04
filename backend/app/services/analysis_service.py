@@ -1,3 +1,4 @@
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from app.core.config import get_settings
@@ -315,6 +316,7 @@ class AnalysisService:
             altseason=altseason,
             oi_movers=oi_movers,
             universe=universe,
+            generated_at=int(time.time()),
             meta=AnalysisMeta(
                 primary_timeframe=primary_timeframe,
                 trigger_timeframe=trigger_timeframe,
@@ -417,5 +419,7 @@ class AnalysisService:
             stage_reasons=analysis.stage_reasons,
             triggered_count=len(directional_evidence),
             pillars=_pillar_breakdown(analysis.evidence),
-            top_evidence=directional_evidence[:3],
+            evidence=analysis.evidence,
+            raw_score=recommendation.raw_score,
+            confluence_multiplier=recommendation.confluence_multiplier,
         )

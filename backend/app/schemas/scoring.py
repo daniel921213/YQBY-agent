@@ -94,7 +94,14 @@ class ScanItem(BaseModel):
     stage_reasons: list[str] = []
     triggered_count: int
     pillars: list[PillarScore]
-    top_evidence: list[EvidenceItem]
+    # Full factor breakdown for THIS snapshot (already score-sorted). The detail
+    # modal renders these instead of re-computing live, so the score it explains
+    # is exactly the one the card/rank was built from.
+    evidence: list[EvidenceItem] = []
+    # Confluence detail (how score = raw × multiplier was built) — mirrors
+    # Recommendation so the modal's breakdown line needs no extra request.
+    raw_score: float = 0.0
+    confluence_multiplier: float = 1.0
     # Latest spot reads (last close of the primary frame + 24h change).
     price: float = 0.0
     change_24h: float = 0.0
@@ -184,6 +191,10 @@ class ScanResponse(BaseModel):
     scanned_symbols: list[str]
     breadth: MarketBreadth
     meta: AnalysisMeta
+    # Epoch seconds when this scan was computed — the cached payload is served
+    # for up to scan_refresh_seconds, so clients label data age from THIS, not
+    # from response receipt time. 0 => warm-up placeholder.
+    generated_at: int = 0
     altseason: AltseasonIndex | None = None
     oi_movers: list[OiMover] = []
     # Every scanned symbol, for the 選幣 screener + data rankings.

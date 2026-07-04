@@ -32,8 +32,14 @@ function Dashboard() {
   const [analystOpen, setAnalystOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("anomaly");
   const { data: scan, loading: scanLoading, error: scanError, refresh } = useMarketScan();
+
+  const items = scan?.items ?? [];
+  const universe = scan?.universe ?? [];
+  const selectedScanItem = items.find((item) => item.symbol === selectedSymbol) ?? null;
+  // 警報清單上的幣整份用掃描快照呈現（分數與卡片/排名同源），不再另打即時
+  // 分析；只有不在清單上的幣（選幣器/榜單點進來）才退回即時計算。
   const { data: analysis, loading: analysisLoading, error: analysisError } =
-    useMarketAnalysis(selectedSymbol);
+    useMarketAnalysis(selectedScanItem ? null : selectedSymbol);
 
   const updatedLabel = useMemo(() => {
     if (!scan) return "--";
@@ -43,10 +49,6 @@ function Dashboard() {
       second: "2-digit"
     }).format(new Date());
   }, [scan]);
-
-  const items = scan?.items ?? [];
-  const universe = scan?.universe ?? [];
-  const selectedScanItem = items.find((item) => item.symbol === selectedSymbol) ?? null;
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
     { key: "anomaly", label: "異常警報", icon: <AlertTriangle className="h-4 w-4" />, count: items.length },
@@ -129,6 +131,7 @@ function Dashboard() {
           <DetailPanel
             analysis={analysis}
             selectedScanItem={selectedScanItem}
+            scanGeneratedAt={scan?.generated_at ?? null}
             loading={analysisLoading}
             error={analysisError}
             symbol={selectedSymbol}
