@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     "CT_NOVA 是一款 TradingView 指標，結合 Vegas EMA 雙通道、EMA12 回踩收復、LazyBear Squeeze Momentum 與 ATR 風控，協助交易者辨識趨勢回踩進場機會。"
 };
 
-// TODO: 換成正式的 TradingView 腳本連結（invite-only script）
-const TRADINGVIEW_SCRIPT_URL = "#";
+// 開通 NOVA 指標：導向 LINE 官方帳號
+const ACTIVATE_URL = "https://lin.ee/RP6APHg";
 
 const SELLING_POINTS = [
   {
@@ -112,10 +112,12 @@ export default function CtNovaPage() {
             <Reveal delay={320}>
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                 <a
-                  href={TRADINGVIEW_SCRIPT_URL}
+                  href={ACTIVATE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-gold inline-flex cursor-pointer items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold"
                 >
-                  取得 TradingView 腳本
+                  開通 NOVA 指標
                   <ExternalLink className="h-4 w-4" />
                 </a>
                 <a
@@ -313,10 +315,12 @@ export default function CtNovaPage() {
           <section className="flex flex-col items-center gap-6 pb-14 pt-6 text-center">
             <Reveal>
               <a
-                href={TRADINGVIEW_SCRIPT_URL}
+                href={ACTIVATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-gold inline-flex cursor-pointer items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold"
               >
-                取得 TradingView 腳本
+                開通 NOVA 指標
                 <ExternalLink className="h-4 w-4" />
               </a>
             </Reveal>
