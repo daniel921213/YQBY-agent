@@ -8,7 +8,7 @@ import { GraduationCap, LayoutDashboard, LineChart, X } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "主控台", description: "早期異動雷達", icon: LayoutDashboard },
-  { href: "/indicators", label: "指標專區", description: "功能製作中", icon: LineChart },
+  { href: "/indicators", label: "指標專區", description: "CT_NOVA 指標介紹", icon: LineChart },
   { href: "/beginner", label: "新手專區", description: "功能製作中", icon: GraduationCap }
 ] as const;
 

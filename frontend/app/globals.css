@@ -327,6 +327,53 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────
+   滾動進場（指標專區）：IntersectionObserver 掛上 .is-in 後歸位。
+   手機一律「上移淡入」；md 以上才有左右滑入——窄幕的水平位移
+   容易造成橫向溢出與暈眩感。位移只走 transform/opacity。
+   ────────────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+@media (min-width: 768px) {
+  .reveal-left {
+    transform: translateX(-36px);
+  }
+  .reveal-right {
+    transform: translateX(36px);
+  }
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* 金色主行動按鈕：沿用 auth-submit 的金屬漸層語言，但不綁 .auth-scene 作用域。 */
+.btn-gold {
+  background: linear-gradient(135deg, #8a5a0d 0%, #d4a437 42%, #f0c876 58%, #c8942a 100%);
+  color: #241503;
+  border: 1px solid rgba(240, 200, 118, 0.55);
+  box-shadow:
+    0 8px 30px rgba(202, 138, 4, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: filter 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+}
+.btn-gold:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 38px rgba(202, 138, 4, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.btn-gold:active {
+  transform: translateY(0);
+}
+
 /* 名稱沿用 ember-pulse（全站既有 class），光色已換成冰藍。 */
 @keyframes ember-pulse {
   0%,
@@ -853,6 +900,11 @@ html[data-theme="light"] .auth-scene .auth-link { color: rgb(var(--au-gold)); }
 html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold-deep)); }
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
   .animate-ember-pulse,
   .animate-core-breathe,
   .space-particle-field::before,
