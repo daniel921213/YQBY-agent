@@ -34,10 +34,11 @@ function EntitlementChip({ me }: { me: Entitlement }) {
       : days <= 3
         ? "border-gold/40 bg-gold/10 text-gold"
         : "border-white/10 bg-white/5 text-slate-300";
+  const label = me.plan === "member" ? "會員剩" : "試用剩";
   return (
     <span className={`inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm tabular-nums ${tone}`}>
       <Timer className="h-3.5 w-3.5" />
-      試用剩 {days} 天
+      {label} {days} 天
     </span>
   );
 }

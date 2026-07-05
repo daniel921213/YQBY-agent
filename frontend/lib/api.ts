@@ -37,7 +37,13 @@ async function request<T>(path: string, label: string, init?: RequestInit): Prom
       // 非 JSON 錯誤內容就算了
     }
     const expired = response.status === 403 && detail === "expired";
-    throw new ApiError(expired ? TRIAL_EXPIRED_MESSAGE : `${label}：${response.status}`, response.status, expired);
+    // 後端給的中文 detail（如「啟用碼無效」）直接當訊息顯示。
+    const message = expired
+      ? TRIAL_EXPIRED_MESSAGE
+      : typeof detail === "string" && detail !== "expired"
+        ? detail
+        : `${label}：${response.status}`;
+    throw new ApiError(message, response.status, expired);
   }
 
   return response.json();
@@ -76,7 +82,7 @@ export async function fetchAnomalyHistory(): Promise<AnomalyHistoryResponse> {
 
 export interface Entitlement {
   uid: string;
-  plan: "trial" | "lifetime";
+  plan: "trial" | "member" | "lifetime";
   expires_at: string | null;
   days_left: number | null; // null = 永久；0 = 已到期
   active: boolean;
@@ -84,4 +90,12 @@ export interface Entitlement {
 
 export async function fetchMe(): Promise<Entitlement> {
   return request("/api/v1/auth/me", "帳號狀態讀取失敗");
+}
+
+export async function redeemCode(code: string): Promise<Entitlement> {
+  return request("/api/v1/auth/redeem", "啟用失敗", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code })
+  });
 }

@@ -14,7 +14,20 @@ class User(Base):
     uid_key: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    # Entitlement: `trial` expires at `expires_at`; `lifetime` never expires
-    # (expires_at stays NULL). Accounts are never deleted — access is gated.
+    # Entitlement: `trial`/`member` expire at `expires_at`; `lifetime` never
+    # expires (expires_at stays NULL). Accounts are never deleted — access is gated.
     plan: Mapped[str] = mapped_column(String(16), nullable=False, server_default="trial")
     expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ActivationCode(Base):
+    """一次性啟用碼：預先產好存表，兌換時標記使用者與時間（即客戶名單）。"""
+
+    __tablename__ = "activation_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, index=True, nullable=False)
+    tier: Mapped[str] = mapped_column(String(16), nullable=False)  # "30d" | "lifetime"
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    used_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    used_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)

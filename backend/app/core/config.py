@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     database_url: str | None = None
     jwt_secret: str = "dev-insecure-change-me"  # MUST set JWT_SECRET in production
     jwt_expire_hours: int = 720  # 30 days
+    # 產碼管理 API 的密鑰（環境變數 ADMIN_SECRET）。未設定 = 管理端點一律 404。
+    admin_secret: str | None = None
 
     @property
     def resolved_database_url(self) -> str:

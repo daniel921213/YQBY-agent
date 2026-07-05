@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.schemas.auth import AuthRequest, AuthResponse, MeResponse
-from app.services import auth_service
+from app.schemas.auth import AuthRequest, AuthResponse, MeResponse, RedeemRequest
+from app.services import activation_service, auth_service
+from app.services.activation_service import RateLimitedError, RedeemError
 from app.services.auth_service import AuthError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -54,8 +55,7 @@ def require_active_user(user=Depends(current_user)):
     return user
 
 
-@router.get("/me", response_model=MeResponse)
-def me(user=Depends(current_user)) -> MeResponse:
+def _me_response(user) -> MeResponse:
     return MeResponse(
         uid=user.uid,
         plan=user.plan,
@@ -63,3 +63,22 @@ def me(user=Depends(current_user)) -> MeResponse:
         days_left=auth_service.days_left(user),
         active=auth_service.is_active(user),
     )
+
+
+@router.get("/me", response_model=MeResponse)
+def me(user=Depends(current_user)) -> MeResponse:
+    return _me_response(user)
+
+
+@router.post("/redeem", response_model=MeResponse)
+def redeem(
+    req: RedeemRequest, user=Depends(current_user), db: Session = Depends(get_db)
+) -> MeResponse:
+    """兌換啟用碼。只要登入即可（到期用戶就是主要使用者），回最新資格狀態。"""
+    try:
+        activation_service.redeem(db, user, req.code)
+    except RateLimitedError:
+        raise HTTPException(status_code=429, detail="嘗試次數過多，請 10 分鐘後再試")
+    except RedeemError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return _me_response(user)

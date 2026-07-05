@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Lock } from "lucide-react";
+import { Check, ExternalLink, KeyRound, Loader2, Lock } from "lucide-react";
 import { Reveal } from "@/components/visual/Reveal";
+import { redeemCode } from "@/lib/api";
 
 // 開通 NOVA 指標：LINE 官方帳號（與 CT_NOVA 詳頁同一條漏斗）
 const ACTIVATE_URL = "https://lin.ee/RP6APHg";
@@ -36,6 +40,71 @@ interface ExpiredWallProps {
  * 表格全糊），中央 glass 卡導去 LINE 開通。真資料由後端 403 擋住，
  * 這裡的打馬是視覺呈現，不是安全機制。
  */
+/** 到期後的輸碼表單：成功顯示綠勾後整頁重載（拿新資格重新渲染主控台）。 */
+function RedeemForm() {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!code.trim() || busy || done) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await redeemCode(code);
+      setDone(true);
+      window.setTimeout(() => window.location.reload(), 1100);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "啟用失敗，請稍後再試");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <p className="inline-flex items-center gap-2 text-sm font-medium text-long">
+        <Check className="h-4 w-4" />
+        已開通！正在為你載入主控台…
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="flex w-full flex-col gap-2">
+      <div className="flex w-full gap-2">
+        <div className="surface-sunken flex min-w-0 flex-1 items-center gap-2 rounded-md px-3">
+          <KeyRound className="h-4 w-4 shrink-0 text-gold/60" aria-hidden />
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value.toUpperCase())}
+            placeholder="輸入啟用碼"
+            aria-label="啟用碼"
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full bg-transparent py-2.5 text-sm tracking-[0.08em] text-slate-100 placeholder:text-slate-600 focus:outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={busy || !code.trim()}
+          className="btn-gold inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-4 py-2.5 text-sm font-semibold disabled:cursor-default disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          啟用
+        </button>
+      </div>
+      {error ? (
+        <p role="alert" className="text-left text-[13px] text-short">
+          {error}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
 export function ExpiredWall({
   title = "試用已到期",
   description = "7 天試用已結束。你的帳號與紀錄都還在——開通後立即恢復完整功能。"
@@ -105,16 +174,19 @@ export function ExpiredWall({
               rel="noopener noreferrer"
               className="btn-gold mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold"
             >
-              開通 NOVA 指標
+              開通請找小幫手
               <ExternalLink className="h-4 w-4" />
             </a>
             <Link
               href="/indicators"
               className="text-sm text-slate-400 transition hover:text-ember"
             >
-              先看看指標介紹 →
+              先逛逛指標專區喔～
             </Link>
-            <p className="text-[11px] text-slate-600">已有啟用碼？輸入功能即將開放</p>
+            <div className="mt-2 w-full border-t border-white/5 pt-4">
+              <p className="mb-2.5 text-left text-[12px] text-slate-500">已有啟用碼？</p>
+              <RedeemForm />
+            </div>
           </div>
         </Reveal>
       </div>
