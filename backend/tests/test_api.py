@@ -6,11 +6,23 @@ from app.main import app
 
 
 def _register_headers(client: TestClient) -> dict[str, str]:
-    """Data endpoints are gated (login + unexpired); mint a fresh trial user."""
+    """Data endpoints are gated; register + redeem a 7d trial code (the real flow)."""
     uid = "t_" + uuid.uuid4().hex[:10]
     res = client.post("/api/v1/auth/register", json={"uid": uid, "password": "secret123"})
     assert res.status_code == 200
-    return {"Authorization": f"Bearer {res.json()['token']}"}
+    headers = {"Authorization": f"Bearer {res.json()['token']}"}
+
+    mint = client.post(
+        "/api/v1/admin/codes",
+        json={"tier": "7d", "count": 1},
+        headers={"X-Admin-Key": "test-admin-secret"},
+    )
+    assert mint.status_code == 200
+    redeem = client.post(
+        "/api/v1/auth/redeem", json={"code": mint.json()["codes"][0]}, headers=headers
+    )
+    assert redeem.status_code == 200
+    return headers
 
 
 def test_data_endpoints_require_auth() -> None:

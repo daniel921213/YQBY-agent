@@ -35,11 +35,16 @@ def test_register_login_me_roundtrip() -> None:
         assert me.status_code == 200
         body = me.json()
         assert body["uid"] == uid
-        # New accounts start as a 7-day trial.
-        assert body["plan"] == "trial"
-        assert body["active"] is True
-        assert body["days_left"] == 7
-        assert body["expires_at"] is not None
+        # 註冊只有帳號，沒有任何天數——7 天試用要輸入啟用碼才開始。
+        assert body["plan"] == "unactivated"
+        assert body["active"] is False
+        assert body["days_left"] == 0
+        assert body["expires_at"] is None
+
+        # 沒輸碼前，資料端點被擋。
+        gated = client.get("/api/v1/scan", headers={"Authorization": f"Bearer {token}"})
+        assert gated.status_code == 403
+        assert gated.json()["detail"] == "expired"
 
         assert client.get("/api/v1/auth/me").status_code == 401
 
@@ -49,6 +54,7 @@ def test_expired_trial_gets_403_on_data_and_can_still_login() -> None:
 
     from app.db import SessionLocal
     from app.models import User
+    from app.services.auth_service import PLAN_TRIAL
 
     with TestClient(app) as client:
         uid = _uid()
@@ -56,9 +62,10 @@ def test_expired_trial_gets_403_on_data_and_can_still_login() -> None:
         token = reg.json()["token"]
         headers = {"Authorization": f"Bearer {token}"}
 
-        # Force the trial into the past.
+        # Simulate a trial that ran and expired.
         with SessionLocal() as db:
             user = db.query(User).filter(User.uid_key == uid.lower()).one()
+            user.plan = PLAN_TRIAL
             user.expires_at = datetime.now(UTC) - timedelta(hours=1)
             db.commit()
 

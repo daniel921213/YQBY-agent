@@ -5,6 +5,8 @@ contain is simply invalid. Redemption is single-use and records who/when —
 the table doubles as the customer ledger.
 
 Tiers:
+- "7d":       試用碼。expires_at = max(now, current expiry) + 7 days; plan
+              becomes "trial" (unless already member/lifetime).
 - "30d":      expires_at = max(now, current expiry) + 30 days (stacking — 提前
               續費不吃虧), plan becomes "member" (unless already lifetime).
 - "lifetime": plan = "lifetime", expires_at cleared.
@@ -22,12 +24,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import ActivationCode, User
-from app.services.auth_service import PLAN_LIFETIME, _as_utc
+from app.services.auth_service import PLAN_LIFETIME, PLAN_TRIAL, _as_utc
 
+TIER_7D = "7d"
 TIER_30D = "30d"
 TIER_LIFETIME = "lifetime"
-VALID_TIERS = {TIER_30D, TIER_LIFETIME}
-MEMBER_DAYS = 30
+VALID_TIERS = {TIER_7D, TIER_30D, TIER_LIFETIME}
+TIER_DAYS = {TIER_7D: 7, TIER_30D: 30}
 PLAN_MEMBER = "member"
 
 # 排除易混淆字元（0/O、1/I/L）
@@ -105,9 +108,12 @@ def redeem(db: Session, user: User, raw_code: str) -> ActivationCode:
     else:
         current = _as_utc(user.expires_at)
         base = current if current is not None and current > now else now
-        user.expires_at = base + timedelta(days=MEMBER_DAYS)
-        if user.plan != PLAN_LIFETIME:
+        user.expires_at = base + timedelta(days=TIER_DAYS[row.tier])
+        # 方案只升不降：lifetime > member > trial。7 天碼不會把付費會員降回試用。
+        if row.tier == TIER_30D and user.plan != PLAN_LIFETIME:
             user.plan = PLAN_MEMBER
+        elif row.tier == TIER_7D and user.plan not in (PLAN_LIFETIME, PLAN_MEMBER):
+            user.plan = PLAN_TRIAL
 
     row.used_by = user.uid
     row.used_at = now

@@ -84,7 +84,9 @@ function Dashboard() {
               <AccountMenu />
             </div>
           </header>
-          <ExpiredWall />
+          <ExpiredWall
+            variant={me !== null && me.plan === "unactivated" ? "new" : "expired"}
+          />
         </div>
       </main>
     );

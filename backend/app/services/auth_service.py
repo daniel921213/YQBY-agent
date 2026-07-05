@@ -22,6 +22,7 @@ MIN_PASSWORD_LEN = 6
 # bcrypt only uses the first 72 bytes; truncate so long inputs don't error.
 _BCRYPT_MAX_BYTES = 72
 
+PLAN_UNACTIVATED = "unactivated"  # 註冊完、還沒輸入任何啟用碼
 PLAN_TRIAL = "trial"
 PLAN_LIFETIME = "lifetime"
 TRIAL_DAYS = 7
@@ -73,12 +74,14 @@ def register(db: Session, uid: str, password: str) -> User:
     if db.scalar(select(User).where(User.uid_key == key)) is not None:
         raise AuthError("這個 UID 已經被註冊了")
 
+    # 註冊只建立帳號，不送任何使用天數——7 天試用要輸入啟用碼（LINE 索取）
+    # 才開始，否則重複註冊新帳號就能無限白嫖。
     user = User(
         uid=uid,
         uid_key=key,
         password_hash=hash_password(password),
-        plan=PLAN_TRIAL,
-        expires_at=datetime.now(UTC) + timedelta(days=TRIAL_DAYS),
+        plan=PLAN_UNACTIVATED,
+        expires_at=None,
     )
     db.add(user)
     db.commit()

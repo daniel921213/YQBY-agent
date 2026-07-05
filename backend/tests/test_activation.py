@@ -54,7 +54,7 @@ def test_admin_mints_unique_wellformed_codes() -> None:
         assert len(codes) == len(set(codes)) == 20
         assert all(re.fullmatch(r"NOVA-[A-Z2-9]{4}-[A-Z2-9]{4}", c) for c in codes)
         bad_tier = client.post(
-            "/api/v1/admin/codes", json={"tier": "7d", "count": 1}, headers=ADMIN_HEADERS
+            "/api/v1/admin/codes", json={"tier": "90d", "count": 1}, headers=ADMIN_HEADERS
         )
         assert bad_tier.status_code == 400
 
@@ -83,14 +83,35 @@ def test_redeem_30d_reactivates_expired_user_and_is_single_use() -> None:
         assert "已被使用" in reuse.json()["detail"]
 
 
-def test_redeem_30d_stacks_on_running_trial() -> None:
+def test_7d_code_starts_the_trial_and_30d_stacks() -> None:
     with TestClient(app) as client:
-        _, headers = _register(client)  # 新帳號 = 試用 7 天
-        code = _mint(client, "30d")[0]
-        res = client.post("/api/v1/auth/redeem", json={"code": code}, headers=headers)
-        assert res.status_code == 200
-        # 疊加：7 + 30 = 37 天
-        assert res.json()["days_left"] == 37
+        _, headers = _register(client)
+        # 剛註冊：未啟用，資料端點被擋
+        assert client.get("/api/v1/scan", headers=headers).status_code == 403
+
+        trial = client.post(
+            "/api/v1/auth/redeem", json={"code": _mint(client, "7d")[0]}, headers=headers
+        )
+        assert trial.status_code == 200
+        assert trial.json()["plan"] == "trial"
+        assert trial.json()["days_left"] == 7
+        assert trial.json()["active"] is True
+
+        # 試用中再輸 30 天碼 → 疊加：7 + 30 = 37 天，升級成會員
+        stacked = client.post(
+            "/api/v1/auth/redeem", json={"code": _mint(client, "30d")[0]}, headers=headers
+        )
+        assert stacked.status_code == 200
+        assert stacked.json()["plan"] == "member"
+        assert stacked.json()["days_left"] == 37
+
+        # 會員再輸 7 天碼：天數照加、方案不降級
+        topped = client.post(
+            "/api/v1/auth/redeem", json={"code": _mint(client, "7d")[0]}, headers=headers
+        )
+        assert topped.status_code == 200
+        assert topped.json()["plan"] == "member"
+        assert topped.json()["days_left"] == 44
 
 
 def test_redeem_lifetime_code() -> None:

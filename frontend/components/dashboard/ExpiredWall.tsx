@@ -30,10 +30,22 @@ const FAUX_ROWS = [
 ] as const;
 
 interface ExpiredWallProps {
-  /** 到期日已過 = "expired"；（下一輪的未啟用場景再加 "inactive"） */
-  title?: string;
-  description?: string;
+  /** "new" = 剛註冊還沒輸碼；"expired" = 用過但到期了。 */
+  variant?: "new" | "expired";
 }
+
+const COPY = {
+  new: {
+    title: "開始你的 7 天免費試用",
+    description: "註冊完成！輸入啟用碼即可解鎖主控台。還沒有啟用碼？私訊小幫手免費領取。",
+    cta: "私訊小幫手領取試用碼"
+  },
+  expired: {
+    title: "免費使用已到期",
+    description: "須繼續使用請私訊小幫手開通。你的帳號與紀錄都還在——開通後立即恢復完整功能。",
+    cta: "私訊小幫手開通"
+  }
+} as const;
 
 /**
  * 試用到期擋板：假快照主控台墊底，模糊由上往下加重（頂部數字隱約可辨、
@@ -105,10 +117,8 @@ function RedeemForm() {
   );
 }
 
-export function ExpiredWall({
-  title = "試用已到期",
-  description = "7 天試用已結束。你的帳號與紀錄都還在——開通後立即恢復完整功能。"
-}: ExpiredWallProps) {
+export function ExpiredWall({ variant = "expired" }: ExpiredWallProps) {
+  const { title, description, cta } = COPY[variant];
   return (
     <section className="relative min-h-[72vh] overflow-hidden rounded-xl">
       {/* 假快照層（純展示，隔絕互動與輔助技術） */}
@@ -174,7 +184,7 @@ export function ExpiredWall({
               rel="noopener noreferrer"
               className="btn-gold mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold"
             >
-              開通請找小幫手
+              {cta}
               <ExternalLink className="h-4 w-4" />
             </a>
             <Link
@@ -184,7 +194,9 @@ export function ExpiredWall({
               先逛逛指標專區喔～
             </Link>
             <div className="mt-2 w-full border-t border-white/5 pt-4">
-              <p className="mb-2.5 text-left text-[12px] text-slate-500">已有啟用碼？</p>
+              <p className="mb-2.5 text-left text-[12px] text-slate-500">
+                {variant === "new" ? "拿到啟用碼了嗎？在這裡輸入：" : "已有啟用碼？"}
+              </p>
               <RedeemForm />
             </div>
           </div>

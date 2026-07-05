@@ -3,6 +3,7 @@
 用法（PowerShell）：
     $env:NOVA_API_URL = "https://<你的 Railway 後端網址>"
     $env:NOVA_ADMIN_SECRET = "<ADMIN_SECRET 環境變數的值>"
+    python scripts/gen_codes.py 7d 100       # 產 100 組 7 天試用碼
     python scripts/gen_codes.py 30d 100      # 產 100 組 30 天碼
     python scripts/gen_codes.py lifetime 5   # 產 5 組永久碼
 
@@ -19,8 +20,8 @@ import httpx
 
 
 def main() -> int:
-    if len(sys.argv) != 3 or sys.argv[1] not in {"30d", "lifetime"}:
-        print("用法：python scripts/gen_codes.py <30d|lifetime> <數量 1-500>")
+    if len(sys.argv) != 3 or sys.argv[1] not in {"7d", "30d", "lifetime"}:
+        print("用法：python scripts/gen_codes.py <7d|30d|lifetime> <數量 1-500>")
         return 1
     tier = sys.argv[1]
     count = int(sys.argv[2])
@@ -47,7 +48,7 @@ def main() -> int:
     with open(filename, "w", encoding="utf-8") as fh:
         fh.write("\n".join(codes) + "\n")
 
-    label = "30 天" if tier == "30d" else "永久"
+    label = {"7d": "7 天試用", "30d": "30 天", "lifetime": "永久"}[tier]
     print(f"已產 {len(codes)} 組{label}碼，存於 {filename}：\n")
     print("\n".join(codes))
     return 0

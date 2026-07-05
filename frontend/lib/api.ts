@@ -82,7 +82,7 @@ export async function fetchAnomalyHistory(): Promise<AnomalyHistoryResponse> {
 
 export interface Entitlement {
   uid: string;
-  plan: "trial" | "member" | "lifetime";
+  plan: "unactivated" | "trial" | "member" | "lifetime";
   expires_at: string | null;
   days_left: number | null; // null = 永久；0 = 已到期
   active: boolean;
