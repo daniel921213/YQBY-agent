@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -13,3 +15,7 @@ class AuthResponse(BaseModel):
 
 class MeResponse(BaseModel):
     uid: str
+    plan: str  # "trial" | "lifetime"
+    expires_at: datetime | None
+    days_left: int | None  # None = 永久；0 = 已到期
+    active: bool

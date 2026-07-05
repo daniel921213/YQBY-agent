@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.v1.routes.auth import require_active_user
 from app.core.config import get_settings
 from app.core.constants import (
     DEFAULT_LOOKBACK_CANDLES,
@@ -19,7 +20,8 @@ from app.services.anomaly_tracker import anomaly_tracker
 from app.services.scan_cache import scan_cache
 
 
-router = APIRouter(tags=["analysis"])
+# 全部資料端點都要「登入且未到期」；到期回 403 "expired"，前端切打馬擋板。
+router = APIRouter(tags=["analysis"], dependencies=[Depends(require_active_user)])
 
 
 @router.get("/analysis", response_model=AnalysisResponse)

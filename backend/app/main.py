@@ -7,7 +7,8 @@ from app.api.v1.routes.analysis import router as analysis_router
 from app.api.v1.routes.analyst import router as analyst_router
 from app.api.v1.routes.auth import router as auth_router
 from app.core.config import get_settings
-from app.db import init_db
+from app.db import SessionLocal, engine, init_db
+from app.services.entitlement_migration import run_entitlement_migration
 from app.services.scan_cache import scan_cache
 
 
@@ -20,6 +21,9 @@ async def lifespan(app: FastAPI):
     # the (public) dashboard from starting — only auth would be affected.
     try:
         init_db()
+        # 冪等的資格遷移：補欄位 + 幫「還沒有資格設定」的舊帳號 backfill
+        # （永久名單 → lifetime、其他 → 試用 +7 天）。套用過就是 no-op。
+        run_entitlement_migration(engine, SessionLocal)
     except Exception as exc:  # pragma: no cover
         print(f"[startup] init_db skipped: {type(exc).__name__}: {exc}")
     # Start the background full-universe scanner for any live provider

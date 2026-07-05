@@ -36,6 +36,30 @@ def current_uid(authorization: str | None = Header(default=None)) -> str:
     return uid
 
 
+def current_user(uid: str = Depends(current_uid), db: Session = Depends(get_db)):
+    user = auth_service.get_user(db, uid)
+    if user is None:
+        raise HTTPException(status_code=401, detail="帳號不存在，請重新登入")
+    return user
+
+
+def require_active_user(user=Depends(current_user)):
+    """Data-endpoint gate: valid login AND (lifetime OR unexpired trial).
+
+    403 detail is the machine-readable "expired" — the frontend switches the
+    dashboard to the trial-expired wall on it.
+    """
+    if not auth_service.is_active(user):
+        raise HTTPException(status_code=403, detail="expired")
+    return user
+
+
 @router.get("/me", response_model=MeResponse)
-def me(uid: str = Depends(current_uid)) -> MeResponse:
-    return MeResponse(uid=uid)
+def me(user=Depends(current_user)) -> MeResponse:
+    return MeResponse(
+        uid=user.uid,
+        plan=user.plan,
+        expires_at=user.expires_at,
+        days_left=auth_service.days_left(user),
+        active=auth_service.is_active(user),
+    )

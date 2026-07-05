@@ -14,3 +14,7 @@ class User(Base):
     uid_key: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Entitlement: `trial` expires at `expires_at`; `lifetime` never expires
+    # (expires_at stays NULL). Accounts are never deleted — access is gated.
+    plan: Mapped[str] = mapped_column(String(16), nullable=False, server_default="trial")
+    expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)

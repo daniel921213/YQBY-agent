@@ -11,9 +11,15 @@ import { DataRankings } from "@/components/dashboard/DataRankings";
 import { AnomalyHistoryModal } from "@/components/dashboard/AnomalyHistoryModal";
 import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { AccountMenu } from "@/components/auth/AccountMenu";
+import { ExpiredWall } from "@/components/dashboard/ExpiredWall";
+import { SideNav } from "@/components/nav/SideNav";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useMarketScan } from "@/hooks/useMarketScan";
+import { TRIAL_EXPIRED_MESSAGE } from "@/lib/api";
+import { ThemeToggle } from "@/lib/theme";
 
 type Tab = "anomaly" | "screener" | "data";
 
@@ -31,6 +37,7 @@ function Dashboard() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [analystOpen, setAnalystOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("anomaly");
+  const { me } = useEntitlement();
   const { data: scan, loading: scanLoading, error: scanError, refresh } = useMarketScan();
 
   const items = scan?.items ?? [];
@@ -56,6 +63,33 @@ function Dashboard() {
     { key: "data", label: "數據榜單", icon: <BarChart3 className="h-4 w-4" /> }
   ];
 
+  // 到期判斷雙保險：/me 說到期，或資料請求吃到 403 expired（session 中途過期）。
+  const expired = (me !== null && !me.active) || scanError === TRIAL_EXPIRED_MESSAGE;
+
+  if (expired) {
+    return (
+      <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+        <SpaceParticleField />
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
+          <header className="glass-panel flex flex-wrap items-center gap-3 rounded-xl px-4 py-4">
+            <SideNav />
+            <div className="min-w-0">
+              <p className="text-xs tracking-[0.18em] text-gold">CT_Trader</p>
+              <h1 className="mt-1 whitespace-nowrap bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-xl font-semibold text-transparent sm:text-2xl">
+                主控台
+              </h1>
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              <ThemeToggle />
+              <AccountMenu />
+            </div>
+          </header>
+          <ExpiredWall />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
       <SpaceParticleField />
@@ -65,6 +99,7 @@ function Dashboard() {
           updatedLabel={updatedLabel}
           loading={scanLoading}
           scan={scan}
+          entitlement={me}
         />
 
         <MarketOverviewBar scan={scan} />

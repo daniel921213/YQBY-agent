@@ -22,6 +22,10 @@ MIN_PASSWORD_LEN = 6
 # bcrypt only uses the first 72 bytes; truncate so long inputs don't error.
 _BCRYPT_MAX_BYTES = 72
 
+PLAN_TRIAL = "trial"
+PLAN_LIFETIME = "lifetime"
+TRIAL_DAYS = 7
+
 
 class AuthError(ValueError):
     """Raised for invalid registration / credentials (mapped to HTTP 4xx)."""
@@ -69,11 +73,46 @@ def register(db: Session, uid: str, password: str) -> User:
     if db.scalar(select(User).where(User.uid_key == key)) is not None:
         raise AuthError("這個 UID 已經被註冊了")
 
-    user = User(uid=uid, uid_key=key, password_hash=hash_password(password))
+    user = User(
+        uid=uid,
+        uid_key=key,
+        password_hash=hash_password(password),
+        plan=PLAN_TRIAL,
+        expires_at=datetime.now(UTC) + timedelta(days=TRIAL_DAYS),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
+
+def _as_utc(value: datetime | None) -> datetime | None:
+    """SQLite hands back naive datetimes; treat them as UTC."""
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+def is_active(user: User) -> bool:
+    if user.plan == PLAN_LIFETIME:
+        return True
+    expires = _as_utc(user.expires_at)
+    return expires is not None and expires > datetime.now(UTC)
+
+
+def days_left(user: User) -> int | None:
+    """Whole days remaining (ceil); None for lifetime, 0 when expired."""
+    if user.plan == PLAN_LIFETIME:
+        return None
+    expires = _as_utc(user.expires_at)
+    if expires is None:
+        return 0
+    remaining = (expires - datetime.now(UTC)).total_seconds()
+    return max(0, -(-int(remaining) // 86400))
+
+
+def get_user(db: Session, uid: str) -> User | None:
+    return db.scalar(select(User).where(User.uid_key == uid.strip().lower()))
 
 
 def authenticate(db: Session, uid: str, password: str) -> User | None:
