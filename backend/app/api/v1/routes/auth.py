@@ -1,17 +1,28 @@
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.schemas.auth import AuthRequest, AuthResponse, MeResponse, RedeemRequest
-from app.services import activation_service, auth_service
+from app.services import activation_service, auth_service, rate_limit
 from app.services.activation_service import RateLimitedError, RedeemError
 from app.services.auth_service import AuthError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# 註冊：每 IP 每小時 8 次（真人只註冊一兩次；批次灌註冊會在此止血）。
+_REGISTER_LIMIT = 8
+_REGISTER_WINDOW = 3600.0
+# 登入：每 IP 每 10 分鐘 15 次失敗（成功即清零，不影響正常使用）。
+_LOGIN_FAIL_LIMIT = 15
+_LOGIN_WINDOW = 600.0
+
 
 @router.post("/register", response_model=AuthResponse)
-def register(req: AuthRequest, db: Session = Depends(get_db)) -> AuthResponse:
+def register(req: AuthRequest, request: Request, db: Session = Depends(get_db)) -> AuthResponse:
+    ip_key = f"reg:{rate_limit.client_ip(request)}"
+    if rate_limit.is_over_limit(ip_key, _REGISTER_LIMIT, _REGISTER_WINDOW):
+        raise HTTPException(status_code=429, detail="註冊次數過多，請稍後再試")
+    rate_limit.record_hit(ip_key, _REGISTER_WINDOW)
     try:
         user = auth_service.register(db, req.uid, req.password)
     except AuthError as exc:
@@ -20,10 +31,15 @@ def register(req: AuthRequest, db: Session = Depends(get_db)) -> AuthResponse:
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(req: AuthRequest, db: Session = Depends(get_db)) -> AuthResponse:
+def login(req: AuthRequest, request: Request, db: Session = Depends(get_db)) -> AuthResponse:
+    ip_key = f"login:{rate_limit.client_ip(request)}"
+    if rate_limit.is_over_limit(ip_key, _LOGIN_FAIL_LIMIT, _LOGIN_WINDOW):
+        raise HTTPException(status_code=429, detail="登入嘗試過多，請稍後再試")
     user = auth_service.authenticate(db, req.uid, req.password)
     if user is None:
+        rate_limit.record_hit(ip_key, _LOGIN_WINDOW)
         raise HTTPException(status_code=401, detail="UID 或密碼不正確")
+    rate_limit.clear(ip_key)
     return AuthResponse(token=auth_service.create_token(user.uid), uid=user.uid)
 
 
