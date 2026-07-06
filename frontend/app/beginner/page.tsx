@@ -12,16 +12,17 @@ type Lesson = { key: string; label: string; title: string; youtubeId?: string };
 
 // 01 操作教學（三步驟，先不給連結 → youtubeId 留空 = 敬請期待）
 const STEPS: Lesson[] = [
-  { key: "gate", label: "第一步", title: "Gate 交易所教學" },
-  { key: "anzo", label: "第二步", title: "ANZO 外匯教學及綁定 MT5" },
-  { key: "tv", label: "第三步", title: "TradingView 教學" }
+  { key: "gate", label: "第一步", title: "Gate 交易所教學", youtubeId: "dqTclbFTXBA" },
+  { key: "anzo", label: "第二步", title: "ANZO 外匯教學及綁定 MT5", youtubeId: "36zReooNfhU" },
+  { key: "tv", label: "第三步", title: "TradingView 教學", youtubeId: "x06fn6tL_Sw" }
 ];
 
-// 02 初階 SMC 專區（小課程，標題與連結之後補）
+// 02 初階 SMC 專區（小課程）
 const SMC_LESSONS: Lesson[] = [
-  { key: "smc1", label: "SMC1", title: "SMC 課程一（籌備中）" },
-  { key: "smc2", label: "SMC2", title: "SMC 課程二（籌備中）" },
-  { key: "smc3", label: "SMC3", title: "SMC 課程三（籌備中）" }
+  { key: "smc1", label: "SMC 基礎介紹", title: "SMC 基礎介紹", youtubeId: "3H6Yw98yHDM" },
+  { key: "smc2", label: "流動性與內外部的邏輯", title: "流動性與內外部的邏輯", youtubeId: "sGA1fJUV2fg" },
+  { key: "smc3", label: "SMC 基礎價格元素原理", title: "SMC 基礎價格元素原理", youtubeId: "xHD3cg4BvaI" },
+  { key: "smc4", label: "市場結構與價格傳遞演算法", title: "市場結構與價格傳遞演算法", youtubeId: "OvgoeL6oKJc" }
 ];
 
 // 03 SNR 專區（同款小課程）
@@ -99,7 +100,7 @@ export default function BeginnerPage() {
                     初階 SMC 專區
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">
-                    從市場結構、訂單塊到流動性——三堂課建立 SMC 基礎視角。
+                    從市場結構、訂單塊到流動性——四堂課建立 SMC 基礎視角。
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
