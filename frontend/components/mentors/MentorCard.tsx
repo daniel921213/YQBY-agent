@@ -48,7 +48,19 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
         <p className="text-sm font-semibold text-slate-100">{mentor.name}</p>
         <p className="text-xs text-slate-400">{mentor.role}</p>
       </div>
-      {mentor.tags.length > 0 ? (
+      {mentor.highlights && mentor.highlights.length > 0 ? (
+        <ul className="mx-auto inline-flex flex-col items-start gap-1 text-left">
+          {mentor.highlights.map((item) => (
+            <li key={item} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+              <span
+                aria-hidden
+                className="h-1 w-1 shrink-0 rounded-full bg-gold shadow-[0_0_6px_rgba(240,200,118,0.6)]"
+              />
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : mentor.tags.length > 0 ? (
         <div className="flex flex-wrap justify-center gap-1.5">
           {mentor.tags.map((tag) => (
             <span
