@@ -24,7 +24,17 @@ export const MENTORS: Mentor[] = [
       "專注於外匯與加密貨幣市場，致力於帶領交易者建立獨立分析能力，而不是依賴明牌。",
     photo: "/mentors/jiji.png"
   },
-  { key: "nini", name: "妮妮", initial: "妮", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "nini",
+    name: "妮妮",
+    initial: "妮",
+    role: "CT_Trader 社群秘書",
+    tags: [],
+    bio:
+      "負責 CT Trader 社群的日常營運與學員服務，協助佈達最新市場資訊、課程公告及社群通知，確保每位成員都能即時掌握重要資訊。\n" +
+      "同時負責解答社群常見問題、協助學員學習與課程引導，成為學員與 CT Trader 之間最即時的溝通橋樑，陪伴每位學員順利完成學習旅程。",
+    photo: "/mentors/nini.png"
+  },
   { key: "kuro", name: "Kuro", initial: "K", role: "CT_Trader 導師", tags: [] },
   { key: "hb", name: "HB", initial: "HB", role: "CT_Trader 導師", tags: [] },
   {

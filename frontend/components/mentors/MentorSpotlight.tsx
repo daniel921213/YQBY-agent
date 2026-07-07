@@ -236,21 +236,21 @@ function MentorDetail({ mentor }: { mentor: Mentor }) {
         {mentor.bio ?? <span className="text-slate-500">介紹籌備中</span>}
       </p>
 
-      <p className="mt-5 text-[11px] tracking-[0.2em] text-slate-500">專長領域</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {mentor.tags.length > 0 ? (
-          mentor.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-goldhi"
-            >
-              {tag}
-            </span>
-          ))
-        ) : (
-          <span className="text-xs text-slate-500">專長籌備中</span>
-        )}
-      </div>
+      {mentor.tags.length > 0 ? (
+        <>
+          <p className="mt-5 text-[11px] tracking-[0.2em] text-slate-500">專長領域</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {mentor.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-goldhi"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       <div className="mt-6">
         <a
