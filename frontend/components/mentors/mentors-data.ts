@@ -11,7 +11,19 @@ export type Mentor = {
 };
 
 export const MENTORS: Mentor[] = [
-  { key: "jiji", name: "吉吉", initial: "吉", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "jiji",
+    name: "吉吉",
+    initial: "吉",
+    role: "CT_Trader 創辦人",
+    tags: ["ICT", "SMC", "時間"],
+    highlights: ["ICT", "SMC", "時間/環境/價格共振"],
+    bio:
+      "我是吉吉，CT Trader 創辦人。\n" +
+      "CT（Confluence Theory）是一套建立在市場邏輯上的交易思維，我主張時間、環境、價格三者共振，並堅持邏輯交易，而非情緒交易。看不懂的盤，就沒有交易。\n" +
+      "專注於外匯與加密貨幣市場，致力於帶領交易者建立獨立分析能力，而不是依賴明牌。",
+    photo: "/mentors/jiji.png"
+  },
   { key: "nini", name: "妮妮", initial: "妮", role: "CT_Trader 導師", tags: [] },
   { key: "kuro", name: "Kuro", initial: "K", role: "CT_Trader 導師", tags: [] },
   { key: "hb", name: "HB", initial: "HB", role: "CT_Trader 導師", tags: [] },
