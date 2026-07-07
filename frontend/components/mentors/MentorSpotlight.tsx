@@ -218,10 +218,6 @@ function MentorPortraitStage({ mentor }: { mentor: Mentor }) {
               ))}
             </ul>
           ) : null}
-          <span
-            aria-hidden
-            className="absolute -bottom-[34px] left-1/2 h-[26px] w-[150px] -translate-x-1/2 rounded-full bg-black/45 blur-[4px]"
-          />
         </div>
       </div>
     </div>
