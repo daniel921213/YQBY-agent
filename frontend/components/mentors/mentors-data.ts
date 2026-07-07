@@ -21,7 +21,8 @@ export const MENTORS: Mentor[] = [
     initial: "E",
     role: "CT_Trader 導師",
     tags: [],
-    highlights: ["指標開發", "SMC", "技術顧問"]
+    highlights: ["指標開發", "SMC", "技術顧問"],
+    photo: "/mentors/evan.png"
   },
   { key: "shark", name: "Shark", initial: "S", role: "CT_Trader 導師", tags: [] },
   { key: "junn", name: "Junn", initial: "J", role: "CT_Trader 導師", tags: [] },

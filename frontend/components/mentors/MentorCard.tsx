@@ -39,7 +39,7 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
       >
         {mentor.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={mentor.photo} alt="" className="h-full w-full rounded-full object-cover" />
+          <img src={mentor.photo} alt="" className="h-full w-full rounded-full object-contain" />
         ) : (
           mentor.initial
         )}
