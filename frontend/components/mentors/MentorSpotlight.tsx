@@ -223,25 +223,46 @@ function MentorDetail({ mentor }: { mentor: Mentor }) {
       <h3 className="mt-2 text-2xl font-bold text-slate-100 sm:text-3xl">{mentor.name}</h3>
       <p className="mt-1 text-sm text-slate-400">{mentor.role}</p>
 
-      <p className="mt-4 text-sm leading-7 text-slate-300">
-        {mentor.bio ?? <span className="text-slate-500">介紹籌備中</span>}
-      </p>
+      {mentor.highlights && mentor.highlights.length > 0 ? (
+        <ul className="mt-4 flex flex-col gap-2.5">
+          {mentor.highlights.map((item) => (
+            <li key={item} className="flex items-center gap-2.5 text-sm text-slate-200">
+              <span
+                aria-hidden
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold shadow-[0_0_8px_rgba(240,200,118,0.6)]"
+              />
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm leading-7 text-slate-300">
+          {mentor.bio ?? <span className="text-slate-500">介紹籌備中</span>}
+        </p>
+      )}
 
-      <p className="mt-5 text-[11px] tracking-[0.2em] text-slate-500">專長領域</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {mentor.tags.length > 0 ? (
-          mentor.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-goldhi"
-            >
-              {tag}
-            </span>
-          ))
-        ) : (
-          <span className="text-xs text-slate-500">專長籌備中</span>
-        )}
-      </div>
+      {mentor.tags.length > 0 ? (
+        <>
+          <p className="mt-5 text-[11px] tracking-[0.2em] text-slate-500">專長領域</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {mentor.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-goldhi"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : !mentor.highlights || mentor.highlights.length === 0 ? (
+        <>
+          <p className="mt-5 text-[11px] tracking-[0.2em] text-slate-500">專長領域</p>
+          <div className="mt-2">
+            <span className="text-xs text-slate-500">專長籌備中</span>
+          </div>
+        </>
+      ) : null}
 
       <div className="mt-6">
         <a
