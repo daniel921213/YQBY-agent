@@ -410,6 +410,70 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* 導師專區 Spotlight：老師立體卡片的 360° 轉入 + idle 漂浮 + 詳情延遲升起。 */
+@keyframes mentor-spin-in {
+  0% {
+    transform: rotateY(-360deg) scale(0.45);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes mentor-fade-in {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mentor-float {
+  0%,
+  100% {
+    transform: translateY(-6px);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+@keyframes mentor-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mentor-portrait-spin {
+  animation: mentor-spin-in 0.82s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mentor-float {
+  animation: mentor-float 5.5s ease-in-out infinite;
+}
+.mentor-detail-rise {
+  opacity: 0;
+  animation: mentor-rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mentor-portrait-spin {
+    animation: mentor-fade-in 0.3s ease-out both;
+  }
+  .mentor-float {
+    animation: none;
+  }
+  .mentor-detail-rise {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 .animate-ember-pulse {
   animation: ember-pulse 2.6s ease-in-out infinite;
 }
