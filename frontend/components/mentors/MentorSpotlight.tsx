@@ -232,7 +232,7 @@ function MentorDetail({ mentor }: { mentor: Mentor }) {
       <h3 className="mt-2 text-2xl font-bold text-slate-100 sm:text-3xl">{mentor.name}</h3>
       <p className="mt-1 text-sm text-slate-400">{mentor.role}</p>
 
-      <p className="mt-4 text-sm leading-7 text-slate-300">
+      <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-300">
         {mentor.bio ?? <span className="text-slate-500">介紹籌備中</span>}
       </p>
 
