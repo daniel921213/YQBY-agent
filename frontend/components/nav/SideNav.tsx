@@ -98,7 +98,7 @@ function SideNavOverlay({
           <div className="flex flex-col gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="CT Trader" className="h-10 w-auto self-start" />
-            <span className="text-[10px] tracking-[0.28em] text-slate-500">
+            <span className="text-xs tracking-[0.28em] text-slate-500">
               CONFLUENCE THEORY
             </span>
           </div>
@@ -133,7 +133,7 @@ function SideNavOverlay({
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-medium">{item.label}</span>
-                  <span className={`text-[11px] ${active ? "text-gold/70" : "text-slate-500"}`}>
+                  <span className={`text-xs ${active ? "text-gold/70" : "text-slate-500"}`}>
                     {item.description}
                   </span>
                 </span>
@@ -142,7 +142,7 @@ function SideNavOverlay({
           })}
         </nav>
 
-        <div className="mt-auto border-t border-white/10 pt-3 text-[11px] leading-5 text-slate-600">
+        <div className="mt-auto border-t border-white/10 pt-3 text-xs leading-5 text-slate-600">
           Where environment, time and price align.
         </div>
       </aside>

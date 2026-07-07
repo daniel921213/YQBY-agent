@@ -26,7 +26,7 @@ export function Field({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="auth-input w-full rounded-md border border-white/10 bg-obsidian/60 px-3 py-2.5 text-sm text-slate-50 outline-none placeholder:text-slate-600"
+        className="auth-input w-full rounded-md border border-white/10 bg-obsidian/60 px-3 py-2.5 text-base text-slate-50 outline-none placeholder:text-slate-600"
       />
     </label>
   );

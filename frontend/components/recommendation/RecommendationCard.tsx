@@ -83,13 +83,13 @@ export function RecommendationCard({ item, selected, onClick }: RecommendationCa
       </div>
 
       {item.first_seen_ts !== null ? (
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-2 text-[11px] text-slate-500">
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-2 text-xs text-slate-500">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {formatRelativeTime(item.minutes_since_first)}
           </span>
           {item.is_new ? (
-            <span className="rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+            <span className="rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-xs font-medium text-ember">
               新
             </span>
           ) : null}

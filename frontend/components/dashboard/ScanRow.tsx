@@ -38,17 +38,17 @@ export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowP
         {showStage ? (
           <span
             title={stageHint(item.stage)}
-            className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${stageTone(item.stage)}`}
+            className={`rounded-sm border px-1.5 py-px text-xs font-medium ${stageTone(item.stage)}`}
           >
             {item.stage}
           </span>
         ) : null}
         {item.is_new ? (
-          <span className="rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+          <span className="rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-xs font-medium text-ember">
             新
           </span>
         ) : null}
-        <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-slate-500">
+        <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500">
           {tracked ? (
             <>
               <Clock className="h-3 w-3" />
@@ -68,13 +68,13 @@ export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowP
       </div>
 
       {item.stage_reasons.length ? (
-        <div className="text-[11px] leading-4 text-slate-400" title={item.stage_reasons.join("；")}>
+        <div className="text-xs leading-4 text-slate-400" title={item.stage_reasons.join("；")}>
           {item.stage_reasons.slice(0, 2).join(" · ")}
         </div>
       ) : null}
 
       {tracked ? (
-        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+        <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
           <span className="truncate">
             首次 {formatPrice(item.first_seen_price)} →{" "}
             <span className={percentTone(item.change_since_first)}>
@@ -86,7 +86,7 @@ export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowP
 
       <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-1.5">
         <span
-          className="inline-flex items-center gap-1.5 text-[11px] text-slate-500"
+          className="inline-flex items-center gap-1.5 text-xs text-slate-500"
           title="近 1 小時內觸發次數（同一輪掃描只計一次）"
         >
           <Zap className="h-3 w-3 text-ember/80" />
@@ -94,7 +94,7 @@ export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowP
           <FrequencyTier tier={item.frequency_tier} />
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="text-[11px] text-slate-500">{item.confluence_pillars}/5</span>
+          <span className="text-xs text-slate-500">{item.confluence_pillars}/5</span>
           <span className="w-9 text-right text-sm font-semibold tabular-nums text-slate-100">
             {formatScore(item.score)}
           </span>

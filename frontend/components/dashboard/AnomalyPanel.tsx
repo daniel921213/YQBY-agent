@@ -121,7 +121,7 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
                 >
                   {filter === "ALL" ? "全部" : filter}
                   {count > 0 ? (
-                    <span className="ml-1 tabular-nums text-[10px] opacity-70">{count}</span>
+                    <span className="ml-1 tabular-nums text-xs opacity-70">{count}</span>
                   ) : null}
                 </button>
               );
@@ -253,7 +253,7 @@ function RecommendationRow({
     >
       <div className="flex items-center gap-1">
         <span className="text-sm font-semibold tabular-nums text-gold">{rank}</span>
-        <span className="text-[11px] text-gold">●</span>
+        <span className="text-xs text-gold">●</span>
       </div>
 
       <div className="truncate text-sm font-semibold text-slate-50">{item.symbol}</div>

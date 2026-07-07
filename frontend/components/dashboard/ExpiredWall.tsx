@@ -96,7 +96,7 @@ function RedeemForm() {
             aria-label="啟用碼"
             autoComplete="off"
             spellCheck={false}
-            className="w-full bg-transparent py-2.5 text-sm tracking-[0.08em] text-slate-100 placeholder:text-slate-600 focus:outline-none"
+            className="w-full bg-transparent py-2.5 text-base tracking-[0.08em] text-slate-100 placeholder:text-slate-600 focus:outline-none"
           />
         </div>
         <button
@@ -126,14 +126,14 @@ export function ExpiredWall({ variant = "expired" }: ExpiredWallProps) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {FAUX_TILES.map((tile) => (
             <div key={tile.label} className="surface rounded-lg px-4 py-3">
-              <p className="text-[11px] text-slate-500">{tile.label}</p>
+              <p className="text-xs text-slate-500">{tile.label}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-slate-100">{tile.value}</p>
             </div>
           ))}
         </div>
 
         <div className="surface-sunken mt-3 overflow-hidden rounded-lg">
-          <div className="grid grid-cols-[1.4fr_1fr_1fr_0.8fr_0.8fr] gap-2 border-b border-white/5 px-4 py-2.5 text-[11px] text-slate-500">
+          <div className="grid grid-cols-[1.4fr_1fr_1fr_0.8fr_0.8fr] gap-2 border-b border-white/5 px-4 py-2.5 text-xs text-slate-500">
             <span>幣種</span>
             <span className="text-right">價格</span>
             <span className="text-right">24h</span>

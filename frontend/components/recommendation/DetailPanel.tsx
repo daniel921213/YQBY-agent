@@ -154,7 +154,7 @@ export function DetailPanel({
               >
                 {view.stage}
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 {scanMinutes !== null
                   ? `本輪掃描 · ${formatRelativeTime(scanMinutes)}`
                   : "即時分析"}

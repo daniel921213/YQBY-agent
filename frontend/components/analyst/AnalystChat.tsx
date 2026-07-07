@@ -155,7 +155,7 @@ export function AnalystChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="輸入問題…"
-          className="flex-1 rounded-md border border-white/10 bg-obsidian/60 px-3 py-2 text-sm text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
+          className="flex-1 rounded-md border border-white/10 bg-obsidian/60 px-3 py-2 text-base text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
         />
         <button
           type="submit"

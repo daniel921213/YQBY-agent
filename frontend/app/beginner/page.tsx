@@ -107,7 +107,7 @@ export default function BeginnerPage() {
                   {["市場結構", "訂單塊", "流動性"].map((chip) => (
                     <span
                       key={chip}
-                      className="surface-sunken rounded-full px-3 py-1 text-[11px] tracking-wide text-slate-300"
+                      className="surface-sunken rounded-full px-3 py-1 text-xs tracking-wide text-slate-300"
                     >
                       {chip}
                     </span>
@@ -138,7 +138,7 @@ export default function BeginnerPage() {
                   {["供給區", "需求區", "進出場依據"].map((chip) => (
                     <span
                       key={chip}
-                      className="surface-sunken rounded-full px-3 py-1 text-[11px] tracking-wide text-slate-300"
+                      className="surface-sunken rounded-full px-3 py-1 text-xs tracking-wide text-slate-300"
                     >
                       {chip}
                     </span>
@@ -213,11 +213,11 @@ function VideoCard({ lesson, onOpen }: { lesson: Lesson; onOpen: (lesson: Lesson
           <Play className="h-5 w-5" />
         </span>
       </div>
-      <span className="absolute left-3 top-3 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold">
+      <span className="absolute left-3 top-3 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-medium text-gold">
         {lesson.label}
       </span>
       {!playable ? (
-        <span className="surface-sunken absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-[11px] text-slate-400">
+        <span className="surface-sunken absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-xs text-slate-400">
           敬請期待
         </span>
       ) : null}

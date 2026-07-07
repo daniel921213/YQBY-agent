@@ -147,7 +147,7 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
                     {meta.icon}
                     {meta.title}
                     <span
-                      className={`rounded-sm px-1.5 py-0.5 text-[11px] tabular-nums ${
+                      className={`rounded-sm px-1.5 py-0.5 text-xs tabular-nums ${
                         active ? "bg-ember/15 text-ember" : "bg-white/5 text-slate-500"
                       }`}
                     >
@@ -319,7 +319,7 @@ function TransitionTable({
     <div className="surface-sunken overflow-x-auto rounded-lg">
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
+          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
             <th className={TH_CLASS}>幣種</th>
             <th className={TH_CLASS}>路徑</th>
             <th className={`${TH_CLASS} text-right`}>OI 1H</th>
@@ -350,14 +350,14 @@ function TransitionTable({
                       <SideChip side={signal.previousSide} muted />
                       <ArrowRight className="h-3.5 w-3.5 text-ember" />
                       <SideChip side={signal.side} />
-                      <span className="animate-ember-pulse rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-[10px] font-medium text-ember">
+                      <span className="animate-ember-pulse rounded-sm border border-ember/45 bg-ember/15 px-1.5 py-px text-xs font-medium text-ember">
                         切換
                       </span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5">
                       <SideChip side={signal.side} />
-                      <span className="text-[11px] text-slate-500">{signal.label}</span>
+                      <span className="text-xs text-slate-500">{signal.label}</span>
                     </span>
                   )}
                 </td>
@@ -399,7 +399,7 @@ function SqueezeTable({
     <div className="surface-sunken overflow-x-auto rounded-lg">
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
+          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
             <th className={TH_CLASS}>幣種</th>
             <th className={TH_CLASS}>類型</th>
             <th className={TH_CLASS}>指數</th>
@@ -428,7 +428,7 @@ function SqueezeTable({
                 </td>
                 <td className={TD_CLASS}>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       isShortSqueeze ? "bg-long/10 text-long" : "bg-short/10 text-short"
                     }`}
                   >
@@ -482,7 +482,7 @@ function SideChip({ side, muted = false }: { side: OiMoverSide; muted?: boolean 
   const meta = SIDE_META[side];
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] ${
+      className={`rounded-full px-2 py-0.5 text-xs ${
         muted ? "bg-white/5 text-slate-500" : `${meta.bg} ${meta.text}`
       }`}
     >

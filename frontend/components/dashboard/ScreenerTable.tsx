@@ -109,7 +109,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜尋合約"
-            className="h-8 w-44 rounded-md border border-white/10 bg-obsidian/60 pl-8 pr-3 text-sm text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
+            className="h-8 w-44 rounded-md border border-white/10 bg-obsidian/60 pl-8 pr-3 text-base text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-ember/60"
           />
         </div>
 
@@ -134,7 +134,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
       <div className="surface-sunken overflow-x-auto rounded-lg">
         <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] tracking-wide text-slate-500">
+            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
               <th className="px-3 py-2 font-medium">#</th>
               <th className="px-3 py-2 font-medium">合約</th>
               <th className="px-3 py-2 text-right font-medium">價格</th>
@@ -180,7 +180,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                   ) : (
                     <span
                       title={stageHint(row.stage)}
-                      className={`inline-block rounded-sm border px-1.5 py-px text-[10px] font-medium ${stageTone(row.stage)}`}
+                      className={`inline-block rounded-sm border px-1.5 py-px text-xs font-medium ${stageTone(row.stage)}`}
                     >
                       {row.stage}
                     </span>

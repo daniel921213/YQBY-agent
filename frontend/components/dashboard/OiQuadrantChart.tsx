@@ -436,7 +436,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                     tone={percentTone(hovered.change_24h)}
                   />
                 </dl>
-                <div className="mt-1.5 text-[10px] text-slate-500">點擊查看五支柱分析</div>
+                <div className="mt-1.5 text-xs text-slate-500">點擊查看五支柱分析</div>
               </div>
             </div>
           ) : null}
@@ -451,7 +451,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
         {/* Intensity sidebar */}
         <aside className="surface flex flex-col gap-1 rounded-lg p-3">
-          <div className="mb-1 text-[11px] text-slate-500">
+          <div className="mb-1 text-xs text-slate-500">
             異動強度 Top {Math.min(SIDEBAR_ROWS, ranked.length)} · 依 OI 變化金額
           </div>
           {ranked.slice(0, SIDEBAR_ROWS).map((m, i) => {
@@ -465,13 +465,13 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                 onMouseLeave={() => setHoveredSymbol(null)}
                 className="flex items-center gap-2 rounded-sm px-1.5 py-1.5 text-left transition hover:bg-steel/50"
               >
-                <span className="w-4 shrink-0 text-[11px] tabular-nums text-slate-600">{i + 1}</span>
+                <span className="w-4 shrink-0 text-xs tabular-nums text-slate-600">{i + 1}</span>
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-slate-100">
                     {shortSymbol(m.symbol)}
                   </span>
-                  <span className="block text-[10px]" style={{ color: meta.color }}>
+                  <span className="block text-xs" style={{ color: meta.color }}>
                     {m.side}
                   </span>
                 </span>
@@ -479,7 +479,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   <span className={`text-xs tabular-nums ${percentTone(m.oi_change_1h)}`}>
                     OI {formatPercent(m.oi_change_1h)}
                   </span>
-                  <span className={`text-[11px] tabular-nums ${percentTone(m.price_change_1h ?? 0)}`}>
+                  <span className={`text-xs tabular-nums ${percentTone(m.price_change_1h ?? 0)}`}>
                     價 {formatPercent(m.price_change_1h ?? 0)}
                   </span>
                 </span>

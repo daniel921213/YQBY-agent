@@ -131,7 +131,7 @@ function Dashboard() {
                   {t.icon}
                   {t.label}
                   {typeof t.count === "number" ? (
-                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-[11px] tabular-nums text-slate-400">
+                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-slate-400">
                       {t.count}
                     </span>
                   ) : null}

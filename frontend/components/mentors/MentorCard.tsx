@@ -19,7 +19,7 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-slate-400">開發中</p>
         </div>
-        <span className="surface-sunken rounded-full px-3 py-1 text-[11px] text-slate-500">
+        <span className="surface-sunken rounded-full px-3 py-1 text-xs text-slate-500">
           敬請期待
         </span>
       </div>
@@ -51,7 +51,7 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
       {mentor.highlights && mentor.highlights.length > 0 ? (
         <ul className="mx-auto inline-flex flex-col items-start gap-1 text-left">
           {mentor.highlights.map((item) => (
-            <li key={item} className="flex items-center gap-1.5 text-[11px] text-slate-300">
+            <li key={item} className="flex items-center gap-1.5 text-xs text-slate-300">
               <span
                 aria-hidden
                 className="h-1 w-1 shrink-0 rounded-full bg-gold shadow-[0_0_6px_rgba(240,200,118,0.6)]"
@@ -65,7 +65,7 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
           {mentor.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] text-goldhi"
+              className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs text-goldhi"
             >
               {tag}
             </span>

@@ -223,8 +223,8 @@ export default function CtNovaPage() {
                 <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
                   <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(240,200,118,0.8)]" aria-hidden />
                   <span className="text-xs font-medium tracking-wide text-slate-200">CT_NOVA</span>
-                  <span className="text-[11px] text-slate-500">BTCUSDT.P · 15m</span>
-                  <span className="ml-auto rounded border border-long/30 bg-long/10 px-2 py-0.5 text-[10px] text-long">
+                  <span className="text-xs text-slate-500">BTCUSDT.P · 15m</span>
+                  <span className="ml-auto rounded border border-long/30 bg-long/10 px-2 py-0.5 text-xs text-long">
                     訊號成立
                   </span>
                 </div>
