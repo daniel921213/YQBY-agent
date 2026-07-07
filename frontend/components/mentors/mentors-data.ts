@@ -79,7 +79,19 @@ export const MENTORS: Mentor[] = [
   },
   { key: "junn", name: "Junn", initial: "J", role: "CT_Trader 導師", tags: [] },
   { key: "chai", name: "柴柴", initial: "柴", role: "CT_Trader 導師", tags: [] },
-  { key: "zyn", name: "Zyn", initial: "Z", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "zyn",
+    name: "Zyn",
+    initial: "Z",
+    role: "CT_Trader 導師",
+    tags: ["ICT", "邏輯交易", "裸K"],
+    highlights: ["技術分析", "時間&價格", "SMC"],
+    bio:
+      "17 歲踏入市場，到現在已有兩年資歷。\n" +
+      "我是 Zyn，關注時間及價格，帶給我正確的答案。\n" +
+      "在市場上不是比誰錢多就贏，而是靠著紀律、計劃並且執行的人才能獲勝。",
+    photo: "/mentors/zyn.png"
+  },
   { key: "louis", name: "Louis", initial: "L", role: "CT_Trader 導師", tags: [] },
   { key: "coming1", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
   { key: "coming2", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
