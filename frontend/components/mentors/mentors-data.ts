@@ -36,7 +36,20 @@ export const MENTORS: Mentor[] = [
       "同時負責解答社群常見問題、協助學員學習與課程引導，成為學員與 CT Trader 之間最即時的溝通橋樑，陪伴每位學員順利完成學習旅程。",
     photo: "/mentors/nini.png"
   },
-  { key: "kuro", name: "Kuro", initial: "K", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "kuro",
+    name: "Kun",
+    initial: "K",
+    role: "CT_Trader 創辦人",
+    tags: ["ICT", "SMC", "時間"],
+    highlights: ["ICT", "SMC", "交易實戰6年"],
+    bio:
+      "從工程到交易，專注時間、數據與紀律。\n" +
+      "我是 Kun，過去長期在起重工程產業累積實務經驗，後來投入金融交易市場。\n" +
+      "經歷虧損、修正與反覆驗證後，我更相信交易不是靠感覺，而是建立在邏輯、風險控管與持續複盤之上。\n" +
+      "目前透過系統化交易觀點與實戰經驗分享，協助多位新手建立自己的交易流程，少走冤枉路。",
+    photo: "/mentors/kuro.png"
+  },
   { key: "hb", name: "HB", initial: "HB", role: "CT_Trader 導師", tags: [] },
   {
     key: "evan",
