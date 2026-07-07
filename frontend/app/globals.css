@@ -410,7 +410,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 
-/* 導師專區 Spotlight：老師立體卡片的 360° 轉入 + idle 漂浮 + 詳情延遲升起。 */
+/* 團隊專區 Spotlight：老師立體卡片的 360° 轉入 + idle 漂浮 + 詳情延遲升起。 */
 @keyframes mentor-spin-in {
   0% {
     transform: rotateY(-360deg) scale(0.45);

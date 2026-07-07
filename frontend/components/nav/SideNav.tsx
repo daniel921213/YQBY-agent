@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/", label: "主控台", description: "早期異動雷達", icon: LayoutDashboard },
   { href: "/indicators", label: "指標專區", description: "CT_NOVA 指標介紹", icon: LineChart },
   { href: "/beginner", label: "新手專區", description: "開戶・看盤・SMC 入門", icon: GraduationCap },
-  { href: "/mentors", label: "導師專區", description: "認識 14 位導師", icon: Users }
+  { href: "/mentors", label: "團隊專區", description: "認識 CT_Trader 團隊", icon: Users }
 ] as const;
 
 /** 左上角 CT 字紋按鈕 + 左側滑出導覽抽屜。桌機/手機共用一套。 */

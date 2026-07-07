@@ -16,7 +16,7 @@ interface MentorSpotlightProps {
 }
 
 /**
- * 導師專區核心大面板：portal 到 body，比照 SideNav 的 modal 模式。
+ * 團隊專區核心大面板：portal 到 body，比照 SideNav 的 modal 模式。
  * 左邊老師立體卡片每次切換都重播一次 360° 轉入，轉完後才接手滑鼠傾斜；
  * 右邊詳細介紹在卡片轉完後才浮現。
  */
@@ -99,7 +99,7 @@ export function MentorSpotlight({ mentors, index, onIndex, onClose }: MentorSpot
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${mentor.name} 導師介紹`}
+      aria-label={`${mentor.name} 介紹`}
       onClick={onClose}
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
     >
@@ -123,7 +123,7 @@ export function MentorSpotlight({ mentors, index, onIndex, onClose }: MentorSpot
             <button
               type="button"
               onClick={() => onIndex((index - 1 + mentors.length) % mentors.length)}
-              aria-label="上一位導師"
+              aria-label="上一位成員"
               className="absolute left-2 top-1/2 z-10 -translate-y-1/2 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-graphite/80 text-slate-300 transition hover:border-gold/50 hover:text-gold sm:left-3"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -131,7 +131,7 @@ export function MentorSpotlight({ mentors, index, onIndex, onClose }: MentorSpot
             <button
               type="button"
               onClick={() => onIndex((index + 1) % mentors.length)}
-              aria-label="下一位導師"
+              aria-label="下一位成員"
               className="absolute right-2 top-1/2 z-10 -translate-y-1/2 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-graphite/80 text-slate-300 transition hover:border-gold/50 hover:text-gold sm:right-3"
             >
               <ChevronRight className="h-5 w-5" />
@@ -228,7 +228,7 @@ function MentorPortraitStage({ mentor }: { mentor: Mentor }) {
 function MentorDetail({ mentor }: { mentor: Mentor }) {
   return (
     <div className="mentor-detail-rise">
-      <p className="text-xs tracking-[0.24em] text-gold">MENTOR</p>
+      <p className="text-xs tracking-[0.24em] text-gold">TEAM</p>
       <h3 className="mt-2 text-2xl font-bold text-slate-100 sm:text-3xl">{mentor.name}</h3>
       <p className="mt-1 text-sm text-slate-400">{mentor.role}</p>
 
