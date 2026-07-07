@@ -65,7 +65,18 @@ export const MENTORS: Mentor[] = [
       "目前也透過實戰，協助多位學員從學習到操作，逐步建立交易節奏，並累積實戰操作與出金經驗。",
     photo: "/mentors/evan.png"
   },
-  { key: "shark", name: "Shark", initial: "S", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "shark",
+    name: "Shark",
+    initial: "S",
+    role: "CT_Trader 導師",
+    tags: ["SNR", "數據", "K棒邏輯"],
+    highlights: ["SNR", "裸 K", "數據分析"],
+    bio:
+      "專注 SNR 結構、價格行為與交易紀律。\n" +
+      "我是 Shark，深耕加密貨幣市場 5 年。我的交易系統以 SNR 為絕對核心，專注於市場關鍵結構位的判讀，並搭配裸 K 形態和市場數據捕捉最真實的價格行為。",
+    photo: "/mentors/shark.png"
+  },
   { key: "junn", name: "Junn", initial: "J", role: "CT_Trader 導師", tags: [] },
   { key: "chai", name: "柴柴", initial: "柴", role: "CT_Trader 導師", tags: [] },
   { key: "zyn", name: "Zyn", initial: "Z", role: "CT_Trader 導師", tags: [] },
