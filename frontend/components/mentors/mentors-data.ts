@@ -92,7 +92,19 @@ export const MENTORS: Mentor[] = [
       "在市場上不是比誰錢多就贏，而是靠著紀律、計劃並且執行的人才能獲勝。",
     photo: "/mentors/zyn.png"
   },
-  { key: "louis", name: "Louis", initial: "L", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "louis",
+    name: "Louis",
+    initial: "L",
+    role: "CT_Trader 導師",
+    tags: ["邏輯", "裸K", "SMC"],
+    highlights: ["ICT", "SMC", "邏輯交易"],
+    bio:
+      "交易到現在已有一年半資歷。\n" +
+      "我是 Louis，關注時間及價格流動性，始終保持紀律參與交易。\n" +
+      "在市場上保持紀律、不腦衝，是活下去的方法。交易是一條漫長的路，跟著我一步一步，帶你走向自律之路。",
+    photo: "/mentors/louis.png"
+  },
   { key: "coming1", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
   { key: "coming2", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
   { key: "coming3", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
