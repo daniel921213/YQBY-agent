@@ -50,7 +50,20 @@ export const MENTORS: Mentor[] = [
       "目前透過系統化交易觀點與實戰經驗分享，協助多位新手建立自己的交易流程，少走冤枉路。",
     photo: "/mentors/kuro.png"
   },
-  { key: "hb", name: "HB", initial: "HB", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "hb",
+    name: "HB",
+    initial: "HB",
+    role: "CT_Trader 導師",
+    tags: ["邏輯交易", "SMC", "時間"],
+    highlights: ["ICT", "SMC", "數據分析"],
+    bio:
+      "我是 HB，有 3 年實戰的交易經驗。\n" +
+      "透過系統化邏輯來讀懂盤面資訊，邏輯交易以及不間斷的復盤檢討，正是我能不斷進步的原因。\n" +
+      "交易就像走一段滿是荊棘的道路，下一步不是情緒交易，而是你對風險的掌控與紀律的堅持。\n" +
+      "目前透過交易觀點與實盤教學，協助多位學員掌握屬於自己的交易系統。",
+    photo: "/mentors/hb.png"
+  },
   {
     key: "evan",
     name: "Evan",
