@@ -55,7 +55,7 @@ export const MENTORS: Mentor[] = [
     key: "evan",
     name: "Evan",
     initial: "E",
-    role: "CT_Trader 導師",
+    role: "CT_Trader 技術顧問",
     tags: ["SMC", "指標", "交易系統"],
     highlights: ["指標開發", "SMC", "技術顧問"],
     bio:
@@ -78,7 +78,20 @@ export const MENTORS: Mentor[] = [
     photo: "/mentors/shark.png"
   },
   { key: "junn", name: "Junn", initial: "J", role: "CT_Trader 導師", tags: [] },
-  { key: "chai", name: "柴柴", initial: "柴", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "chai",
+    name: "柴柴",
+    initial: "柴",
+    role: "CT_Trader 導師",
+    tags: ["ICT", "SMC", "邏輯交易"],
+    highlights: ["ICT", "SMC", "交易經歷4年"],
+    bio:
+      "我是柴柴，2022 年底入圈，從新手小白一路走到帶單老師。\n" +
+      "曾經虧損過、爆倉過，也正是這些坑，逼我養成日復一日復盤跟學習的習慣，才走到今天的穩定。\n" +
+      "我始終相信一件事：做單靠的不是猜測，而是邏輯。\n" +
+      "在這裡，我分享的不只是方向，更是判斷背後的思路，讓你看得懂，也學得會。",
+    photo: "/mentors/chai.png"
+  },
   {
     key: "zyn",
     name: "Zyn",
