@@ -77,7 +77,21 @@ export const MENTORS: Mentor[] = [
       "我是 Shark，深耕加密貨幣市場 5 年。我的交易系統以 SNR 為絕對核心，專注於市場關鍵結構位的判讀，並搭配裸 K 形態和市場數據捕捉最真實的價格行為。",
     photo: "/mentors/shark.png"
   },
-  { key: "junn", name: "Junn", initial: "J", role: "CT_Trader 導師", tags: [] },
+  {
+    key: "junn",
+    name: "Junn",
+    initial: "J",
+    role: "CT_Trader 導師",
+    tags: ["時間", "日內交易", "邏輯交易"],
+    highlights: ["ICT", "日內高概率交易", "Time&Price theory"],
+    bio:
+      "· Topstep Funded Trader\n" +
+      "· Lucid Funded Trader\n" +
+      "我是 Junn，曾指導學員在 propfirm 自營平台出金破萬 USD。\n" +
+      "在加密貨幣、外匯與期貨市場交易三年，專注於演算法價格傳遞、時間價格理論與 NYAM 日內高概率交易。\n" +
+      "幫助學員對價格與時間的對應有更深的理解，並正確判斷價格的運行方向。",
+    photo: "/mentors/junn.png"
+  },
   {
     key: "chai",
     name: "柴柴",
