@@ -131,9 +131,5 @@ export const MENTORS: Mentor[] = [
       "我是 Louis，關注時間及價格流動性，始終保持紀律參與交易。\n" +
       "在市場上保持紀律、不腦衝，是活下去的方法。交易是一條漫長的路，跟著我一步一步，帶你走向自律之路。",
     photo: "/mentors/louis.png"
-  },
-  { key: "coming1", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
-  { key: "coming2", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
-  { key: "coming3", name: "開發中", initial: "?", role: "", tags: [], status: "coming" },
-  { key: "coming4", name: "開發中", initial: "?", role: "", tags: [], status: "coming" }
+  }
 ];

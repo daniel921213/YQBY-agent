@@ -9,7 +9,7 @@ const LINE_URL = "https://lin.ee/RP6APHg";
  */
 export function BrandOutro() {
   return (
-    <section className="relative overflow-hidden px-4 pb-20 pt-16 text-center sm:pb-28 sm:pt-24">
+    <section className="relative overflow-hidden px-4 pb-20 pt-2 text-center sm:pb-24 sm:pt-4">
       {/* 金色光效層（裝飾、不可互動） */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         {/* 主光源：柔和金色光暈（橢圓、羽化） */}
