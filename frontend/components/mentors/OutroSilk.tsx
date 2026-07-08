@@ -34,16 +34,16 @@ export function OutroSilk() {
     ro.observe(canvas);
 
     // 每條線各有自己的振幅/頻率/相位/速度/垂直偏移，疊起來像流動的絲綢
-    const LINES = 9;
+    const LINES = 5;
     const lines = Array.from({ length: LINES }, (_, i) => ({
-      amp: 0.12 + Math.random() * 0.2, // 相對高度的振幅
-      freq: 0.8 + Math.random() * 1.8, // 整條寬度內的波數
+      amp: 0.1 + Math.random() * 0.13, // 相對高度的振幅（收斂一點）
+      freq: 0.7 + Math.random() * 0.9, // 波數少一點、更緩
       phase: Math.random() * Math.PI * 2,
-      speed: 0.12 + Math.random() * 0.3,
-      yOffset: (i / (LINES - 1) - 0.5) * 0.34, // 垂直散開
-      width: 0.8 + Math.random() * 2.2,
-      alpha: 0.22 + Math.random() * 0.5,
-      bloom: Math.random() < 0.35 // 部分線加粗更朦朧當底光
+      speed: 0.1 + Math.random() * 0.2,
+      yOffset: (i / (LINES - 1) - 0.5) * 0.2, // 更集中成一束
+      width: 0.8 + Math.random() * 1.5,
+      alpha: 0.15 + Math.random() * 0.3, // 更淡
+      bloom: i === 1 // 只留一條當底光
     }));
 
     const draw = (t: number) => {
