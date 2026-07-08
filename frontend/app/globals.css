@@ -474,6 +474,40 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* 團隊頁品牌收尾光效：金色光暈/光束的緩慢呼吸。 */
+@keyframes mentor-outro-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+@keyframes mentor-outro-beam {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+.mentor-outro-glow {
+  animation: mentor-outro-glow 7s ease-in-out infinite;
+}
+.mentor-outro-beam {
+  animation: mentor-outro-beam 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mentor-outro-glow,
+  .mentor-outro-beam {
+    animation: none;
+  }
+}
+
 .animate-ember-pulse {
   animation: ember-pulse 2.6s ease-in-out infinite;
 }
