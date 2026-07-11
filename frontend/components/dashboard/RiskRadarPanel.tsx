@@ -1,8 +1,10 @@
 "use client";
 
-import { Activity, AlertTriangle, Clock } from "lucide-react";
+import { useState } from "react";
+import { Activity, AlertTriangle, ChevronDown, ChevronUp, Clock, ListFilter } from "lucide-react";
 import type { EvidenceDirection, RiskRadarItem, RiskRadarPayload, RiskSeverity } from "@/lib/types";
 import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
+import { ModalShell } from "@/components/dashboard/ModalShell";
 
 interface RiskRadarPanelProps {
   radar?: RiskRadarPayload | null;
@@ -10,15 +12,15 @@ interface RiskRadarPanelProps {
 }
 
 const SEVERITY: Record<RiskSeverity, { label: string; tone: string }> = {
-  HIGH: { label: "高風險", tone: "border-short/45 bg-short/15 text-short" },
-  MEDIUM: { label: "中風險", tone: "border-yellow-300/40 bg-yellow-300/10 text-yellow-300" },
-  LOW: { label: "低風險", tone: "border-ember/35 bg-ember/10 text-ember" }
+  HIGH: { label: "高警戒", tone: "border-short/45 bg-short/15 text-short" },
+  MEDIUM: { label: "需注意", tone: "border-yellow-300/40 bg-yellow-300/10 text-yellow-300" },
+  LOW: { label: "一般觀察", tone: "border-ember/35 bg-ember/10 text-ember" }
 };
 
 const DIRECTION: Record<EvidenceDirection, { label: string; tone: string }> = {
-  LONG: { label: "偏多", tone: "bg-long/10 text-long" },
-  SHORT: { label: "偏空", tone: "bg-short/10 text-short" },
-  NEUTRAL: { label: "中性", tone: "bg-white/5 text-slate-400" }
+  LONG: { label: "短線偏多", tone: "bg-long/10 text-long" },
+  SHORT: { label: "短線偏空", tone: "bg-short/10 text-short" },
+  NEUTRAL: { label: "短線中性", tone: "bg-white/5 text-slate-400" }
 };
 
 const STATE_LABELS: Record<string, string> = {
@@ -50,68 +52,226 @@ const FLAG_LABELS: Record<string, string> = {
 
 const TH = "px-3 py-2 font-medium";
 const TD = "px-3 py-3 align-top";
+const DEFAULT_ROWS = 3;
+const EXPANDED_ROWS = 6;
 
 export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
+  const [detailKey, setDetailKey] = useState<string | null>(null);
   const items = radar?.items ?? [];
   const highCount = items.filter((item) => item.severity === "HIGH").length;
+  const conflictCount = items.filter((item) => item.conflicts_official).length;
+  const liquidationCount = items.filter((item) =>
+    item.flags.some((flag) => flag.includes("爆倉"))
+  ).length;
+  const visibleItems = items.slice(0, expanded ? EXPANDED_ROWS : DEFAULT_ROWS);
+
+  const selectFromModal = (symbol: string) => {
+    setAllOpen(false);
+    onSelect(symbol);
+  };
 
   return (
-    <section className="surface relative overflow-hidden rounded-lg p-4">
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(255,81,102,0.10),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(76,194,255,0.10),transparent_30%)]" />
-      <div className="relative z-10 flex flex-col gap-3">
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-3">
-          <div className="flex min-w-0 items-start gap-2.5">
-            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-ember/30 bg-ember/10 text-ember">
+    <>
+      <section className="surface relative overflow-hidden rounded-lg px-4 py-3">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(255,81,102,0.10),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(76,194,255,0.10),transparent_30%)]" />
+        <div className="relative z-10 flex flex-col gap-2.5">
+          <header className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-ember/30 bg-ember/10 text-ember">
               <Activity className="h-4 w-4" />
             </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-semibold text-slate-100">5m 已收盤風險雷達（不改正式 15m 分數）</h2>
-                <span className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-slate-400">{items.length} 件事件</span>
-                {radar?.scanned_count !== undefined ? (
-                  <span className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-slate-500">
-                    覆蓋 {radar.covered_count ?? 0}/{radar.scanned_count}
-                  </span>
-                ) : null}
-                {highCount > 0 ? <span className="rounded-sm border border-short/35 bg-short/10 px-1.5 py-0.5 text-xs text-short">高風險 {highCount}</span> : null}
-              </div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">僅用已收盤 5m 資料提早標示 OI、主動流與爆倉風險；它是觀察提醒，不會加減正式評分。</p>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-slate-100">5m 短線狀態雷達</h2>
+              <p className="text-[11px] text-slate-500">已收盤提醒，不改正式 15m 分數</p>
             </div>
-          </div>
-          <div className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-            <Clock className="h-3.5 w-3.5" />
-            <span>雷達時間</span>
-            <time dateTime={dateTimeValue(radar?.generated_at)}>{formatEventTime(radar?.generated_at)}</time>
-          </div>
-        </header>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              {highCount > 0 ? (
+                <span className="rounded-sm border border-short/35 bg-short/10 px-2 py-1 text-short">高警戒 {highCount}</span>
+              ) : (
+                <span className="rounded-sm border border-long/25 bg-long/5 px-2 py-1 text-long">目前無高警戒</span>
+              )}
+              <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 text-slate-400">方向衝突 {conflictCount}</span>
+              <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 text-slate-400">爆倉 {liquidationCount}</span>
+              {radar?.scanned_count !== undefined ? (
+                <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 tabular-nums text-slate-500">
+                  覆蓋 {radar.covered_count ?? 0}/{radar.scanned_count}
+                </span>
+              ) : null}
+            </div>
+            <div className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-500">
+              <Clock className="h-3.5 w-3.5" />
+              <time dateTime={dateTimeValue(radar?.generated_at)}>{formatEventTime(radar?.generated_at)}</time>
+            </div>
+          </header>
 
-        {!radar ? (
-          <Empty title="5m 雷達資料尚未送達" description="目前仍可正常使用 Gate Futures 的正式 15m 已收盤評分。" />
-        ) : items.length === 0 ? (
-          <Empty title="目前沒有達到門檻的 5m 風險事件" description="最新已收盤資料未觸發提醒；正式 15m 評分不受影響。" />
-        ) : (
-          <div className="surface-sunken overflow-x-auto rounded-lg">
-            <table className="w-full min-w-[1080px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
-                  <th className={TH}>事件</th><th className={TH}>方向／風險</th>
-                  <th className={`${TH} text-right`}>近 15m 價格</th><th className={`${TH} text-right`}>近 15m OI 數量</th>
-                  <th className={`${TH} text-right`}>爆倉強度</th><th className={`${TH} text-right`}>主動流</th>
-                  <th className={TH}>事件時間</th><th className={TH}>衝突／旗標</th>
-                </tr>
-              </thead>
-              <tbody>{items.map((item, index) => <RiskRow key={`${item.symbol}-${item.event_time}-${item.state}-${index}`} item={item} onSelect={onSelect} />)}</tbody>
-            </table>
-          </div>
-        )}
+          {!radar ? (
+            <CompactEmpty text="5m 雷達資料尚未送達，正式 15m 評分仍可正常使用。" />
+          ) : items.length === 0 ? (
+            <CompactEmpty text="目前沒有達到門檻的 5m 警戒事件。" />
+          ) : (
+            <>
+              <ul className="surface-sunken divide-y divide-white/5 overflow-hidden rounded-lg">
+                {visibleItems.map((item, index) => {
+                  const key = riskKey(item, index);
+                  return (
+                    <CompactRiskRow
+                      key={key}
+                      item={item}
+                      open={detailKey === key}
+                      onToggle={() => setDetailKey(detailKey === key ? null : key)}
+                      onSelect={onSelect}
+                    />
+                  );
+                })}
+              </ul>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {items.length > DEFAULT_ROWS ? (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((value) => !value)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:border-ember/40 hover:text-ember"
+                  >
+                    {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {expanded ? "收合" : `展開前 ${Math.min(EXPANDED_ROWS, items.length)} 筆`}
+                  </button>
+                ) : null}
+                {items.length > EXPANDED_ROWS ? (
+                  <button
+                    type="button"
+                    onClick={() => setAllOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-ember/30 bg-ember/10 px-3 py-1.5 text-xs text-ember transition hover:border-ember/60"
+                  >
+                    <ListFilter className="h-3.5 w-3.5" />
+                    查看全部 {items.length} 筆
+                  </button>
+                ) : null}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {allOpen ? (
+        <ModalShell
+          title="5m 短線狀態雷達"
+          subtitle={`完整 ${items.length} 筆 · 不改正式 15m 分數`}
+          icon={<Activity className="h-4 w-4" />}
+          onClose={() => setAllOpen(false)}
+          widthClass="max-w-7xl"
+        >
+          <RiskTable items={items} onSelect={selectFromModal} />
+        </ModalShell>
+      ) : null}
+    </>
+  );
+}
+
+function CompactRiskRow({
+  item,
+  open,
+  onToggle,
+  onSelect
+}: {
+  item: RiskRadarItem;
+  open: boolean;
+  onToggle: () => void;
+  onSelect: (symbol: string) => void;
+}) {
+  const severity = SEVERITY[item.severity];
+  const direction = DIRECTION[item.direction];
+  const flags = displayFlags(item);
+
+  return (
+    <li className="px-3 py-2.5 transition hover:bg-ember/[0.04]">
+      <div className="grid items-center gap-2 sm:grid-cols-[110px_minmax(180px,1fr)_auto_auto]">
+        <button
+          type="button"
+          onClick={() => onSelect(item.symbol)}
+          className="text-left font-semibold text-slate-50 transition hover:text-ember"
+          title={`查看 ${item.symbol} 正式 15m 分析`}
+        >
+          {shortSymbol(item.symbol)}
+        </button>
+        <div className="min-w-0">
+          <p className="truncate text-sm text-slate-300">{codeLabel(item.state, STATE_LABELS)}</p>
+          <p className="mt-0.5 text-[11px] tabular-nums text-slate-500">
+            OI {formatPercent(item.oi_qty_change_pct)} · {flowLabel(item.flow_imbalance)}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${direction.tone}`}>{direction.label}</span>
+          <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${severity.tone}`}>{severity.label}</span>
+          <span className={`rounded-sm border px-2 py-0.5 text-[11px] ${item.conflicts_official ? "border-short/40 bg-short/10 text-short" : "border-long/25 bg-long/5 text-long"}`}>
+            {item.conflicts_official ? "與 15m 衝突" : "未與 15m 衝突"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="inline-flex items-center justify-end gap-1 text-xs text-slate-500 transition hover:text-ember"
+        >
+          詳情 {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </button>
       </div>
-    </section>
+
+      {open ? (
+        <div className="mt-2 grid gap-2 border-t border-white/5 pt-2 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-5">
+          <Metric label="近 15m 價格" value={formatPercent(item.price_change_pct)} tone={percentTone(item.price_change_pct)} />
+          <Metric label="近 15m OI" value={formatPercent(item.oi_qty_change_pct)} tone={percentTone(item.oi_qty_change_pct)} />
+          <Metric label="爆倉強度" value={formatPercent(item.liquidation_intensity)} />
+          <Metric label="主動流" value={flowLabel(item.flow_imbalance)} tone={flowTone(item.flow_imbalance)} />
+          <Metric label="事件時間" value={formatEventTime(item.event_time)} />
+          <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 lg:col-span-5">
+            <span className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-500">資料 {item.data_quality}</span>
+            {flags.map((flag) => (
+              <span key={flag} className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-400">
+                {codeLabel(flag, FLAG_LABELS)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-sm bg-white/[0.025] px-2 py-1.5">
+      <span>{label}</span>
+      <span className={`font-medium tabular-nums ${tone ?? "text-slate-300"}`}>{value}</span>
+    </div>
+  );
+}
+
+function RiskTable({ items, onSelect }: { items: RiskRadarItem[]; onSelect: (symbol: string) => void }) {
+  return (
+    <div className="surface-sunken overflow-x-auto rounded-lg">
+      <table className="w-full min-w-[1080px] border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
+            <th className={TH}>事件</th><th className={TH}>方向／警戒</th>
+            <th className={`${TH} text-right`}>近 15m 價格</th><th className={`${TH} text-right`}>近 15m OI 數量</th>
+            <th className={`${TH} text-right`}>爆倉強度</th><th className={`${TH} text-right`}>主動流</th>
+            <th className={TH}>事件時間</th><th className={TH}>衝突／旗標</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, index) => (
+            <RiskRow key={riskKey(item, index)} item={item} onSelect={onSelect} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 function RiskRow({ item, onSelect }: { item: RiskRadarItem; onSelect: (symbol: string) => void }) {
   const severity = SEVERITY[item.severity];
   const direction = DIRECTION[item.direction];
+  const flags = displayFlags(item);
   return (
     <tr className="border-b border-white/5 transition last:border-0 hover:bg-ember/[0.05]">
       <td className={TD}>
@@ -146,16 +306,33 @@ function RiskRow({ item, onSelect }: { item: RiskRadarItem; onSelect: (symbol: s
             資料 {item.data_quality}
           </span>
         ) : null}
-        {item.flags.map((flag) => <span key={flag} className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-400">{codeLabel(flag, FLAG_LABELS)}</span>)}
+        {flags.map((flag) => <span key={flag} className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-400">{codeLabel(flag, FLAG_LABELS)}</span>)}
       </div></td>
     </tr>
   );
 }
 
-function Empty({ title, description }: { title: string; description: string }) {
-  return <div className="surface-sunken flex min-h-28 items-center justify-center rounded-lg px-4 py-6 text-center"><div>
-    <AlertTriangle className="mx-auto h-5 w-5 text-slate-500" /><p className="mt-2 text-sm font-medium text-slate-300">{title}</p><p className="mt-1 text-xs text-slate-500">{description}</p>
-  </div></div>;
+function CompactEmpty({ text }: { text: string }) {
+  return (
+    <div className="surface-sunken flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs text-slate-500">
+      <AlertTriangle className="h-4 w-4 shrink-0" />
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function displayFlags(item: RiskRadarItem): string[] {
+  const seen = new Set<string>();
+  return item.flags.filter((flag) => {
+    const normalized = flag.replaceAll(" ", "").trim();
+    if (normalized === "與15m正式方向衝突" || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function riskKey(item: RiskRadarItem, index: number): string {
+  return `${item.symbol}-${item.event_time}-${item.state}-${index}`;
 }
 
 function codeLabel(value: string, labels: Record<string, string>): string {
