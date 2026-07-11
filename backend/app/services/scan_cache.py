@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 
 from app.core.config import get_settings
@@ -11,6 +12,9 @@ from app.core.constants import (
 )
 from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
+
+
+logger = logging.getLogger(__name__)
 
 
 class ScanCache:
@@ -38,6 +42,8 @@ class ScanCache:
         symbols = service.market_data.list_symbols()
         if cap:
             symbols = symbols[:cap]  # list_symbols is volume-sorted => top `cap`
+        if not symbols:
+            raise RuntimeError("Market data provider returned no tradable symbols")
         result = service.scan_market(
             symbols=symbols,
             primary_timeframe=PRIMARY_TIMEFRAME,
@@ -47,6 +53,10 @@ class ScanCache:
             top_per_direction=20,
             track=True,
         )
+        if result.breadth.total == 0:
+            raise RuntimeError(
+                f"Market scan analyzed 0 of {len(symbols)} requested symbols"
+            )
         with self._lock:
             self._latest = result
 
@@ -54,12 +64,14 @@ class ScanCache:
         try:
             self.refresh_once(cap=warmup_cap)  # fast first paint
         except Exception:
-            pass
+            logger.exception(
+                "Background market scan warm-up failed (cap=%s)", warmup_cap
+            )
         while not self._stop.is_set():
             try:
                 self.refresh_once(cap=None)  # full universe
             except Exception:
-                pass
+                logger.exception("Background full-universe market scan failed")
             self._stop.wait(interval)
 
     def start(self) -> None:
