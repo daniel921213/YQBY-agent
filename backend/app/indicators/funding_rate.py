@@ -31,6 +31,12 @@ def analyze_funding_rate_extreme(
     recent = frame.tail(lookback)
     if len(recent) < 12:
         return FundingRateSignal("NEUTRAL", 0.0, "資金費率資料不足", "樣本不足")
+    if "funding_rate_quality" in recent.columns:
+        quality = str(recent["funding_rate_quality"].iloc[-1]).upper()
+        if quality == "MISSING":
+            return FundingRateSignal(
+                "NEUTRAL", 0.0, "資金費率資料不足", "最新資金費率缺失，不以 0 冒充正常"
+            )
 
     series = recent["funding_rate"]
     latest = float(series.iloc[-1])

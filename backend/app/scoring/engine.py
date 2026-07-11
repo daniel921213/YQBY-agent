@@ -3,6 +3,7 @@ import pandas as pd
 from app.indicators.divergence import DivergenceSignal, detect_price_cvd_divergence
 from app.indicators.early_signals import (
     CvdThrustSignal,
+    VolumeSurgeSignal,
     analyze_cvd_thrust,
     analyze_volatility_squeeze,
     analyze_volume_surge,
@@ -31,13 +32,31 @@ P_RATIO = "多空比"
 P_RELATIVE = "相對強弱"
 
 
-def _cvd_is_proxy(frame: pd.DataFrame) -> bool:
-    """True when buy/sell volume was synthesized from candle direction (no real
-    taker data). CVD is then just a re-scaled price series, so CVD-derived
-    factors (divergence, thrust) must be skipped — they'd re-count price."""
-    if "cvd_proxy" not in frame.columns or not len(frame):
+def _cvd_is_usable(
+    frame: pd.DataFrame,
+    bars: int,
+    *,
+    latest_bars: int = 8,
+    minimum_coverage: float = 0.95,
+) -> bool:
+    """Require recent real, finite taker flow before using a CVD factor."""
+
+    if len(frame) < bars or not {"buy_volume", "sell_volume"}.issubset(frame.columns):
         return False
-    return bool(frame["cvd_proxy"].iloc[-1] > 0)
+    recent = frame.tail(bars)
+    flow = recent[["buy_volume", "sell_volume"]].apply(pd.to_numeric, errors="coerce")
+    valid_numeric = flow.notna().all(axis=1) & (flow >= 0).all(axis=1)
+
+    if "flow_quality" in recent.columns:
+        real = recent["flow_quality"].astype(str).str.upper().eq("REAL") & valid_numeric
+    elif "cvd_proxy" in recent.columns:
+        proxy = pd.to_numeric(recent["cvd_proxy"], errors="coerce").fillna(1.0)
+        real = proxy.le(0) & valid_numeric
+    else:
+        real = valid_numeric
+
+    latest = real.tail(min(latest_bars, len(real)))
+    return bool(real.mean() >= minimum_coverage and latest.all())
 
 
 class ScoringEngine:
@@ -91,21 +110,24 @@ class ScoringEngine:
                 )
             )
 
-        cvd_proxy = _cvd_is_proxy(primary)
+        divergence_flow_ok = _cvd_is_usable(primary, 96, latest_bars=6)
+        thrust_flow_ok = _cvd_is_usable(primary, 104, latest_bars=8)
 
         # ── 市場結構: CVD divergence + OI/price relation ──────────────
-        if cvd_proxy:
+        if not divergence_flow_ok:
             div = DivergenceSignal(
-                "none", 0.0, None, None, "無真實主動買賣資料，跳過 CVD 背離判定"
+                "none", 0.0, None, None, "真實主動買賣覆蓋不足，跳過 CVD 背離判定"
             )
         else:
             div = detect_price_cvd_divergence(primary, lookback=96)
         if div.kind == "bullish":
-            add(key="cvd_bullish_divergence", label="CVD 底背離 成立", pillar=P_STRUCTURE,
+            pattern = "賣單吸收" if div.pattern == "absorption" else "賣壓衰竭"
+            add(key=f"cvd_bullish_{div.pattern}", label=f"CVD {pattern} 成立", pillar=P_STRUCTURE,
                 direction="LONG", weight=self.weights.cvd_divergence,
                 strength=div.strength, description=div.description)
         elif div.kind == "bearish":
-            add(key="cvd_bearish_divergence", label="CVD 頂背離 成立", pillar=P_STRUCTURE,
+            pattern = "買單吸收" if div.pattern == "absorption" else "買盤衰竭"
+            add(key=f"cvd_bearish_{div.pattern}", label=f"CVD {pattern} 成立", pillar=P_STRUCTURE,
                 direction="SHORT", weight=self.weights.cvd_divergence,
                 strength=div.strength, description=div.description)
 
@@ -120,14 +142,21 @@ class ScoringEngine:
             direction=mom.direction, weight=self.weights.momentum,
             strength=mom.strength, description=mom.description)
 
-        surge = analyze_volume_surge(primary)
+        if thrust_flow_ok:
+            surge = analyze_volume_surge(primary)
+        else:
+            surge = VolumeSurgeSignal(
+                "NEUTRAL", 0.0, "量能方向資料不足",
+                "真實主動買賣覆蓋不足，不用成交量猜測方向", 1.0,
+            )
         add(key="volume_surge", label=surge.label, pillar=P_MOMENTUM,
             direction=surge.direction, weight=self.weights.volume_surge,
             strength=surge.strength, description=surge.description)
 
-        if cvd_proxy:
+        if not thrust_flow_ok:
             thrust = CvdThrustSignal(
-                "NEUTRAL", 0.0, "主動買賣平衡", "無真實主動買賣資料，跳過主動力道判定", 0.0
+                "NEUTRAL", 0.0, "主動買賣資料不足",
+                "真實主動買賣覆蓋不足，跳過主動力道判定", 0.0,
             )
         else:
             thrust = analyze_cvd_thrust(primary)

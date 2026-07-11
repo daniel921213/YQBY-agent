@@ -1,8 +1,12 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, replace
+
+import pandas as pd
 
 from app.core.config import get_settings
 from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE, RECOMMEND_SCORE
+from app.indicators.risk_radar import RiskRadarReading, analyze_five_minute_risk
 from app.schemas.indicators import EvidenceItem
 from app.schemas.market import CandlePoint, LinePoint, MarketChartPayload
 from app.schemas.scoring import (
@@ -14,6 +18,8 @@ from app.schemas.scoring import (
     OiMover,
     PillarScore,
     Recommendation,
+    RiskRadar,
+    RiskRadarItem,
     ScanItem,
     ScanResponse,
     ScreenerRow,
@@ -27,11 +33,11 @@ PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多�
 # Points on the OI quadrant map — biggest 1h movers by notional change. Higher
 # than the old table's 15 so all four quadrants have enough dots to read.
 OI_MOVERS_CAP = 40
+RISK_RADAR_LOOKBACK = 96
+RISK_RADAR_ITEMS_CAP = 40
 # Below this score a screener row reads as 中性 rather than forcing 做多/做空.
 SCREENER_NEUTRAL_SCORE = 15.0
-# Quadrant deadband: with BOTH axes inside these bands nothing meaningful moved,
-# so the side is 持平 — otherwise sign noise around zero makes coins flap between
-# quadrants and every flap reads as a fake "象限切換".
+# Independent axis deadbands for a true 3x3 price/OI state map.
 OI_SIDE_MIN_PRICE_MOVE = 0.0015  # |1h price| < 0.15%
 OI_SIDE_MIN_OI_MOVE = 0.005      # |1h OI| < 0.5%
 
@@ -76,6 +82,55 @@ def _flow_sum(frame, column: str, bars: int) -> float:
     return float(frame[column].tail(bars).sum())
 
 
+def _number(value: object, default: float = 0.0) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    return default if pd.isna(parsed) else parsed
+
+
+def _last_value(frame: pd.DataFrame, column: str, default: float = 0.0) -> float:
+    if column not in frame.columns or frame.empty:
+        return default
+    return _number(frame[column].iloc[-1], default)
+
+
+def _flow_quality(frame: pd.DataFrame) -> str:
+    if frame.empty:
+        return "MISSING"
+    if "flow_quality" in frame.columns:
+        value = str(frame["flow_quality"].iloc[-1]).upper()
+        return value if value in {"REAL", "MISSING", "PROXY", "STALE"} else "MISSING"
+    if {"buy_volume", "sell_volume"}.issubset(frame.columns):
+        return "REAL"
+    return "MISSING"
+
+
+def _official_close_time(frame: pd.DataFrame, timeframe: str) -> int | None:
+    if frame.empty or "timestamp" not in frame.columns:
+        return None
+    return int(frame["timestamp"].iloc[-1]) + timeframe_to_seconds(timeframe)
+
+
+def _line_points(
+    frame: pd.DataFrame,
+    column: str,
+    *,
+    fallback_column: str | None = None,
+) -> list[LinePoint]:
+    source = column if column in frame.columns else fallback_column
+    if source is None or source not in frame.columns:
+        return []
+    points: list[LinePoint] = []
+    for row in frame.itertuples():
+        value = getattr(row, source)
+        if pd.isna(value):
+            continue
+        points.append(LinePoint(time=int(row.timestamp), value=float(value)))
+    return points
+
+
 def _price_and_change_24h(chart: MarketChartPayload, primary_timeframe: str) -> tuple[float, float]:
     candles = chart.candles
     if not candles:
@@ -110,35 +165,57 @@ def _oi_mover(
     primary_timeframe: str,
     metrics: MarketSnapshot | None,
 ) -> OiMover | None:
-    oi = chart.open_interest
-    if len(oi) < 2 or oi[-1].value <= 0:
+    oi_qty = chart.open_interest
+    if len(oi_qty) < 2 or oi_qty[-1].value <= 0:
         return None
     bars_1h = _bars_for(3_600, primary_timeframe)
-    prev = oi[-1 - bars_1h].value if len(oi) > bars_1h else oi[0].value
-    total_oi = oi[-1].value
-    oi_delta = total_oi - prev
-    oi_change_1h = pct_change(prev, total_oi)
+    prev_qty = oi_qty[-1 - bars_1h].value if len(oi_qty) > bars_1h else oi_qty[0].value
+    total_qty = oi_qty[-1].value
+    oi_delta_qty = total_qty - prev_qty
+    oi_change_1h = pct_change(prev_qty, total_qty)
+
+    # Bubble size/ranking is USD notional. Legacy providers may only expose one
+    # OI series, in which case the fallback preserves their prior behaviour.
+    oi_usd = chart.open_interest_usd or oi_qty
+    total_oi_usd = oi_usd[-1].value
+    # Cross-symbol flow estimate strips out the mechanical mark-price effect:
+    # Δcontracts × current USD/contract (= multiplier × mark price).
+    usd_per_contract = total_oi_usd / total_qty if total_qty > 0 else 0.0
+    oi_delta_usd = oi_delta_qty * usd_per_contract
 
     candles = chart.candles
     price_ref = candles[-1 - bars_1h].close if len(candles) > bars_1h else candles[0].close
     price_change_1h = pct_change(price_ref, price)
 
-    if (
-        abs(price_change_1h) < OI_SIDE_MIN_PRICE_MOVE
-        and abs(oi_change_1h) < OI_SIDE_MIN_OI_MOVE
-    ):
-        side = "持平"
-    elif oi_delta >= 0:
-        side = "多頭建倉" if price_change_1h >= 0 else "空頭建倉"
-    else:
-        side = "空頭平倉" if price_change_1h >= 0 else "多頭平倉"
+    price_axis = (
+        0 if abs(price_change_1h) < OI_SIDE_MIN_PRICE_MOVE
+        else (1 if price_change_1h > 0 else -1)
+    )
+    oi_axis = (
+        0 if abs(oi_change_1h) < OI_SIDE_MIN_OI_MOVE
+        else (1 if oi_change_1h > 0 else -1)
+    )
+    side = {
+        (1, 1): "多頭建倉",
+        (-1, 1): "空頭建倉",
+        (1, -1): "空頭回補",
+        (-1, -1): "多頭去槓桿",
+        (0, 1): "OI增倉／價格持平",
+        (0, -1): "OI減倉／價格持平",
+        (1, 0): "價格上漲／OI持平",
+        (-1, 0): "價格下跌／OI持平",
+        (0, 0): "持平",
+    }[(price_axis, oi_axis)]
 
     return OiMover(
         symbol=symbol,
         price=price,
         oi_change_1h=round(oi_change_1h, 6),
-        oi_delta=round(oi_delta, 2),
-        total_oi=round(total_oi, 2),
+        oi_delta=round(oi_delta_usd, 2),
+        total_oi=round(total_oi_usd, 2),
+        oi_qty_change_1h=round(oi_change_1h, 6),
+        oi_delta_qty=round(oi_delta_qty, 6),
+        total_oi_qty=round(total_qty, 6),
         change_24h=change_24h,
         price_change_1h=round(price_change_1h, 6),
         side=side,
@@ -197,32 +274,41 @@ class AnalysisService:
                 )
                 for row in primary.itertuples()
             ],
-            cvd=[
-                LinePoint(time=int(row.timestamp), value=float(row.cvd))
-                for row in primary.itertuples()
-            ],
-            open_interest=[
-                LinePoint(time=int(row.timestamp), value=float(row.open_interest))
-                for row in primary.itertuples()
-            ],
-            funding_rate=[
-                LinePoint(time=int(row.timestamp), value=float(row.funding_rate))
-                for row in primary.itertuples()
-            ],
+            cvd=_line_points(primary, "cvd"),
+            open_interest=_line_points(
+                primary, "open_interest_qty", fallback_column="open_interest"
+            ),
+            open_interest_usd=_line_points(
+                primary, "open_interest_usd", fallback_column="open_interest"
+            ),
+            funding_rate=_line_points(primary, "funding_rate"),
         )
 
-        last = primary.iloc[-1]
         bars_1h = _bars_for(3_600, primary_timeframe)
+        long_liq_1h = _flow_sum(primary, "long_liq_usd", bars_1h)
+        short_liq_1h = _flow_sum(primary, "short_liq_usd", bars_1h)
+        oi_qty = _last_value(primary, "open_interest_qty", _last_value(primary, "open_interest"))
+        oi_usd = _last_value(primary, "open_interest_usd", _last_value(primary, "open_interest"))
+        quote_volume_1h = _flow_sum(primary, "quote_volume", bars_1h)
+        total_liq_1h = long_liq_1h + short_liq_1h
         metrics = MarketSnapshot(
-            funding_rate=float(last["funding_rate"]),
-            top_trader_ratio=float(last["top_trader_long_short_ratio"]),
-            account_ratio=float(last["account_long_short_ratio"]),
-            open_interest=float(last["open_interest"]),
+            funding_rate=_last_value(primary, "funding_rate"),
+            top_trader_ratio=_last_value(primary, "top_trader_long_short_ratio", 1.0),
+            top_position_ratio=_last_value(primary, "top_position_long_short_ratio", 1.0),
+            account_ratio=_last_value(primary, "account_long_short_ratio", 1.0),
+            open_interest=oi_qty,
+            open_interest_qty=oi_qty,
+            open_interest_usd=oi_usd,
             account_ratio_avg=round(
-                float(primary["account_long_short_ratio"].tail(36).mean()), 4
+                _number(primary["account_long_short_ratio"].tail(36).mean(), 1.0), 4
             ),
-            long_liq_usd_1h=round(_flow_sum(primary, "long_liq_usd", bars_1h), 2),
-            short_liq_usd_1h=round(_flow_sum(primary, "short_liq_usd", bars_1h), 2),
+            long_liq_usd_1h=round(long_liq_1h, 2),
+            short_liq_usd_1h=round(short_liq_1h, 2),
+            liquidation_intensity_1h=round(total_liq_1h / oi_usd, 8) if oi_usd > 0 else 0.0,
+            liquidation_to_volume_1h=(
+                round(total_liq_1h / quote_volume_1h, 8) if quote_volume_1h > 0 else 0.0
+            ),
+            flow_quality=_flow_quality(primary),
         )
 
         return AnalysisResponse(
@@ -238,6 +324,7 @@ class AnalysisService:
                 trend_timeframe=trend_timeframe,
                 lookback=lookback,
                 data_provider=self.settings.data_provider,
+                official_close_time=_official_close_time(primary, primary_timeframe),
             ),
         )
 
@@ -308,6 +395,10 @@ class AnalysisService:
         oi_movers = self._build_oi_movers(analyses, primary_timeframe, track=track)
         altseason = self._build_altseason(analyses, record=track)
         universe = self._build_universe(analyses, primary_timeframe)
+        risk_radar = self._build_risk_radar(analyses, track=track)
+        official_closes = [
+            a.meta.official_close_time for a in analyses if a.meta.official_close_time is not None
+        ]
 
         return ScanResponse(
             items=items,
@@ -316,6 +407,7 @@ class AnalysisService:
             altseason=altseason,
             oi_movers=oi_movers,
             universe=universe,
+            risk_radar=risk_radar,
             generated_at=int(time.time()),
             meta=AnalysisMeta(
                 primary_timeframe=primary_timeframe,
@@ -323,7 +415,77 @@ class AnalysisService:
                 trend_timeframe=trend_timeframe,
                 lookback=lookback,
                 data_provider=self.settings.data_provider,
+                official_close_time=min(official_closes) if official_closes else None,
             ),
+        )
+
+    def _build_risk_radar(
+        self,
+        analyses: list[AnalysisResponse],
+        *,
+        track: bool,
+    ) -> RiskRadar:
+        """Fetch a separate closed-5m frame and emit an independent risk overlay."""
+
+        official = {
+            analysis.recommendation.symbol: analysis.recommendation.direction
+            for analysis in analyses
+        }
+
+        def run(symbol: str) -> RiskRadarReading | None:
+            try:
+                frame = self.market_data.get_enriched_market_frame(
+                    symbol, "5m", RISK_RADAR_LOOKBACK
+                )
+                return analyze_five_minute_risk(symbol, frame, official[symbol])
+            except Exception:
+                return None
+
+        symbols = list(official)
+        if not symbols:
+            return RiskRadar(generated_at=int(time.time()))
+        workers = max(1, min(self.settings.scan_max_workers, len(symbols)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            readings = [reading for reading in pool.map(run, symbols) if reading is not None]
+
+        if track and readings:
+            transitions = anomaly_tracker.confirm_risk_state_transitions(
+                {reading.symbol: reading.state for reading in readings}
+            )
+            updated: list[RiskRadarReading] = []
+            for reading in readings:
+                transition = transitions.get(reading.symbol)
+                if transition is None:
+                    updated.append(reading)
+                    continue
+                previous, current = transition
+                flags = [*reading.flags, f"5m狀態確認切換：{previous} → {current}"]
+                severity = "HIGH" if reading.severity == "MEDIUM" else (
+                    "MEDIUM" if reading.severity == "LOW" else reading.severity
+                )
+                updated.append(replace(reading, flags=flags, severity=severity))
+            readings = updated
+
+        actionable = [reading for reading in readings if reading.severity != "LOW"]
+        severity_rank = {"HIGH": 2, "MEDIUM": 1, "LOW": 0}
+        actionable.sort(
+            key=lambda reading: (
+                severity_rank[reading.severity],
+                reading.conflicts_official,
+                reading.liquidation_intensity,
+                abs(reading.oi_change_zscore),
+                abs(reading.flow_zscore),
+            ),
+            reverse=True,
+        )
+        return RiskRadar(
+            generated_at=int(time.time()),
+            scanned_count=len(symbols),
+            covered_count=len(readings),
+            items=[
+                RiskRadarItem(**asdict(reading))
+                for reading in actionable[:RISK_RADAR_ITEMS_CAP]
+            ],
         )
 
     @staticmethod
@@ -376,14 +538,15 @@ class AnalysisService:
         # scanned symbols — not just the shipped top movers — so a coin that
         # jumps into the top list still has a valid "previous" to compare with.
         if track and movers:
-            previous = anomaly_tracker.swap_oi_sides({m.symbol: m.side for m in movers})
-            for m in movers:
-                before = previous.get(m.symbol)
-                if before and before != m.side and m.side != "持平":
-                    m.previous_side = before  # type: ignore[assignment]
+            transitions = anomaly_tracker.confirm_oi_side_transitions(
+                {m.symbol: m.side for m in movers}
+            )
+            for mover in movers:
+                transition = transitions.get(mover.symbol)
+                if transition and mover.side != "持平":
+                    mover.previous_side = transition[0]  # type: ignore[assignment]
 
-        # Rank by 1h OI change in USD notional (open_interest is USD from both
-        # live providers), like the reference's "依變化金額排序".
+        # Rank/bubble by USD exposure; quadrant signs above use quantity OI.
         movers.sort(key=lambda m: abs(m.oi_delta), reverse=True)
         return movers[:OI_MOVERS_CAP]
 

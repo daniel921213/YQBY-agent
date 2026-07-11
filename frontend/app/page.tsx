@@ -158,6 +158,10 @@ function Dashboard() {
               <DataRankings
                 universe={universe}
                 movers={scan.oi_movers}
+                riskRadar={scan.risk_radar}
+                dataProvider={scan.meta.data_provider}
+                primaryTimeframe={scan.meta.primary_timeframe}
+                officialCloseTime={scan.meta.official_close_time}
                 onSelect={setSelectedSymbol}
               />
             ) : null}

@@ -18,6 +18,8 @@ class LinePoint(BaseModel):
 class MarketChartPayload(BaseModel):
     candles: list[CandlePoint]
     cvd: list[LinePoint]
+    # Position direction is derived from contract quantity.  The USD series is
+    # kept separately because mark-price changes mechanically move notional OI.
     open_interest: list[LinePoint]
+    open_interest_usd: list[LinePoint] = Field(default_factory=list)
     funding_rate: list[LinePoint]
-

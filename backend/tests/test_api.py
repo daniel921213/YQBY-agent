@@ -58,19 +58,22 @@ def test_scan_endpoint_returns_ranked_market_items() -> None:
 
         assert response.status_code == 200
         payload = response.json()
-        # Items = recommends + confluence-gated anomalies; with synthetic data not
-        # every requested symbol clears the gate, but at least one must.
-        assert 1 <= len(payload["items"]) <= 2
-        assert payload["items"][0]["rank"] == 1
-        assert payload["items"][0]["symbol"] in {"BTCUSDT", "ETHUSDT"}
-        # New per-item spot reads are always present.
-        assert payload["items"][0]["price"] > 0
-        assert "change_24h" in payload["items"][0]
-        # Lifecycle stage + why-selected reasons power the 早期異動雷達 UI.
-        assert payload["items"][0]["stage"] in {
-            "早期異動", "趨勢啟動", "趨勢延續", "過熱風險", "反轉警訊", "觀察"
-        }
-        assert isinstance(payload["items"][0]["stage_reasons"], list)
+        # Items contain only signals that clear the recommendation/anomaly gate;
+        # a stricter causal flow model may legitimately return none. The full
+        # universe proves both requested symbols were still analyzed.
+        assert len(payload["items"]) <= 2
+        assert payload["breadth"]["total"] == 2
+        assert len(payload["universe"]) == 2
+        if payload["items"]:
+            assert payload["items"][0]["rank"] == 1
+            assert payload["items"][0]["symbol"] in {"BTCUSDT", "ETHUSDT"}
+            assert payload["items"][0]["price"] > 0
+            assert "change_24h" in payload["items"][0]
+            assert payload["items"][0]["stage"] in {
+                "早期異動", "趨勢啟動", "趨勢延續", "過熱風險", "反轉警訊", "觀察"
+            }
+            assert isinstance(payload["items"][0]["stage_reasons"], list)
+        assert payload["risk_radar"]["timeframe"] == "5m"
 
 
 def test_scan_endpoint_includes_altseason_and_oi_movers() -> None:
@@ -90,7 +93,11 @@ def test_scan_endpoint_includes_altseason_and_oi_movers() -> None:
         assert altseason["label"] in {"BTC季", "偏BTC", "中性", "偏山寨", "山寨季"}
         assert payload["oi_movers"]
         mover = payload["oi_movers"][0]
-        assert mover["side"] in {"多頭建倉", "空頭建倉", "多頭平倉", "空頭平倉", "持平"}
+        assert mover["side"] in {
+            "多頭建倉", "空頭建倉", "空頭回補", "多頭去槓桿",
+            "OI增倉／價格持平", "OI減倉／價格持平",
+            "價格上漲／OI持平", "價格下跌／OI持平", "持平",
+        }
         assert mover["total_oi"] > 0
         # Quadrant chart Y axis: 1h price change shipped alongside the 1h OI change.
         assert "price_change_1h" in mover

@@ -1,13 +1,18 @@
 import numpy as np
 import pandas as pd
 
-from app.indicators.divergence import detect_price_cvd_divergence
+from app.indicators.divergence import (
+    detect_cvd_absorption,
+    detect_price_cvd_divergence,
+)
 
 
 def _frame(close: list[float], cvd: list[float]) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "close": close,
+            "high": [value + 0.1 for value in close],
+            "low": [value - 0.1 for value in close],
             "cvd": cvd,
             "volume": [1000.0] * len(close),
         }
@@ -41,6 +46,7 @@ def test_detects_fresh_bullish_cvd_divergence() -> None:
     signal = detect_price_cvd_divergence(_frame(close, cvd), lookback=60)
 
     assert signal.kind == "bullish"
+    assert signal.pattern == "exhaustion"
     assert signal.strength > 0
     assert signal.age_bars is not None and signal.age_bars <= 12
 
@@ -81,4 +87,36 @@ def test_detects_fresh_bearish_cvd_divergence() -> None:
     signal = detect_price_cvd_divergence(_frame(close, cvd), lookback=60)
 
     assert signal.kind == "bearish"
+    assert signal.pattern == "exhaustion"
     assert signal.strength > 0
+
+
+def test_detects_bullish_sell_absorption_with_one_bar_cvd_lag() -> None:
+    length = 60
+    close = [100.0 + 0.01 * i for i in range(length)]
+    for offset, px in ((-2, 97.5), (-1, 96.0), (0, 95.0), (1, 96.0), (2, 97.5)):
+        close[20 + offset] = px
+    # Price holds a higher low while aggressive selling makes a much lower CVD
+    # low one bar later. The ±2 alignment must still recognize sell absorption.
+    for offset, px in ((-2, 97.6), (-1, 96.2), (0, 95.2), (1, 96.2), (2, 97.6)):
+        close[52 + offset] = px
+    cvd = [-(i % 5) * 2.0 for i in range(length)]
+    cvd[20] = -20.0
+    cvd[53] = -80.0
+
+    signal = detect_cvd_absorption(_frame(close, cvd), lookback=60)
+
+    assert signal.kind == "bullish"
+    assert signal.pattern == "absorption"
+    assert "吸收" in signal.description
+    assert signal.age_bars is not None and signal.age_bars <= 12
+
+
+def test_invalid_cvd_window_never_emits_a_signal() -> None:
+    close, cvd = _bullish_setup(second_dip_at=52)
+    cvd[40] = np.nan
+
+    signal = detect_price_cvd_divergence(_frame(close, cvd), lookback=60)
+
+    assert signal.kind == "none"
+    assert signal.strength == 0.0

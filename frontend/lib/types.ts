@@ -20,6 +20,7 @@ export interface MarketChartPayload {
   candles: CandlePoint[];
   cvd: LinePoint[];
   open_interest: LinePoint[];
+  open_interest_usd: LinePoint[];
   funding_rate: LinePoint[];
 }
 
@@ -62,16 +63,25 @@ export interface AnalysisMeta {
   lookback: number;
   data_provider: string;
   refresh_interval_seconds: number;
+  market_type?: "futures";
+  score_uses_closed_candles?: boolean;
+  official_close_time?: number | null;
 }
 
 export interface MarketSnapshot {
   funding_rate: number;
   top_trader_ratio: number;
+  top_position_ratio: number;
   account_ratio: number;
   open_interest: number;
+  open_interest_qty: number;
+  open_interest_usd: number;
   account_ratio_avg: number;
   long_liq_usd_1h: number;
   short_liq_usd_1h: number;
+  liquidation_intensity_1h: number;
+  liquidation_to_volume_1h: number;
+  flow_quality: "REAL" | "MISSING" | "PROXY" | "STALE";
 }
 
 export interface AnalysisResponse {
@@ -136,7 +146,19 @@ export interface AltseasonIndex {
   previous_index: number | null;
 }
 
-export type OiMoverSide = "多頭建倉" | "空頭建倉" | "多頭平倉" | "空頭平倉" | "持平";
+export type OiMoverSide =
+  | "多頭建倉"
+  | "空頭建倉"
+  | "空頭回補"
+  | "多頭去槓桿"
+  | "OI增倉／價格持平"
+  | "OI減倉／價格持平"
+  | "價格上漲／OI持平"
+  | "價格下跌／OI持平"
+  | "持平"
+  // Rolling-deploy compatibility with an older cached scan.
+  | "多頭平倉"
+  | "空頭平倉";
 
 export interface OiMover {
   symbol: string;
@@ -144,6 +166,9 @@ export interface OiMover {
   oi_change_1h: number;
   oi_delta: number;
   total_oi: number;
+  oi_qty_change_1h?: number;
+  oi_delta_qty?: number;
+  total_oi_qty?: number;
   change_24h: number;
   price_change_1h: number;
   side: OiMoverSide;
@@ -171,6 +196,37 @@ export interface ScreenerRow {
   stage: Stage;
 }
 
+export type RiskSeverity = "LOW" | "MEDIUM" | "HIGH";
+
+export interface RiskRadarItem {
+  symbol: string;
+  event_time: string | number;
+  severity: RiskSeverity;
+  direction: EvidenceDirection;
+  state: string;
+  price_change_pct: number;
+  oi_qty_change_pct: number;
+  flow_imbalance: number;
+  long_liq_usd: number;
+  short_liq_usd: number;
+  liquidation_intensity: number;
+  liquidation_to_volume?: number;
+  oi_change_zscore?: number;
+  flow_zscore?: number;
+  liquidation_zscore?: number;
+  flags: string[];
+  conflicts_official: boolean;
+  data_quality?: "REAL" | "PARTIAL" | "MISSING";
+}
+
+export interface RiskRadarPayload {
+  timeframe: "5m";
+  generated_at: string | number;
+  items: RiskRadarItem[];
+  scanned_count?: number;
+  covered_count?: number;
+}
+
 export interface ScanResponse {
   items: ScanItem[];
   scanned_symbols: string[];
@@ -181,6 +237,8 @@ export interface ScanResponse {
   altseason: AltseasonIndex | null;
   oi_movers: OiMover[];
   universe: ScreenerRow[];
+  // 獨立的 5m 已收盤風險提醒；舊版後端沒有此欄位時仍可正常顯示正式 15m 評分。
+  risk_radar?: RiskRadarPayload | null;
 }
 
 export interface AnomalyHistoryItem {

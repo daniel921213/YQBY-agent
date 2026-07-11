@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, RadioTower, Zap } from "lucide-react";
-import type { OiMover, OiMoverSide, ScreenerRow } from "@/lib/types";
+import { ArrowRight, RadioTower, ShieldCheck, Zap } from "lucide-react";
+import type { OiMover, OiMoverSide, RiskRadarPayload, ScreenerRow } from "@/lib/types";
 import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
 import { OiQuadrantChart } from "@/components/dashboard/OiQuadrantChart";
+import { RiskRadarPanel } from "@/components/dashboard/RiskRadarPanel";
 
 interface DataRankingsProps {
   universe: ScreenerRow[];
   movers: OiMover[];
+  riskRadar?: RiskRadarPayload | null;
+  dataProvider?: string;
+  primaryTimeframe?: string;
+  officialCloseTime?: number | null;
   onSelect: (symbol: string) => void;
 }
 
@@ -52,9 +57,16 @@ const SQUEEZE_MIN_SCORE = 40;
 
 const SIDE_META: Record<OiMoverSide, { color: string; text: string; bg: string }> = {
   多頭建倉: { color: "#23dd8d", text: "text-long", bg: "bg-long/10" },
+  空頭建倉: { color: "#ff5166", text: "text-short", bg: "bg-short/10" },
+  空頭回補: { color: "#4cc2ff", text: "text-ember", bg: "bg-ember/10" },
+  多頭去槓桿: { color: "#f0b429", text: "text-yellow-300", bg: "bg-yellow-300/10" },
+  "OI增倉／價格持平": { color: "#a78bfa", text: "text-violet-300", bg: "bg-violet-400/10" },
+  "OI減倉／價格持平": { color: "#94a3b8", text: "text-slate-300", bg: "bg-white/5" },
+  "價格上漲／OI持平": { color: "#67e8f9", text: "text-cyan-300", bg: "bg-cyan-400/10" },
+  "價格下跌／OI持平": { color: "#fb7185", text: "text-rose-300", bg: "bg-rose-400/10" },
+  // Cached labels from the previous four-quadrant API.
   空頭平倉: { color: "#4cc2ff", text: "text-ember", bg: "bg-ember/10" },
   多頭平倉: { color: "#f0b429", text: "text-yellow-300", bg: "bg-yellow-300/10" },
-  空頭建倉: { color: "#ff5166", text: "text-short", bg: "bg-short/10" },
   持平: { color: "#8fa9c9", text: "text-slate-300", bg: "bg-white/5" }
 };
 
@@ -80,11 +92,19 @@ const TAB_META: Record<RadarTab, { icon: React.ReactNode; title: string; descrip
   squeeze: {
     icon: <Zap className="h-3.5 w-3.5" />,
     title: "擠壓風險雷達",
-    description: "價格 × OI × 費率 × 散戶偏離 × 實際爆倉；指數 ≥ 40 才上榜"
+    description: "價格 × OI × 費率 × 全體帳戶偏離 × 實際爆倉；指數 ≥ 40 才上榜"
   }
 };
 
-export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) {
+export function DataRankings({
+  universe,
+  movers,
+  riskRadar,
+  dataProvider,
+  primaryTimeframe,
+  officialCloseTime,
+  onSelect
+}: DataRankingsProps) {
   const [tab, setTab] = useState<RadarTab>("transition");
 
   const enriched = useMemo(() => {
@@ -114,9 +134,17 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
 
   return (
     <div className="flex flex-col gap-5">
+      <ScoreBasisNotice
+        dataProvider={dataProvider}
+        primaryTimeframe={primaryTimeframe}
+        officialCloseTime={officialCloseTime}
+      />
+
+      <RiskRadarPanel radar={riskRadar} onSelect={onSelect} />
+
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
-          <span className="text-sm font-semibold text-slate-100">OI 異動 · 四象限地圖</span>
+          <span className="text-sm font-semibold text-slate-100">OI 異動 · 3×3 狀態地圖</span>
           <span className="text-xs text-slate-500">
             1H 持倉變化 × 價格變化 · 氣泡大小 = 變化金額 · 點擊幣種看分析
           </span>
@@ -171,6 +199,59 @@ export function DataRankings({ universe, movers, onSelect }: DataRankingsProps) 
   );
 }
 
+function ScoreBasisNotice({
+  dataProvider,
+  primaryTimeframe,
+  officialCloseTime
+}: {
+  dataProvider?: string;
+  primaryTimeframe?: string;
+  officialCloseTime?: number | null;
+}) {
+  const source = providerLabel(dataProvider);
+  const timeframe = primaryTimeframe || "15m";
+
+  return (
+    <section className="surface-sunken flex flex-wrap items-center gap-3 rounded-lg px-4 py-3">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-long/30 bg-long/10 text-long">
+        <ShieldCheck className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium tracking-[0.14em] text-slate-500">正式評分基準</p>
+        <p className="mt-0.5 text-sm font-semibold text-slate-100">
+          {source} · {timeframe} 已收盤正式評分
+        </p>
+        {officialCloseTime ? (
+          <p className="mt-0.5 text-[11px] tabular-nums text-slate-500">
+            正式資料截止 {formatCloseTime(officialCloseTime)}
+          </p>
+        ) : null}
+      </div>
+      <span className="ml-auto text-xs leading-5 text-slate-500">
+        5m 雷達是獨立風險提醒，不參與正式分數或方向判定
+      </span>
+    </section>
+  );
+}
+
+function providerLabel(provider?: string): string {
+  if (!provider) return "Gate Futures";
+  const normalized = provider.toLowerCase();
+  if (normalized.includes("gate")) return "Gate Futures";
+  if (normalized.includes("binance")) return "Binance Futures";
+  return `${provider} Futures`;
+}
+
+function formatCloseTime(epochSeconds: number): string {
+  return new Intl.DateTimeFormat("zh-TW", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(epochSeconds * 1000));
+}
+
 function buildTransitionSignals(movers: EnrichedMover[]): TransitionSignal[] {
   return movers
     .filter((mover) => mover.side !== "持平" || mover.previous_side)
@@ -207,8 +288,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
   const signals = movers.flatMap<SqueezeSignal>((mover) => {
     const priceChange = mover.price_change_1h ?? 0;
     const oiStress = Math.min(18, (Math.abs(mover.oi_change_1h) / 0.08) * 18);
-    // 散戶擁擠 = 偏離「這個幣自己的常態」，不是偏離 1.0 —— 加密散戶天生偏多，
-    // 用絕對值 1.0 當基準會讓殺多分數常駐虛高。
+    // 全體帳戶擁擠以「這個幣自己的常態」為基準，不假設它是純散戶資料。
     const ratioDeviation = mover.account_ratio - mover.account_ratio_avg;
     // 實際爆倉：1 小時內爆掉 OI 的 0.2% 就拿滿分——從「推測會爆」升級成「已在爆」。
     const shortLiqPts = Math.min(20, (mover.short_liq_usd_1h / Math.max(1, mover.total_oi)) / 0.002 * 20);
@@ -220,7 +300,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
       Math.min(16, (Math.max(0, -ratioDeviation) / 0.3) * 16) +
       Math.min(12, (Math.max(0, 0.0002 - mover.funding_rate) / 0.00035) * 12) +
       shortLiqPts +
-      (mover.side === "空頭平倉" ? 14 : mover.side === "多頭建倉" ? 7 : 0);
+      (["空頭回補", "空頭平倉"].includes(mover.side) ? 14 : mover.side === "多頭建倉" ? 7 : 0);
 
     const longSqueezeScore =
       Math.min(24, (Math.max(0, -priceChange) / 0.08) * 24) +
@@ -228,7 +308,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
       Math.min(16, (Math.max(0, ratioDeviation) / 0.3) * 16) +
       Math.min(12, (Math.max(0, mover.funding_rate + 0.0001) / 0.00045) * 12) +
       longLiqPts +
-      (mover.side === "多頭平倉" ? 14 : mover.side === "空頭建倉" ? 7 : 0);
+      (["多頭去槓桿", "多頭平倉"].includes(mover.side) ? 14 : mover.side === "空頭建倉" ? 7 : 0);
 
     return [
       {
@@ -238,7 +318,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
         reason:
           mover.short_liq_usd_1h > 0 && shortLiqPts >= 8
             ? "空單已在實際爆倉，價格上推會加速回補"
-            : mover.side === "空頭平倉"
+            : ["空頭回補", "空頭平倉"].includes(mover.side)
               ? "價格上推且 OI 下降，空方停損回補正在放大"
               : "價格逆勢上推，若空方擁擠延續，容易形成追價回補",
         oiChange: mover.oi_change_1h,
@@ -254,7 +334,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
         reason:
           mover.long_liq_usd_1h > 0 && longLiqPts >= 8
             ? "多單已在實際爆倉，價格下壓會引發踩踏"
-            : mover.side === "多頭平倉"
+            : ["多頭去槓桿", "多頭平倉"].includes(mover.side)
               ? "價格下壓且 OI 下降，多方降槓桿壓力正在釋放"
               : "價格回落但 OI 增加，若多方仍擁擠，容易出現踩踏",
         oiChange: mover.oi_change_1h,
@@ -278,19 +358,27 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
 function transitionLabel(mover: EnrichedMover): string {
   if (mover.side === "多頭建倉" && mover.funding_rate > 0.00025) return "多方偏熱";
   if (mover.side === "空頭建倉" && mover.funding_rate < -0.00015) return "空方偏熱";
-  if (mover.side === "空頭平倉") return "回補加速";
-  if (mover.side === "多頭平倉") return "降槓桿";
+  if (["空頭回補", "空頭平倉"].includes(mover.side)) return "回補加速";
+  if (["多頭去槓桿", "多頭平倉"].includes(mover.side)) return "降槓桿";
   if (mover.side === "多頭建倉") return "主動增倉";
   if (mover.side === "空頭建倉") return "主動壓制";
+  if (mover.side === "OI增倉／價格持平") return "增倉待表態";
+  if (mover.side === "OI減倉／價格持平") return "去槓桿待表態";
+  if (mover.side === "價格上漲／OI持平") return "價格先行";
+  if (mover.side === "價格下跌／OI持平") return "價格先跌";
   return "觀察";
 }
 
 function transitionReason(mover: EnrichedMover, changed: boolean): string {
   if (changed) return "與上一輪掃描（約 5 分鐘前）相比已切換象限，優先檢查是否為新一輪資金流向。";
   if (mover.side === "多頭建倉") return "價格與 OI 同步上升，偏向多方主動推進。";
-  if (mover.side === "空頭平倉") return "價格上升但 OI 減少，偏向空方回補或趨勢後段。";
+  if (["空頭回補", "空頭平倉"].includes(mover.side)) return "價格上升但 OI 減少，這是空方回補／去槓桿，不是新多單。";
   if (mover.side === "空頭建倉") return "價格下跌且 OI 上升，偏向空方主動加壓。";
-  if (mover.side === "多頭平倉") return "價格與 OI 同步下降，多方部位正在降槓桿。";
+  if (["多頭去槓桿", "多頭平倉"].includes(mover.side)) return "價格與 OI 同步下降，多方部位正在降槓桿；不是自動抄底訊號。";
+  if (mover.side === "OI增倉／價格持平") return "OI 增加但價格仍在 deadband，方向尚未確認。";
+  if (mover.side === "OI減倉／價格持平") return "OI 減少但價格持平，槓桿退出、方向未明。";
+  if (mover.side === "價格上漲／OI持平") return "價格上漲但沒有明顯新合約進場。";
+  if (mover.side === "價格下跌／OI持平") return "價格下跌但沒有明顯新空頭部位確認。";
   return "OI 與價格變化接近中性，等待下一次放量。";
 }
 
@@ -406,8 +494,8 @@ function SqueezeTable({
             <th className={`${TH_CLASS} text-right`}>爆倉 1H</th>
             <th className={`${TH_CLASS} text-right`}>價格 1H</th>
             <th className={`${TH_CLASS} text-right`}>費率</th>
-            <th className={`${TH_CLASS} text-right`} title="散戶多空比相對其近 9 小時常態的偏離">
-              散戶偏離
+            <th className={`${TH_CLASS} text-right`} title="全體帳戶多空比相對其近 9 小時常態的偏離">
+              全體帳戶偏離
             </th>
           </tr>
         </thead>

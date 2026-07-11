@@ -54,13 +54,13 @@ metadata:
 | 欄位 | 意義 |
 |------|------|
 | `open_interest` / `open_interest_usd` | 未平倉量（張數 / 美元） |
-| `lsr_account` | 全體帳戶多空比（散戶情緒，>1 偏多） |
+| `lsr_account` | 全體持倉帳戶多空比（不是純散戶；>1 偏多） |
 | `top_lsr_account` | 大戶帳戶多空比 |
 | `lsr_taker` | 主動買/賣比（>1 主動買盤強） |
 | `long_taker_size` / `short_taker_size` | 主動買量 / 主動賣量 |
 | `mark_price` | 標記價 |
 
-**用途**：回答「OI 變化」「多空比 / 散戶在做多還做空」「大戶 vs 散戶」「主動買賣力道」。
+**用途**：回答「OI 變化」「全體帳戶多空比」「大戶帳戶 vs 全體帳戶」「主動買賣力道」。
 
 ---
 
