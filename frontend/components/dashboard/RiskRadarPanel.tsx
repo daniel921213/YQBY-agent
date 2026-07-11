@@ -54,18 +54,31 @@ const TH = "px-3 py-2 font-medium";
 const TD = "px-3 py-3 align-top";
 const DEFAULT_ROWS = 3;
 const EXPANDED_ROWS = 6;
+type RadarFilter = "ALL" | "HIGH" | "CONFLICT" | "LIQUIDATION";
 
 export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
   const [detailKey, setDetailKey] = useState<string | null>(null);
+  const [filter, setFilter] = useState<RadarFilter>("ALL");
   const items = radar?.items ?? [];
   const highCount = items.filter((item) => item.severity === "HIGH").length;
   const conflictCount = items.filter((item) => item.conflicts_official).length;
-  const liquidationCount = items.filter((item) =>
-    item.flags.some((flag) => flag.includes("爆倉"))
-  ).length;
-  const visibleItems = items.slice(0, expanded ? EXPANDED_ROWS : DEFAULT_ROWS);
+  const liquidationCount = items.filter(isLiquidationEvent).length;
+  const filteredItems = items.filter((item) => {
+    if (filter === "HIGH") return item.severity === "HIGH";
+    if (filter === "CONFLICT") return item.conflicts_official;
+    if (filter === "LIQUIDATION") return isLiquidationEvent(item);
+    return true;
+  });
+  const visibleItems = filteredItems.slice(0, expanded ? EXPANDED_ROWS : DEFAULT_ROWS);
+
+  const selectFilter = (next: RadarFilter) => {
+    setFilter(filter === next && next !== "ALL" ? "ALL" : next);
+    setExpanded(false);
+    setDetailKey(null);
+    setAllOpen(false);
+  };
 
   const selectFromModal = (symbol: string) => {
     setAllOpen(false);
@@ -85,14 +98,11 @@ export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
               <h2 className="text-sm font-semibold text-slate-100">5m 短線狀態雷達</h2>
               <p className="text-[11px] text-slate-500">已收盤提醒，不改正式 15m 分數</p>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              {highCount > 0 ? (
-                <span className="rounded-sm border border-short/35 bg-short/10 px-2 py-1 text-short">高警戒 {highCount}</span>
-              ) : (
-                <span className="rounded-sm border border-long/25 bg-long/5 px-2 py-1 text-long">目前無高警戒</span>
-              )}
-              <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 text-slate-400">方向衝突 {conflictCount}</span>
-              <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 text-slate-400">爆倉 {liquidationCount}</span>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="5m 雷達事件篩選">
+              <FilterButton active={filter === "ALL"} label="全部" count={items.length} onClick={() => selectFilter("ALL")} />
+              <FilterButton active={filter === "HIGH"} label="高警戒" count={highCount} onClick={() => selectFilter("HIGH")} disabled={highCount === 0} alert />
+              <FilterButton active={filter === "CONFLICT"} label="方向衝突" count={conflictCount} onClick={() => selectFilter("CONFLICT")} disabled={conflictCount === 0} />
+              <FilterButton active={filter === "LIQUIDATION"} label="爆倉" count={liquidationCount} onClick={() => selectFilter("LIQUIDATION")} disabled={liquidationCount === 0} />
               {radar?.scanned_count !== undefined ? (
                 <span className="rounded-sm border border-white/10 bg-white/5 px-2 py-1 tabular-nums text-slate-500">
                   覆蓋 {radar.covered_count ?? 0}/{radar.scanned_count}
@@ -109,6 +119,8 @@ export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
             <CompactEmpty text="5m 雷達資料尚未送達，正式 15m 評分仍可正常使用。" />
           ) : items.length === 0 ? (
             <CompactEmpty text="目前沒有達到門檻的 5m 警戒事件。" />
+          ) : filteredItems.length === 0 ? (
+            <CompactEmpty text={`目前沒有符合「${filterName(filter)}」的事件。`} />
           ) : (
             <>
               <ul className="surface-sunken divide-y divide-white/5 overflow-hidden rounded-lg">
@@ -126,24 +138,24 @@ export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
                 })}
               </ul>
               <div className="flex flex-wrap items-center justify-end gap-2">
-                {items.length > DEFAULT_ROWS ? (
+                {filteredItems.length > DEFAULT_ROWS ? (
                   <button
                     type="button"
                     onClick={() => setExpanded((value) => !value)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:border-ember/40 hover:text-ember"
                   >
                     {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                    {expanded ? "收合" : `展開前 ${Math.min(EXPANDED_ROWS, items.length)} 筆`}
+                    {expanded ? "收合" : `展開前 ${Math.min(EXPANDED_ROWS, filteredItems.length)} 筆`}
                   </button>
                 ) : null}
-                {items.length > EXPANDED_ROWS ? (
+                {filteredItems.length > EXPANDED_ROWS ? (
                   <button
                     type="button"
                     onClick={() => setAllOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-ember/30 bg-ember/10 px-3 py-1.5 text-xs text-ember transition hover:border-ember/60"
                   >
                     <ListFilter className="h-3.5 w-3.5" />
-                    查看全部 {items.length} 筆
+                    查看全部 {filteredItems.length} 筆
                   </button>
                 ) : null}
               </div>
@@ -155,15 +167,50 @@ export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
       {allOpen ? (
         <ModalShell
           title="5m 短線狀態雷達"
-          subtitle={`完整 ${items.length} 筆 · 不改正式 15m 分數`}
+          subtitle={`${filterName(filter)} ${filteredItems.length} 筆 · 不改正式 15m 分數`}
           icon={<Activity className="h-4 w-4" />}
           onClose={() => setAllOpen(false)}
           widthClass="max-w-7xl"
         >
-          <RiskTable items={items} onSelect={selectFromModal} />
+          <RiskTable items={filteredItems} onSelect={selectFromModal} />
         </ModalShell>
       ) : null}
     </>
+  );
+}
+
+function FilterButton({
+  active,
+  label,
+  count,
+  onClick,
+  disabled = false,
+  alert = false
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+  disabled?: boolean;
+  alert?: boolean;
+}) {
+  const activeTone = alert
+    ? "border-short/55 bg-short/15 text-short"
+    : "border-ember/50 bg-ember/15 text-ember";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`rounded-sm border px-2 py-1 tabular-nums transition ${
+        active
+          ? activeTone
+          : "border-white/10 bg-white/5 text-slate-400 hover:border-ember/35 hover:text-slate-200"
+      } disabled:cursor-not-allowed disabled:opacity-40`}
+    >
+      {label} {count}
+    </button>
   );
 }
 
@@ -319,6 +366,17 @@ function CompactEmpty({ text }: { text: string }) {
       <span>{text}</span>
     </div>
   );
+}
+
+function isLiquidationEvent(item: RiskRadarItem): boolean {
+  return item.flags.some((flag) => flag.includes("爆倉"));
+}
+
+function filterName(filter: RadarFilter): string {
+  if (filter === "HIGH") return "高警戒";
+  if (filter === "CONFLICT") return "方向衝突";
+  if (filter === "LIQUIDATION") return "爆倉";
+  return "全部事件";
 }
 
 function displayFlags(item: RiskRadarItem): string[] {
