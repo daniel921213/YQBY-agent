@@ -101,6 +101,10 @@ class AnomalyTracker:
         # so every client sees the same "象限切換" against the same baseline (the
         # last ~5-min scan), instead of each browser keeping its own memory.
         self._oi_sides: dict[str, str] = {}
+        self._confirmed_oi_sides: dict[str, str] = {}
+        self._pending_oi_sides: dict[str, tuple[str, int]] = {}
+        self._confirmed_risk_states: dict[str, str] = {}
+        self._pending_risk_states: dict[str, tuple[str, int]] = {}
 
     def swap_oi_sides(self, sides: dict[str, str]) -> dict[str, str]:
         """Store this scan's quadrant per symbol; return the previous scan's map."""
@@ -108,6 +112,57 @@ class AnomalyTracker:
             previous = self._oi_sides
             self._oi_sides = dict(sides)
             return previous
+
+    def confirm_oi_side_transitions(
+        self, sides: dict[str, str]
+    ) -> dict[str, tuple[str, str]]:
+        """Confirm a quadrant switch only after two consecutive scans.
+
+        One noisy 5-minute observation is retained as pending state and does
+        not become a user-facing transition.
+        """
+
+        with self._lock:
+            return self._confirm_transitions(
+                sides, self._confirmed_oi_sides, self._pending_oi_sides
+            )
+
+    def confirm_risk_state_transitions(
+        self, states: dict[str, str]
+    ) -> dict[str, tuple[str, str]]:
+        """Independent two-scan hysteresis for the closed-5m risk overlay."""
+
+        with self._lock:
+            return self._confirm_transitions(
+                states, self._confirmed_risk_states, self._pending_risk_states
+            )
+
+    @staticmethod
+    def _confirm_transitions(
+        readings: dict[str, str],
+        confirmed: dict[str, str],
+        pending: dict[str, tuple[str, int]],
+    ) -> dict[str, tuple[str, str]]:
+        transitions: dict[str, tuple[str, str]] = {}
+        for symbol, state in readings.items():
+            baseline = confirmed.get(symbol)
+            if baseline is None:
+                confirmed[symbol] = state
+                pending.pop(symbol, None)
+                continue
+            if state == baseline:
+                pending.pop(symbol, None)
+                continue
+
+            candidate, count = pending.get(symbol, (state, 0))
+            count = count + 1 if candidate == state else 1
+            if count >= 2:
+                transitions[symbol] = (baseline, state)
+                confirmed[symbol] = state
+                pending.pop(symbol, None)
+            else:
+                pending[symbol] = (state, count)
+        return transitions
 
     def record(self, items: list[ScanItem], now_ts: int | None = None) -> None:
         """Update lifecycle state from an authoritative scan and write the

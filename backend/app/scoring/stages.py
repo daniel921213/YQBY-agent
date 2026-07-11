@@ -6,7 +6,7 @@ the move" so a user can tell 剛開始異動 from 已經過熱 at a glance:
 - 早期異動   flow/volume/OI are moving but price hasn't — the radar's prize
 - 趨勢啟動   price has just started moving and flow confirms it
 - 趨勢延續   an established move that order flow still supports
-- 過熱風險   the move is extended AND the crowd piled in (funding/retail) — late
+- 過熱風險   the move is extended AND the crowd piled in (funding/accounts) — late
 - 反轉警訊   fresh divergence or aggressive flow flipping against the move
 - 觀察       nothing actionable (screener fallback; anomalies rarely land here)
 
@@ -68,8 +68,8 @@ _THRUST_FLIP_Z = 1.8
 
 # Crowding thresholds for 過熱.
 _FUNDING_HOT = 0.0005
-_RETAIL_LONG_CROWDED = 1.5
-_RETAIL_SHORT_CROWDED = 0.65
+_ACCOUNT_LONG_CROWDED = 1.5
+_ACCOUNT_SHORT_CROWDED = 0.65
 
 _MAX_REASONS = 4
 
@@ -119,19 +119,37 @@ def classify_stage(
 
     # ── 1. 反轉警訊 — fresh divergence against a real move, or flow flipping ──
     if divergence.kind == "bullish" and ret_24h <= -_REVERSAL_MIN_MOVE:
-        reasons = [f"CVD 底背離（{divergence.age_bars} 根 K 線內確認）", f"24h {ret_24h:+.1%} 下跌後賣壓衰竭"]
-        if cvd_thrust.zscore >= _THRUST_HOT_Z:
+        if divergence.pattern == "absorption":
+            reasons = [
+                f"CVD 底背離／賣單吸收（{divergence.age_bars} 根 K 線內確認）",
+                f"24h {ret_24h:+.1%} 下跌後，主動賣單未能再壓低價格",
+            ]
+        else:
+            reasons = [
+                f"CVD 底背離／賣壓衰竭（{divergence.age_bars} 根 K 線內確認）",
+                f"24h {ret_24h:+.1%} 下跌後主動賣壓未跟隨",
+            ]
+        if cvd_thrust.direction == "LONG" and cvd_thrust.zscore >= _THRUST_HOT_Z:
             reasons.append(f"主動買盤回流 z={cvd_thrust.zscore:+.1f}")
         return StageResult(STAGE_REVERSAL, reasons[:_MAX_REASONS])
     if divergence.kind == "bearish" and ret_24h >= _REVERSAL_MIN_MOVE:
-        reasons = [f"CVD 頂背離（{divergence.age_bars} 根 K 線內確認）", f"24h {ret_24h:+.1%} 上漲後買盤不繼"]
-        if cvd_thrust.zscore <= -_THRUST_HOT_Z:
+        if divergence.pattern == "absorption":
+            reasons = [
+                f"CVD 頂背離／買單吸收（{divergence.age_bars} 根 K 線內確認）",
+                f"24h {ret_24h:+.1%} 上漲後，主動買單未能再推高價格",
+            ]
+        else:
+            reasons = [
+                f"CVD 頂背離／買盤衰竭（{divergence.age_bars} 根 K 線內確認）",
+                f"24h {ret_24h:+.1%} 上漲後主動買盤未跟隨",
+            ]
+        if cvd_thrust.direction == "SHORT" and cvd_thrust.zscore <= -_THRUST_HOT_Z:
             reasons.append(f"主動賣盤湧現 z={cvd_thrust.zscore:+.1f}")
         return StageResult(STAGE_REVERSAL, reasons[:_MAX_REASONS])
     if (
         move_sign != 0
         and abs(ret_24h) >= _EXTENDED_24H
-        and _sign(cvd_thrust.zscore) == -move_sign
+        and cvd_thrust.direction == ("SHORT" if move_sign > 0 else "LONG")
         and abs(cvd_thrust.zscore) >= _THRUST_FLIP_Z
     ):
         side = "賣" if move_sign > 0 else "買"
@@ -153,10 +171,10 @@ def classify_stage(
             crowd.append(f"資金費率 {funding:.4%} 同向過熱")
         if move_sign < 0 and funding <= -_FUNDING_HOT:
             crowd.append(f"資金費率 {funding:.4%} 同向過熱")
-        if move_sign > 0 and account_ratio >= _RETAIL_LONG_CROWDED:
-            crowd.append(f"散戶多空比 {account_ratio:.2f}，多單擁擠")
-        if move_sign < 0 and account_ratio <= _RETAIL_SHORT_CROWDED:
-            crowd.append(f"散戶多空比 {account_ratio:.2f}，空單擁擠")
+        if move_sign > 0 and account_ratio >= _ACCOUNT_LONG_CROWDED:
+            crowd.append(f"全體帳戶多空比 {account_ratio:.2f}，多單擁擠")
+        if move_sign < 0 and account_ratio <= _ACCOUNT_SHORT_CROWDED:
+            crowd.append(f"全體帳戶多空比 {account_ratio:.2f}，空單擁擠")
         if volume_surge.ratio >= _VOL_BLOWOFF_RATIO:
             crowd.append(f"量能 {volume_surge.ratio:.1f}× 急速放大，疑似末段趕價")
         if crowd:
@@ -169,11 +187,11 @@ def classify_stage(
     # ── 3. 早期異動 — flow moving, price not yet ───────────────────────────
     quiet = abs(ret_4h) <= _QUIET_4H and abs(ret_24h) <= _QUIET_24H
     flow_hits: list[str] = []
-    if volume_surge.ratio >= _VOL_HOT_RATIO:
+    if volume_surge.ratio >= _VOL_HOT_RATIO and volume_surge.direction != "NEUTRAL":
         flow_hits.append(f"量能 {volume_surge.ratio:.1f}× 異常放大")
-    if abs(oi_change_4h) >= _OI_ACTIVE_4H:
-        flow_hits.append(f"OI 4h {oi_change_4h:+.1%} 快速變化")
-    if abs(cvd_thrust.zscore) >= _THRUST_HOT_Z:
+    if oi_change_4h >= _OI_ACTIVE_4H:
+        flow_hits.append(f"OI 4h {oi_change_4h:+.1%} 增倉")
+    if cvd_thrust.direction != "NEUTRAL" and abs(cvd_thrust.zscore) >= _THRUST_HOT_Z:
         side = "買" if cvd_thrust.zscore > 0 else "賣"
         flow_hits.append(f"主動{side}盤轉強 z={cvd_thrust.zscore:+.1f}")
     if quiet and (len(flow_hits) >= 2 or (flow_hits and squeeze.compressed)):
@@ -192,8 +210,12 @@ def classify_stage(
         )
     )
     flow_confirms = (
-        _sign(cvd_thrust.zscore) == move_sign and abs(cvd_thrust.zscore) >= 1.0
-    ) or volume_surge.ratio >= _VOL_HOT_RATIO or oi_change_4h >= _OI_ACTIVE_4H
+        cvd_thrust.direction == ("LONG" if move_sign > 0 else "SHORT")
+        and abs(cvd_thrust.zscore) >= 1.0
+    ) or (
+        volume_surge.direction == ("LONG" if move_sign > 0 else "SHORT")
+        and volume_surge.ratio >= _VOL_HOT_RATIO
+    ) or oi_change_4h >= _OI_ACTIVE_4H
     if starting and flow_hits and flow_confirms:
         move_word = "上行" if move_sign > 0 else "下行"
         return StageResult(
@@ -206,15 +228,24 @@ def classify_stage(
         move_sign < 0 and ret_24h <= -_ESTABLISHED_24H
     )
     supported = (
-        (_sign(cvd_thrust.zscore) == move_sign and abs(cvd_thrust.zscore) >= 0.8)
+        (
+            cvd_thrust.direction == ("LONG" if move_sign > 0 else "SHORT")
+            and abs(cvd_thrust.zscore) >= 0.8
+        )
         or (move_sign > 0 and oi_change_4h >= 0.01)
         or (move_sign < 0 and oi_change_4h >= 0.01)  # OI building on a dump = shorts adding
-        or volume_surge.ratio >= 1.3
+        or (
+            volume_surge.direction == ("LONG" if move_sign > 0 else "SHORT")
+            and volume_surge.ratio >= 1.3
+        )
     )
     if established and supported:
         move_word = "漲" if move_sign > 0 else "跌"
         reasons = [f"24h {ret_24h:+.1%}，{move_word}勢進行中"]
-        if abs(cvd_thrust.zscore) >= 0.8 and _sign(cvd_thrust.zscore) == move_sign:
+        if (
+            abs(cvd_thrust.zscore) >= 0.8
+            and cvd_thrust.direction == ("LONG" if move_sign > 0 else "SHORT")
+        ):
             side = "買" if move_sign > 0 else "賣"
             reasons.append(f"主動{side}盤持續 z={cvd_thrust.zscore:+.1f}")
         if oi_change_4h >= 0.01:

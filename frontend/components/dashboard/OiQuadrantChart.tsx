@@ -13,13 +13,23 @@ interface OiQuadrantChartProps {
 // `side` uses the same sign convention, so dot position and colour always agree.
 const SIDE_META: Record<OiMoverSide, { color: string; desc: string }> = {
   多頭建倉: { color: "#23dd8d", desc: "價漲 · OI增" },
-  空頭平倉: { color: "#3fb6f6", desc: "價漲 · OI減" },
-  多頭平倉: { color: "#f0b429", desc: "價跌 · OI減" },
   空頭建倉: { color: "#ff5166", desc: "價跌 · OI增" },
+  空頭回補: { color: "#3fb6f6", desc: "價漲 · OI減（退出）" },
+  多頭去槓桿: { color: "#f0b429", desc: "價跌 · OI減（退出）" },
+  "OI增倉／價格持平": { color: "#a78bfa", desc: "價平 · OI增" },
+  "OI減倉／價格持平": { color: "#94a3b8", desc: "價平 · OI減" },
+  "價格上漲／OI持平": { color: "#67e8f9", desc: "價漲 · OI平" },
+  "價格下跌／OI持平": { color: "#fb7185", desc: "價跌 · OI平" },
+  空頭平倉: { color: "#3fb6f6", desc: "價漲 · OI減（舊快取）" },
+  多頭平倉: { color: "#f0b429", desc: "價跌 · OI減（舊快取）" },
   持平: { color: "#64748b", desc: "" }
 };
 
-const SIDE_ORDER: OiMoverSide[] = ["多頭建倉", "空頭平倉", "多頭平倉", "空頭建倉"];
+const SIDE_ORDER: OiMoverSide[] = [
+  "多頭建倉", "空頭建倉", "空頭回補", "多頭去槓桿",
+  "OI增倉／價格持平", "OI減倉／價格持平",
+  "價格上漲／OI持平", "價格下跌／OI持平", "持平"
+];
 
 // SVG geometry in viewBox units; the svg scales to its container.
 const VW = 760;
@@ -72,9 +82,15 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
   const counts = useMemo(() => {
     const tally: Record<OiMoverSide, number> = {
       多頭建倉: 0,
+      空頭建倉: 0,
+      空頭回補: 0,
+      多頭去槓桿: 0,
+      "OI增倉／價格持平": 0,
+      "OI減倉／價格持平": 0,
+      "價格上漲／OI持平": 0,
+      "價格下跌／OI持平": 0,
       空頭平倉: 0,
       多頭平倉: 0,
-      空頭建倉: 0,
       持平: 0
     };
     for (const m of pool) tally[m.side] += 1;
@@ -217,7 +233,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             viewBox={`0 0 ${VW} ${VH}`}
             className="block h-auto w-full select-none"
             role="img"
-            aria-label="OI 四象限異動圖"
+            aria-label="OI 與價格 3×3 狀態異動圖"
             onMouseLeave={() => setHoveredSymbol(null)}
           >
             <defs>
@@ -227,12 +243,12 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                 <stop offset="1" stopColor={SIDE_META.多頭建倉.color} stopOpacity="0.13" />
               </linearGradient>
               <linearGradient id="oiq-q2" x1="1" y1="1" x2="0" y2="0">
-                <stop offset="0" stopColor={SIDE_META.空頭平倉.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.空頭平倉.color} stopOpacity="0.13" />
+                <stop offset="0" stopColor={SIDE_META.空頭回補.color} stopOpacity="0" />
+                <stop offset="1" stopColor={SIDE_META.空頭回補.color} stopOpacity="0.13" />
               </linearGradient>
               <linearGradient id="oiq-q3" x1="1" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={SIDE_META.多頭平倉.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.多頭平倉.color} stopOpacity="0.13" />
+                <stop offset="0" stopColor={SIDE_META.多頭去槓桿.color} stopOpacity="0" />
+                <stop offset="1" stopColor={SIDE_META.多頭去槓桿.color} stopOpacity="0.13" />
               </linearGradient>
               <linearGradient id="oiq-q4" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0" stopColor={SIDE_META.空頭建倉.color} stopOpacity="0" />
@@ -302,11 +318,11 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               <text x={M.left + PW - 10} y={M.top + 18} textAnchor="end" fill={SIDE_META.多頭建倉.color}>
                 多頭建倉
               </text>
-              <text x={M.left + 10} y={M.top + 18} fill={SIDE_META.空頭平倉.color}>
-                空頭平倉
+              <text x={M.left + 10} y={M.top + 18} fill={SIDE_META.空頭回補.color}>
+                空頭回補
               </text>
-              <text x={M.left + 10} y={M.top + PH - 22} fill={SIDE_META.多頭平倉.color}>
-                多頭平倉
+              <text x={M.left + 10} y={M.top + PH - 22} fill={SIDE_META.多頭去槓桿.color}>
+                多頭去槓桿
               </text>
               <text x={M.left + PW - 10} y={M.top + PH - 22} textAnchor="end" fill={SIDE_META.空頭建倉.color}>
                 空頭建倉
@@ -316,11 +332,11 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               <text x={M.left + PW - 10} y={M.top + 31} textAnchor="end" fill={SIDE_META.多頭建倉.color} opacity={0.55}>
                 {SIDE_META.多頭建倉.desc}
               </text>
-              <text x={M.left + 10} y={M.top + 31} fill={SIDE_META.空頭平倉.color} opacity={0.55}>
-                {SIDE_META.空頭平倉.desc}
+              <text x={M.left + 10} y={M.top + 31} fill={SIDE_META.空頭回補.color} opacity={0.55}>
+                {SIDE_META.空頭回補.desc}
               </text>
-              <text x={M.left + 10} y={M.top + PH - 10} fill={SIDE_META.多頭平倉.color} opacity={0.55}>
-                {SIDE_META.多頭平倉.desc}
+              <text x={M.left + 10} y={M.top + PH - 10} fill={SIDE_META.多頭去槓桿.color} opacity={0.55}>
+                {SIDE_META.多頭去槓桿.desc}
               </text>
               <text x={M.left + PW - 10} y={M.top + PH - 10} textAnchor="end" fill={SIDE_META.空頭建倉.color} opacity={0.55}>
                 {SIDE_META.空頭建倉.desc}
@@ -329,7 +345,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
             {/* Axis titles */}
             <text x={M.left + PW / 2} y={VH - 10} textAnchor="middle" fontSize={11} fill="#64748b">
-              持倉變化 (1H)
+              OI 數量變化 (1H)
             </text>
             <text
               x={14}
