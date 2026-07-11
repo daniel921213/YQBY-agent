@@ -150,12 +150,6 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
     setHoveredSymbol(null);
   };
 
-  if (!movers.length) {
-    return (
-      <div className="py-10 text-center text-sm text-slate-500">目前沒有明顯的 OI 異動。</div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
       {/* Quadrant chips (toggle) + threshold sliders */}
@@ -459,8 +453,10 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
           {/* All filtered out */}
           {!filtered.length ? (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">
-              沒有符合門檻的異動 — 調低門檻或重新顯示象限
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
+              {movers.length
+                ? "沒有符合門檻的異動 — 調低門檻或重新顯示象限"
+                : "OI 資料尚未取得，等待下一輪市場掃描"}
             </div>
           ) : null}
         </div>

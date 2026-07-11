@@ -269,9 +269,11 @@ def test_gate_klines_keep_quote_volume_and_drop_open_bar(monkeypatch) -> None:
 def test_gate_symbol_universe_excludes_tradfi_and_delisting_contracts() -> None:
     source = object.__new__(GateLiveMarketDataSource)
     source._settings = type("Settings", (), {"scan_universe_size": 0})()
+    calls = []
 
     class Client:
         def get_json(self, path, params=None):
+            calls.append((path, params))
             if path.endswith("/tickers"):
                 return [
                     {"contract": "XAU_USDT", "volume_24h_quote": "999"},
@@ -289,6 +291,10 @@ def test_gate_symbol_universe_excludes_tradfi_and_delisting_contracts() -> None:
     source._client = Client()
 
     assert source.list_symbols() == ["BTCUSDT", "ETHUSDT"]
+    assert calls == [
+        ("/futures/usdt/tickers", None),
+        ("/futures/usdt/contracts", None),
+    ]
 
 
 def test_gate_funding_is_labelled_settled_not_current(monkeypatch) -> None:

@@ -211,9 +211,10 @@ class GateLiveMarketDataSource(MarketDataSource):
 
     def list_symbols(self) -> list[str]:
         tickers = self._client.get_json("/futures/usdt/tickers")
-        contracts = self._client.get_json(
-            "/futures/usdt/contracts", params={"limit": 1_000}
-        )
+        # Gate returns the complete contract list from this endpoint and does
+        # not accept a ``limit`` query parameter. Sending one produces HTTP
+        # 400, which prevents the background scan from discovering any symbol.
+        contracts = self._client.get_json("/futures/usdt/contracts")
         crypto_contracts = {
             str(row.get("name", ""))
             for row in contracts
