@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/noto-sans-tc";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 
 export const metadata: Metadata = {

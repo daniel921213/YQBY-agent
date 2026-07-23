@@ -68,7 +68,7 @@ function Dashboard() {
 
   if (expired) {
     return (
-      <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+      <main className="dashboard-shell relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
         <SpaceParticleField />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
           <header className="glass-panel flex flex-wrap items-center gap-3 rounded-xl px-4 py-4">
@@ -93,7 +93,7 @@ function Dashboard() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+    <main className="dashboard-shell relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
       <SpaceParticleField />
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
         <MarketHeader
@@ -116,7 +116,7 @@ function Dashboard() {
           </section>
         ) : (
           <>
-            <nav className="flex flex-wrap gap-1 border-b border-white/10">
+            <nav className="font-kicker flex flex-wrap gap-1 border-b border-white/10">
               {tabs.map((t) => (
                 <button
                   key={t.key}

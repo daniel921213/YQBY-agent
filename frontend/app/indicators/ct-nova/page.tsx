@@ -14,7 +14,10 @@ import {
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { PageHeader } from "@/components/nav/PageHeader";
 import { NovaChartVisual } from "@/components/indicators/NovaChartVisual";
+import { NovaScrollStage } from "@/components/indicators/NovaScrollStage";
+import { PointerGlow } from "@/components/visual/PointerGlow";
 import { Reveal } from "@/components/visual/Reveal";
+import { ScrollChapter } from "@/components/visual/ScrollChapter";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 
 export const metadata: Metadata = {
@@ -81,84 +84,93 @@ const PARAMS = [
 const FIT = ["偏好趨勢交易、順勢操作", "習慣等回踩再進場", "需要明確的停損與目標價位"];
 const UNFIT = ["想每一段行情都參與", "追求高頻、大量訊號", "不使用停損的交易方式"];
 
+const PRODUCT_STATS = [
+  ["15m", "主要判讀週期"],
+  ["05", "訊號確認步驟"],
+  ["4H", "可選同向過濾"],
+  ["2.5 ATR", "預設初始停損"]
+] as const;
+
+const FAQS = [
+  {
+    question: "CT_NOVA 適合什麼交易方式？",
+    answer: "它以趨勢回踩為核心，適合願意等待條件完整、並且會執行停損的交易者；不以高頻出訊號為目標。"
+  },
+  {
+    question: "為什麼主要使用 15m？",
+    answer: "指標的趨勢、回踩深度與動能條件以加密合約 15m 設計；4H 可以作為更高週期的同向過濾。"
+  },
+  {
+    question: "出現訊號就一定會獲利嗎？",
+    answer: "不會。CT_NOVA 是條件與風控工具，不是獲利保證；每筆交易仍可能停損，使用者需要控制倉位與總風險。"
+  },
+  {
+    question: "訊號成立時會顯示哪些價格？",
+    answer: "畫面會標示進場、初始停損、TP1 與 TP2，讓交易計畫在進場前就有明確邊界。"
+  }
+] as const;
+
 export default function CtNovaPage() {
   return (
     <AuthGuard>
-      <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+      <main className="relative min-h-screen overflow-x-clip px-4 py-5 sm:px-6 lg:px-8">
         <SpaceParticleField />
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-5">
-          <PageHeader title="指標專區" backHref="/indicators" backLabel="返回指標專區" />
+          <PageHeader
+            title="CT_NOVA"
+            backHref="/indicators"
+            backLabel="返回指標專區"
+            anchors={[
+              { href: "#principles", label: "特色" },
+              { href: "#how", label: "流程" },
+              { href: "#chart", label: "圖表" },
+              { href: "#params", label: "參數" },
+              { href: "#faq", label: "FAQ" }
+            ]}
+          />
 
-          {/* ① Hero */}
-          <section className="flex flex-col items-center gap-5 px-4 pb-14 pt-14 text-center sm:pt-20">
-            <Reveal>
-              <p className="text-xs tracking-[0.32em] text-gold">INDICATOR 01 · TRADINGVIEW</p>
-            </Reveal>
-            <Reveal delay={80}>
-              <h2 className="bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-5xl font-bold tracking-tight text-transparent [filter:drop-shadow(0_0_28px_rgba(240,200,118,0.25))] sm:text-6xl">
-                CT_NOVA
-              </h2>
-            </Reveal>
-            <Reveal delay={160}>
-              <p className="text-lg font-medium text-slate-200 sm:text-xl">
-                Vegas 雙隧道 × Squeeze Momentum 趨勢回踩指標
-              </p>
-            </Reveal>
-            <Reveal delay={240}>
-              <p className="max-w-xl text-sm leading-7 text-slate-400">
-                專為加密合約 15m 設計——趨勢方向、動能狀態、進場條件與風控價格，一個面板看完。
-              </p>
-            </Reveal>
-            <Reveal delay={320}>
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href={ACTIVATE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-gold inline-flex cursor-pointer items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold"
-                >
-                  開通 NOVA 指標
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-                <a
-                  href="#how"
-                  className="surface lift inline-flex cursor-pointer items-center gap-2 rounded-md px-5 py-2.5 text-sm text-slate-200 hover:text-ember"
-                >
-                  了解運作邏輯
-                  <ArrowDown className="h-4 w-4" />
-                </a>
-              </div>
-            </Reveal>
-          </section>
+          <NovaScrollStage activateUrl={ACTIVATE_URL} />
 
           {/* ② 核心賣點 */}
-          <section className="py-10">
+          <ScrollChapter id="principles" index="01" label="四個設計原則" className="py-14">
             <Reveal>
-              <p className="text-center text-xs tracking-[0.28em] text-gold">WHY CT_NOVA</p>
-              <h3 className="mt-2 text-center text-2xl font-semibold text-slate-100">
+              <p className="font-kicker text-center text-xs tracking-[0.28em] text-gold">WHY CT_NOVA</p>
+              <h3 className="font-display mt-2 text-center text-3xl font-black text-slate-100">
                 四個設計原則
               </h3>
             </Reveal>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {SELLING_POINTS.map((point, i) => (
                 <Reveal key={point.title} delay={i * 90}>
-                  <div className="surface lift flex h-full flex-col gap-3 rounded-xl p-5">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold">
-                      <point.icon className="h-5 w-5" />
-                    </span>
-                    <p className="text-base font-semibold text-slate-100">{point.title}</p>
-                    <p className="text-[13px] leading-6 text-slate-400">{point.text}</p>
+                  <PointerGlow className="story-card surface lift h-full rounded-xl">
+                    <div className="flex h-full flex-col gap-3 p-5">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold">
+                        <point.icon className="h-5 w-5" />
+                      </span>
+                      <p className="text-base font-semibold text-slate-100">{point.title}</p>
+                      <p className="text-[13px] leading-6 text-slate-400">{point.text}</p>
+                    </div>
+                  </PointerGlow>
+                </Reveal>
+              ))}
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {PRODUCT_STATS.map(([value, label], index) => (
+                <Reveal key={label} delay={120 + index * 70}>
+                  <div className="surface-sunken chapter-light-fill rounded-xl px-4 py-5 text-center">
+                    <strong className="font-data block text-2xl text-ember sm:text-3xl">{value}</strong>
+                    <span className="mt-2 block text-xs text-slate-500">{label}</span>
                   </div>
                 </Reveal>
               ))}
             </div>
-          </section>
+          </ScrollChapter>
 
           {/* ③ 運作五步驟：中央金色 spine，左右交錯進場 */}
-          <section id="how" className="scroll-mt-24 py-14">
+          <ScrollChapter id="how" index="02" label="訊號五步驟" className="py-16">
             <Reveal>
-              <p className="text-center text-xs tracking-[0.28em] text-gold">HOW IT WORKS</p>
-              <h3 className="mt-2 text-center text-2xl font-semibold text-slate-100">
+              <p className="font-kicker text-center text-xs tracking-[0.28em] text-gold">HOW IT WORKS</p>
+              <h3 className="font-display mt-2 text-center text-3xl font-black text-slate-100">
                 一個訊號的誕生，要過五關
               </h3>
             </Reveal>
@@ -191,10 +203,10 @@ export default function CtNovaPage() {
                 );
               })}
             </div>
-          </section>
+          </ScrollChapter>
 
           {/* ④ 畫面介紹：文左圖右 */}
-          <section className="grid items-center gap-8 py-14 md:grid-cols-5 md:gap-10">
+          <ScrollChapter id="chart" index="03" label="圖表畫面" className="grid items-center gap-8 py-16 md:grid-cols-5 md:gap-10">
             <Reveal direction="left" className="md:col-span-2">
               <p className="text-xs tracking-[0.28em] text-gold">CHART LAYOUT</p>
               <h3 className="mt-2 text-2xl font-semibold text-slate-100">面板一眼看懂</h3>
@@ -233,10 +245,10 @@ export default function CtNovaPage() {
                 </div>
               </div>
             </Reveal>
-          </section>
+          </ScrollChapter>
 
           {/* ⑤ 適合誰 / 不適合誰 */}
-          <section className="py-14">
+          <ScrollChapter id="fit" index="04" label="適用對象" className="py-16">
             <div className="grid gap-4 md:grid-cols-2">
               <Reveal direction="left">
                 <div className="surface h-full rounded-xl border-l-2 border-l-long/50 p-6">
@@ -282,10 +294,10 @@ export default function CtNovaPage() {
                 </span>
               </p>
             </Reveal>
-          </section>
+          </ScrollChapter>
 
           {/* ⑥ 參數一覽 + 警報 */}
-          <section id="params" className="scroll-mt-24 py-14">
+          <ScrollChapter id="params" index="05" label="參數一覽" className="py-16">
             <Reveal>
               <p className="text-center text-xs tracking-[0.28em] text-gold">PARAMETERS</p>
               <h3 className="mt-2 text-center text-2xl font-semibold text-slate-100">參數一覽</h3>
@@ -309,7 +321,33 @@ export default function CtNovaPage() {
                 call」）：訊號確認後自動帶出方向、商品、進場價、停損價、TP1、TP2 與 Squeeze 狀態。
               </p>
             </Reveal>
-          </section>
+          </ScrollChapter>
+
+          <ScrollChapter id="faq" index="06" label="常見問題" className="py-16">
+            <Reveal>
+              <p className="font-kicker text-center text-xs tracking-[0.28em] text-gold">
+                QUESTIONS
+              </p>
+              <h3 className="font-display mt-2 text-center text-3xl font-black text-slate-100">
+                常見問題
+              </h3>
+            </Reveal>
+            <Reveal delay={100}>
+              <div className="glass-panel mx-auto mt-8 max-w-3xl rounded-2xl px-5 sm:px-7">
+                {FAQS.map((item) => (
+                  <details key={item.question} className="story-faq">
+                    <summary>
+                      <span className="text-sm font-medium sm:text-base">{item.question}</span>
+                      <span className="story-faq-plus" aria-hidden />
+                    </summary>
+                    <p className="max-w-2xl pb-5 pr-8 text-sm leading-7 text-slate-400">
+                      {item.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </Reveal>
+          </ScrollChapter>
 
           {/* ⑦ 頁尾：CTA 收束 + 風險聲明 */}
           <section className="flex flex-col items-center gap-6 pb-14 pt-6 text-center">

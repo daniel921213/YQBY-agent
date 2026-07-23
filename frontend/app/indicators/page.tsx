@@ -11,7 +11,9 @@ import {
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { PageHeader } from "@/components/nav/PageHeader";
 import { NovaChartVisual } from "@/components/indicators/NovaChartVisual";
+import { PointerGlow } from "@/components/visual/PointerGlow";
 import { Reveal } from "@/components/visual/Reveal";
+import { ScrollChapter } from "@/components/visual/ScrollChapter";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 
 const NOVA_POINTS = [
@@ -24,18 +26,25 @@ const NOVA_POINTS = [
 export default function IndicatorsPage() {
   return (
     <AuthGuard>
-      <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+      <main className="relative min-h-screen overflow-x-clip px-4 py-5 sm:px-6 lg:px-8">
         <SpaceParticleField />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
-          <PageHeader title="指標專區" />
+          <PageHeader
+            title="指標專區"
+            anchors={[
+              { href: "#nova", label: "CT_NOVA" },
+              { href: "#next", label: "COMING NEXT" }
+            ]}
+            cta={{ href: "/indicators/ct-nova", label: "查看 NOVA" }}
+          />
 
           {/* 開場：短 hero，往下是章節式內容 */}
           <section className="flex flex-col items-center gap-4 px-4 pb-10 pt-14 text-center sm:pt-20">
             <Reveal>
-              <p className="text-xs tracking-[0.32em] text-gold">INDICATORS</p>
+              <p className="font-kicker text-xs tracking-[0.32em] text-gold">INDICATORS</p>
             </Reveal>
             <Reveal delay={80}>
-              <h2 className="max-w-2xl bg-gradient-to-b from-white to-slate-400 bg-clip-text text-3xl font-semibold leading-tight text-transparent sm:text-4xl">
+              <h2 className="font-display max-w-2xl bg-gradient-to-b from-white to-slate-400 bg-clip-text text-3xl font-black leading-tight text-transparent sm:text-5xl">
                 用結構與動能，取代直覺
               </h2>
             </Reveal>
@@ -51,12 +60,12 @@ export default function IndicatorsPage() {
           </section>
 
           {/* 章節 01：CT_NOVA（文左圖右，滾動時左右合攏） */}
-          <section className="grid items-center gap-8 py-10 md:grid-cols-5 md:gap-10 lg:py-16">
+          <ScrollChapter id="nova" index="01" label="CT_NOVA" className="grid items-center gap-8 py-12 md:grid-cols-5 md:gap-10 lg:py-20">
             <Reveal direction="left" className="md:col-span-2">
               <div className="flex flex-col gap-5">
                 <div>
-                  <p className="text-xs tracking-[0.28em] text-gold">INDICATOR 01</p>
-                  <h3 className="mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+                  <p className="font-kicker text-xs tracking-[0.28em] text-gold">INDICATOR 01</p>
+                  <h3 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-4xl font-black tracking-tight text-transparent">
                     CT_NOVA
                   </h3>
                   <p className="mt-3 text-base font-medium text-slate-200">
@@ -104,24 +113,26 @@ export default function IndicatorsPage() {
             </Reveal>
 
             <Reveal direction="right" delay={100} className="md:col-span-3">
-              <div className="surface-raised overflow-hidden rounded-xl">
-                <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-                  <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(240,200,118,0.8)]" aria-hidden />
-                  <span className="text-xs font-medium tracking-wide text-slate-200">CT_NOVA</span>
-                  <span className="text-xs text-slate-500">BTCUSDT.P · 15m</span>
-                  <span className="ml-auto rounded border border-long/30 bg-long/10 px-2 py-0.5 text-xs text-long">
-                    訊號成立
-                  </span>
+              <PointerGlow className="story-card surface-raised rounded-xl">
+                <div className="overflow-hidden rounded-xl">
+                  <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
+                    <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(240,200,118,0.8)]" aria-hidden />
+                    <span className="font-kicker text-xs font-medium tracking-wide text-slate-200">CT_NOVA</span>
+                    <span className="font-data text-xs text-slate-500">BTCUSDT.P · 15m</span>
+                    <span className="ml-auto rounded border border-long/30 bg-long/10 px-2 py-0.5 text-xs text-long">
+                      訊號成立
+                    </span>
+                  </div>
+                  <div className="p-2 sm:p-3">
+                    <NovaChartVisual />
+                  </div>
                 </div>
-                <div className="p-2 sm:p-3">
-                  <NovaChartVisual />
-                </div>
-              </div>
+              </PointerGlow>
             </Reveal>
-          </section>
+          </ScrollChapter>
 
           {/* 章節 02：籌備中 */}
-          <section className="pb-16 pt-4">
+          <ScrollChapter id="next" index="02" label="下一個指標" className="pb-16 pt-8">
             <Reveal>
               <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 px-6 py-12 text-center">
                 <p className="text-xs tracking-[0.28em] text-slate-500">INDICATOR 02</p>
@@ -134,7 +145,7 @@ export default function IndicatorsPage() {
                 </p>
               </div>
             </Reveal>
-          </section>
+          </ScrollChapter>
         </div>
       </main>
     </AuthGuard>

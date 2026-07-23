@@ -9,6 +9,10 @@
 :root {
   color-scheme: dark;
 
+  --font-noto-tc: "Noto Sans TC Variable";
+  --font-space-grotesk: "Space Grotesk Variable";
+  --font-jetbrains-mono: "JetBrains Mono Variable";
+
   --c-obsidian: 7 12 24;
   --c-graphite: 14 23 41;
   --c-steel: 27 44 74;
@@ -108,8 +112,8 @@ html[data-theme="light"] body {
 
 /* 深空底：星點（8 顆）→ 兩片極淡星雲 → 深空黑。fixed 讓星空釘在視窗、內容在其上滑動。 */
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-noto-tc), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   background:
     radial-gradient(1.5px 1.5px at 12% 22%, rgba(190, 226, 255, 0.62) 50%, transparent 51%),
     radial-gradient(1px 1px at 28% 64%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
@@ -159,6 +163,23 @@ button,
 input,
 select {
   font: inherit;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-noto-tc), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-kicker {
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-data,
+.tabular-nums {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
@@ -538,6 +559,808 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 }
 .glow-sweep:hover::after {
   left: 130%;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   品牌敘事共用元件：章節進度、游標邊光、發光分隔線。
+   全部只操作 opacity / transform / CSS 變數，不干預內容高度與互動。
+   ────────────────────────────────────────────────────────────── */
+.scroll-chapter {
+  --chapter-progress: 0;
+  position: relative;
+  isolation: isolate;
+}
+
+.chapter-rail {
+  position: absolute;
+  inset: 1.5rem auto 1.5rem -2.3rem;
+  width: 1.25rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.chapter-rail-track,
+.chapter-rail-fill {
+  position: absolute;
+  left: 50%;
+  top: 1.5rem;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.chapter-rail-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chapter-rail-fill {
+  bottom: auto;
+  height: calc((100% - 1.5rem) * var(--chapter-progress));
+  background: linear-gradient(180deg, rgba(76, 194, 255, 0.2), rgba(190, 226, 255, 0.95));
+  box-shadow: 0 0 13px rgba(76, 194, 255, 0.65);
+}
+
+.chapter-rail-dot {
+  position: absolute;
+  left: 50%;
+  top: calc(1.5rem + (100% - 1.5rem) * var(--chapter-progress));
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: #d7eeff;
+  box-shadow:
+    0 0 0 3px rgba(76, 194, 255, 0.12),
+    0 0 18px rgba(76, 194, 255, 0.95);
+}
+
+.chapter-index {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  color: rgba(240, 200, 118, 0.68);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}
+
+.chapter-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  transform: scaleX(var(--chapter-progress));
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(76, 194, 255, 0.55),
+    rgba(240, 200, 118, 0.28),
+    transparent
+  );
+  box-shadow: 0 0 14px rgba(76, 194, 255, 0.22);
+  transform-origin: center;
+}
+
+.pointer-glow,
+.cursor-glow {
+  --pointer-x: 50%;
+  --pointer-y: 42%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.pointer-glow::after,
+.cursor-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(
+      260px circle at var(--pointer-x) var(--pointer-y),
+      rgba(176, 224, 255, 0.15),
+      rgba(76, 194, 255, 0.05) 38%,
+      transparent 68%
+    );
+  transition: opacity 0.28s ease;
+}
+
+.pointer-glow:hover::after,
+.cursor-glow:hover::after {
+  opacity: 1;
+}
+
+.story-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.story-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(76, 194, 255, calc(0.08 + var(--chapter-progress) * 0.34)),
+    rgba(240, 200, 118, calc(0.04 + var(--chapter-progress) * 0.18)),
+    rgba(255, 255, 255, 0.04)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.chapter-light-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.chapter-light-fill::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(var(--chapter-progress) * 100%);
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.09));
+  transition: height 0.08s linear;
+}
+
+html[data-theme="light"] .chapter-rail-track {
+  background: rgba(15, 30, 60, 0.1);
+}
+
+html[data-theme="light"] .pointer-glow::after,
+html[data-theme="light"] .cursor-glow::after {
+  background: radial-gradient(
+    260px circle at var(--pointer-x) var(--pointer-y),
+    rgba(2, 132, 199, 0.12),
+    transparent 68%
+  );
+}
+
+/* 內頁浮動導覽：桌面顯示錨點膠囊，手機保留簡潔品牌列。 */
+.page-header-shell {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 30;
+}
+
+.page-anchor-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  background: rgba(3, 8, 18, 0.42);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.page-anchor-link {
+  border-radius: 999px;
+  padding: 0.45rem 0.72rem;
+  color: rgb(var(--c-slate-400));
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.page-anchor-link:hover {
+  color: rgb(var(--c-slate-50));
+  background: rgba(76, 194, 255, 0.08);
+}
+
+html[data-theme="light"] .page-anchor-nav {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(15, 30, 60, 0.1);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CT_NOVA pinned scrollytelling hero。
+   高度只給產品故事；內容頁與資料面板不使用此重量級舞台。
+   ────────────────────────────────────────────────────────────── */
+.nova-story {
+  --story-progress: 0;
+  --scene-a-opacity: 1;
+  --scene-b-opacity: 0;
+  --object-scale: 0.82;
+  --object-x: -5vw;
+  --object-y: 8vh;
+  position: relative;
+  height: 240vh;
+  margin-top: -6.75rem;
+  margin-inline: calc(50% - 50vw);
+}
+
+.nova-story-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 680px;
+  overflow: hidden;
+  isolation: isolate;
+  background: #050608;
+}
+
+.nova-scene {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.08s linear;
+}
+
+.nova-scene-a {
+  opacity: var(--scene-a-opacity);
+}
+
+.nova-scene-b {
+  opacity: var(--scene-b-opacity);
+  background:
+    radial-gradient(circle at 56% 50%, rgba(76, 194, 255, 0.11), transparent 20%),
+    radial-gradient(circle at 65% 60%, rgba(212, 175, 55, 0.04), transparent 30%),
+    #030405;
+}
+
+.nova-scene-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(1, 3, 6, 0.8), transparent 46%, rgba(1, 3, 6, 0.18)),
+    linear-gradient(0deg, rgba(1, 3, 6, 0.74), transparent 40%, rgba(1, 3, 6, 0.35));
+}
+
+.nova-watermark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  color: rgba(255, 255, 255, 0.026);
+  font-size: clamp(5rem, 15vw, 17rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 0.8;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.nova-dust {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 12% 25%, rgba(218, 239, 255, 0.82) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 24% 68%, rgba(218, 239, 255, 0.58) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 38% 35%, rgba(76, 194, 255, 0.72) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 62% 18%, rgba(218, 239, 255, 0.58) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 76% 72%, rgba(240, 200, 118, 0.48) 0 1.1px, transparent 1.9px),
+    radial-gradient(circle at 91% 42%, rgba(218, 239, 255, 0.62) 0 1px, transparent 1.8px);
+  animation: nova-dust-drift 13s ease-in-out infinite alternate;
+}
+
+.nova-copy {
+  position: absolute;
+  z-index: 8;
+}
+
+.nova-copy-a {
+  opacity: clamp(0, calc(var(--scene-a-opacity) * 1.8 - 0.8), 1);
+}
+
+div.nova-copy-a {
+  left: max(5vw, calc((100vw - 78rem) / 2));
+  bottom: 7vh;
+}
+
+.nova-side-note {
+  right: max(5vw, calc((100vw - 78rem) / 2));
+  bottom: 7vh;
+  z-index: 8;
+  max-width: 15rem;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.78rem;
+  line-height: 1.8;
+  text-align: right;
+}
+
+.nova-side-note span {
+  display: block;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.nova-copy-b {
+  opacity: var(--scene-b-opacity);
+}
+
+.nova-copy-b-top {
+  left: max(4vw, calc((100vw - 82rem) / 2));
+  top: 15vh;
+}
+
+.nova-copy-b-bottom {
+  right: max(4vw, calc((100vw - 82rem) / 2));
+  bottom: 11vh;
+  text-align: right;
+}
+
+.nova-story-note {
+  position: absolute;
+  left: max(4vw, calc((100vw - 82rem) / 2));
+  bottom: 9vh;
+  z-index: 9;
+  width: min(22rem, 34vw);
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(6, 10, 18, 0.68);
+  backdrop-filter: blur(14px);
+}
+
+.story-secondary-cta {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(6, 10, 18, 0.52);
+  color: rgb(var(--c-slate-200));
+  backdrop-filter: blur(12px);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.story-secondary-cta:hover {
+  border-color: rgba(76, 194, 255, 0.5);
+  background: rgba(76, 194, 255, 0.08);
+}
+
+.nova-object {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --hero-pointer-x: 50%;
+  --hero-pointer-y: 38%;
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  z-index: 7;
+  width: clamp(390px, 47vw, 760px);
+  perspective: 1500px;
+  transform:
+    translate3d(calc(-50% + var(--object-x)), calc(-50% + var(--object-y)), 0)
+    scale(var(--object-scale));
+  transform-origin: center;
+  will-change: transform;
+}
+
+.nova-object-tilt {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 760 / 505;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nova-object-tilt.is-flipped {
+  transform: rotateX(var(--tilt-x)) rotateY(calc(180deg + var(--tilt-y)));
+}
+
+.nova-ground-pool {
+  position: absolute;
+  left: 50%;
+  bottom: -13%;
+  width: 84%;
+  height: 23%;
+  transform: translateX(-50%) rotateX(72deg);
+  border-radius: 50%;
+  opacity: calc(0.34 + var(--scene-b-opacity) * 0.24);
+  background: radial-gradient(ellipse, rgba(125, 204, 255, 0.34), rgba(76, 194, 255, 0.08) 45%, transparent 72%);
+  filter: blur(18px);
+}
+
+.nova-object-aura {
+  position: absolute;
+  inset: -7%;
+  z-index: -1;
+  border-radius: 2.3rem;
+  background: radial-gradient(circle at 50% 45%, rgba(76, 194, 255, 0.18), transparent 68%);
+  filter: blur(16px);
+  transform: translateZ(-60px);
+  animation: nova-aura-breathe 4.8s ease-in-out infinite;
+}
+
+.nova-card-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 1.35rem;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 35px 90px -28px rgba(0, 0, 0, 0.9),
+    0 0 48px -18px rgba(76, 194, 255, 0.62);
+}
+
+.nova-card-face::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 0 34%,
+    rgba(201, 232, 255, 0.22) 42%,
+    rgba(76, 194, 255, 0.95) 49%,
+    rgba(240, 200, 118, 0.42) 54%,
+    transparent 64%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: nova-border-spin 6s linear infinite;
+}
+
+.nova-card-face::after {
+  content: "";
+  position: absolute;
+  top: -55%;
+  bottom: -55%;
+  left: -48%;
+  z-index: 5;
+  width: 24%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+  filter: blur(2px);
+  transform: rotate(18deg);
+  animation: nova-card-sweep 5.6s ease-in-out infinite;
+}
+
+.nova-card-front {
+  background: rgba(9, 17, 32, 0.94);
+}
+
+.nova-card-back {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.25rem, 3vw, 2.7rem);
+  transform: rotateY(180deg);
+  background:
+    radial-gradient(circle at 25% 12%, rgba(255, 248, 223, 0.55), transparent 32%),
+    linear-gradient(135deg, #8b5c12, #d4af37 43%, #f0d27b 68%, #a26b14);
+}
+
+.nova-card-chrome {
+  display: flex;
+  min-height: 2.6rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  background: linear-gradient(180deg, rgba(45, 64, 102, 0.72), rgba(18, 29, 51, 0.76));
+}
+
+.nova-specular {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(
+    290px circle at var(--hero-pointer-x) var(--hero-pointer-y),
+    rgba(255, 255, 255, 0.17),
+    rgba(133, 204, 255, 0.05) 36%,
+    transparent 68%
+  );
+}
+
+.nova-logic-cell {
+  border: 1px solid rgba(43, 27, 4, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 248, 223, 0.2);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.nova-story-progress {
+  position: absolute;
+  left: 50%;
+  bottom: 1.4rem;
+  z-index: 10;
+  width: min(24rem, 42vw);
+  height: 1px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nova-story-progress span {
+  display: block;
+  width: calc(var(--story-progress) * 100%);
+  height: 100%;
+  background: linear-gradient(90deg, #8dd2ff, #f0c876);
+  box-shadow: 0 0 13px rgba(76, 194, 255, 0.7);
+}
+
+.nova-scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 2.2rem;
+  z-index: 10;
+  transform: translateX(-50%);
+  color: rgba(148, 163, 184, 0.68);
+  font-size: 0.55rem;
+  letter-spacing: 0.28em;
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes nova-border-spin {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+@keyframes nova-card-sweep {
+  0%,
+  18% {
+    left: -48%;
+  }
+  54%,
+  100% {
+    left: 128%;
+  }
+}
+
+@keyframes nova-aura-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translateZ(-60px) scale(0.98);
+  }
+  50% {
+    opacity: 0.94;
+    transform: translateZ(-60px) scale(1.04);
+  }
+}
+
+@keyframes nova-dust-drift {
+  from {
+    transform: translate3d(-1%, 1.5%, 0);
+  }
+  to {
+    transform: translate3d(1.5%, -2%, 0);
+  }
+}
+
+/* FAQ：原生 details 保留鍵盤與螢幕閱讀器能力，只增加開闔視覺。 */
+.story-faq {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.story-faq summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 0;
+  color: rgb(var(--c-slate-100));
+}
+
+.story-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.story-faq-plus {
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  transition: transform 0.24s ease;
+}
+
+.story-faq-plus::before,
+.story-faq-plus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: rgb(var(--c-gold-hi));
+  transform: translate(-50%, -50%);
+}
+
+.story-faq-plus::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.story-faq[open] .story-faq-plus {
+  transform: rotate(45deg);
+}
+
+/* 儀表板只借用微光，不使用故事頁的重動畫。 */
+.dashboard-shell .glass-panel,
+.dashboard-shell .surface,
+.dashboard-shell .surface-raised,
+.dashboard-shell .surface-sunken {
+  --dashboard-edge: rgba(76, 194, 255, 0.08);
+}
+
+.dashboard-header {
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 1px 0 rgba(76, 194, 255, 0.16),
+    0 24px 70px -28px rgba(0, 0, 0, 0.82);
+}
+
+.data-glint {
+  position: relative;
+  overflow: hidden;
+}
+
+.data-glint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 28%, rgba(76, 194, 255, 0.08), transparent 70%);
+  transform: translateX(-80%);
+  transition:
+    opacity 0.2s ease,
+    transform 0.55s ease;
+}
+
+.data-glint:hover::after {
+  opacity: 1;
+  transform: translateX(80%);
+}
+
+@media (max-width: 767px) {
+  .chapter-rail {
+    inset-inline-start: 0.05rem;
+  }
+
+  .scroll-chapter {
+    padding-left: 1.4rem;
+  }
+
+  .page-anchor-nav {
+    display: none;
+  }
+
+  .page-header-shell {
+    top: 0.25rem;
+  }
+
+  .page-back-link {
+    width: 2.35rem;
+    height: 2.35rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .page-back-link span {
+    display: none;
+  }
+
+  .nova-story {
+    height: 340vh;
+    margin-top: -6rem;
+  }
+
+  .nova-story-sticky {
+    min-height: 100svh;
+  }
+
+  .nova-copy {
+    max-width: calc(100vw - 2rem);
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    background: rgba(4, 8, 15, 0.62);
+    backdrop-filter: blur(12px);
+  }
+
+  div.nova-copy-a {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1.25rem;
+  }
+
+  div.nova-copy-a h1 {
+    font-size: clamp(2.2rem, 10vw, 3.4rem);
+  }
+
+  .nova-side-note {
+    display: none;
+  }
+
+  .nova-copy-b-top {
+    left: 1rem;
+    top: 5.5rem;
+  }
+
+  .nova-copy-b-bottom {
+    right: 1rem;
+    bottom: 1.2rem;
+  }
+
+  .nova-story-note {
+    left: 1rem;
+    bottom: 7.7rem;
+    width: calc(100vw - 2rem);
+  }
+
+  .nova-object {
+    top: 45%;
+    width: min(94vw, 680px);
+  }
+
+  .nova-card-face {
+    border-radius: 1rem;
+  }
+
+  .nova-card-back {
+    padding: 1rem;
+  }
+
+  .nova-card-back h3 {
+    margin-top: 0.35rem;
+    font-size: 1.35rem;
+  }
+
+  .nova-card-back .mt-6 {
+    margin-top: 0.65rem;
+  }
+
+  .nova-card-back .mt-5 {
+    display: none;
+  }
+
+  .nova-logic-cell {
+    padding: 0.5rem;
+  }
+
+  .nova-story-progress {
+    bottom: 0.65rem;
+    width: 42vw;
+  }
+
+  .nova-scroll-hint {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 760px) {
+  .nova-copy-b-top {
+    top: 11vh;
+  }
+  .nova-copy-b-bottom,
+  .nova-story-note {
+    bottom: 5vh;
+  }
+  .nova-object {
+    top: 46%;
+    width: min(44vw, 650px);
+  }
 }
 
 .space-particle-field {
@@ -1013,10 +1836,48 @@ html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold
   .space-stars-twinkle,
   .space-drift-particles,
   .space-scanline,
-  .space-grid {
+  .space-grid,
+  .nova-dust,
+  .nova-object-aura,
+  .nova-card-face::before,
+  .nova-card-face::after {
     animation: none;
   }
   .lift {
+    transition: none;
+  }
+  .nova-story {
+    height: auto;
+    margin: 0;
+  }
+  .nova-story-sticky {
+    position: relative;
+    min-height: 880px;
+  }
+  .nova-scene-a {
+    opacity: 1;
+  }
+  .nova-scene-b,
+  .nova-copy-b,
+  .nova-story-progress,
+  .nova-scroll-hint {
+    display: none;
+  }
+  .nova-object {
+    top: 43%;
+    transform: translate(-50%, -50%);
+  }
+  .nova-object-tilt,
+  .nova-object-tilt.is-flipped {
+    transform: none;
+    transition: none;
+  }
+  .nova-card-face::before {
+    background: linear-gradient(120deg, rgba(76, 194, 255, 0.7), rgba(240, 200, 118, 0.3));
+  }
+  .chapter-divider,
+  .chapter-rail-fill,
+  .chapter-rail-dot {
     transition: none;
   }
 }
