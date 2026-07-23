@@ -49,7 +49,10 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["var(--font-noto-tc)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-noto-tc)", "ui-sans-serif", "system-ui", "sans-serif"],
+        kicker: ["var(--font-space-grotesk)", "ui-sans-serif", "system-ui", "sans-serif"],
+        data: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"]
       }
     }
   },

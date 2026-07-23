@@ -1,10 +1,12 @@
 "use client";
 
+import type { PointerEvent } from "react";
 import { useState } from "react";
 import { ChevronDown, ExternalLink, Lock, Play } from "lucide-react";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { PageHeader } from "@/components/nav/PageHeader";
 import { Reveal } from "@/components/visual/Reveal";
+import { ScrollChapter } from "@/components/visual/ScrollChapter";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { VideoLightbox } from "@/components/nav/VideoLightbox";
 
@@ -34,6 +36,13 @@ const SNR_LESSONS: Lesson[] = [
 
 const LINE_URL = "https://lin.ee/RP6APHg";
 
+function trackPointerGlow(event: PointerEvent<HTMLElement>) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--pointer-x", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--pointer-y", `${event.clientY - rect.top}px`);
+}
+
 export default function BeginnerPage() {
   const [activeVideo, setActiveVideo] = useState<Lesson | null>(null);
 
@@ -44,18 +53,27 @@ export default function BeginnerPage() {
 
   return (
     <AuthGuard>
-      <main className="relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+      <main className="relative min-h-screen overflow-x-clip px-4 py-5 sm:px-6 lg:px-8">
         <SpaceParticleField />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
-          <PageHeader title="新手專區" />
+          <PageHeader
+            title="新手專區"
+            anchors={[
+              { href: "#start", label: "快速上手" },
+              { href: "#smc", label: "SMC" },
+              { href: "#snr", label: "SNR" },
+              { href: "#join", label: "加入核心" }
+            ]}
+            cta={{ href: LINE_URL, label: "加入社群", external: true }}
+          />
 
           {/* 開場：短 hero */}
           <section className="flex flex-col items-center gap-4 px-4 pb-10 pt-14 text-center sm:pt-20">
             <Reveal>
-              <p className="text-xs tracking-[0.32em] text-gold">BEGINNER · 新手專區</p>
+              <p className="font-kicker text-xs tracking-[0.32em] text-gold">BEGINNER · 新手專區</p>
             </Reveal>
             <Reveal delay={80}>
-              <h2 className="max-w-2xl bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-semibold leading-tight text-transparent sm:text-4xl">
+              <h2 className="font-display max-w-2xl bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-black leading-tight text-transparent sm:text-5xl">
                 從零開始，一步步上手
               </h2>
             </Reveal>
@@ -70,11 +88,11 @@ export default function BeginnerPage() {
           </section>
 
           {/* 章節 01：快速上手（操作教學） */}
-          <section className="pb-10 pt-4">
+          <ScrollChapter id="start" index="01" label="快速上手" className="pb-12 pt-8">
             <Reveal>
               <div className="mb-6 flex flex-col gap-2 text-center sm:text-left">
-                <p className="text-xs tracking-[0.28em] text-gold">STEP BY STEP · 操作教學</p>
-                <h3 className="text-2xl font-semibold text-white">快速上手</h3>
+                <p className="font-kicker text-xs tracking-[0.28em] text-gold">STEP BY STEP · 操作教學</p>
+                <h3 className="font-display text-3xl font-black text-white">快速上手</h3>
                 <p className="text-sm leading-6 text-slate-400">
                   三個步驟，帶你完成開戶、綁定與看盤工具設定。
                 </p>
@@ -88,15 +106,15 @@ export default function BeginnerPage() {
                 </Reveal>
               ))}
             </div>
-          </section>
+          </ScrollChapter>
 
           {/* 章節 02：初階 SMC 專區 */}
-          <section className="grid items-center gap-8 py-10 md:grid-cols-5 md:gap-10 lg:py-16">
+          <ScrollChapter id="smc" index="02" label="初階 SMC" className="grid items-center gap-8 py-14 md:grid-cols-5 md:gap-10 lg:py-20">
             <Reveal direction="left" className="md:col-span-2">
               <div className="flex flex-col gap-5">
                 <div>
-                  <p className="text-xs tracking-[0.28em] text-gold">COURSE · 初階 SMC</p>
-                  <h3 className="mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                  <p className="font-kicker text-xs tracking-[0.28em] text-gold">COURSE · 初階 SMC</p>
+                  <h3 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-black tracking-tight text-transparent">
                     初階 SMC 專區
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">
@@ -119,15 +137,15 @@ export default function BeginnerPage() {
             <Reveal direction="right" delay={100} className="md:col-span-3">
               <CourseList lessons={SMC_LESSONS} onOpen={handleOpen} />
             </Reveal>
-          </section>
+          </ScrollChapter>
 
           {/* 章節 03：SNR 專區（左右鏡像） */}
-          <section className="grid items-center gap-8 py-10 md:grid-cols-5 md:gap-10 lg:py-16">
+          <ScrollChapter id="snr" index="03" label="SNR" className="grid items-center gap-8 py-14 md:grid-cols-5 md:gap-10 lg:py-20">
             <Reveal direction="right" className="md:col-span-2 md:order-2">
               <div className="flex flex-col gap-5">
                 <div>
-                  <p className="text-xs tracking-[0.28em] text-gold">COURSE · SNR</p>
-                  <h3 className="mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                  <p className="font-kicker text-xs tracking-[0.28em] text-gold">COURSE · SNR</p>
+                  <h3 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-black tracking-tight text-transparent">
                     SNR 專區
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">
@@ -150,14 +168,14 @@ export default function BeginnerPage() {
             <Reveal direction="left" delay={100} className="md:col-span-3 md:order-1">
               <CourseList lessons={SNR_LESSONS} onOpen={handleOpen} />
             </Reveal>
-          </section>
+          </ScrollChapter>
 
           {/* 章節 04：CTA 加入核心 */}
-          <section className="pb-16 pt-4">
+          <ScrollChapter id="join" index="04" label="加入核心" className="pb-16 pt-10">
             <Reveal>
-              <div className="surface-raised rounded-xl border border-gold/30 px-6 py-12 text-center shadow-[0_0_40px_-12px_rgba(202,138,4,0.4)]">
-                <p className="text-xs tracking-[0.28em] text-gold">JOIN THE CORE</p>
-                <h3 className="mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-2xl font-semibold text-transparent">
+              <div className="surface-raised story-card chapter-light-fill rounded-xl border border-gold/30 px-6 py-12 text-center shadow-[0_0_40px_-12px_rgba(202,138,4,0.4)]">
+                <p className="font-kicker text-xs tracking-[0.28em] text-gold">JOIN THE CORE</p>
+                <h3 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-black text-transparent">
                   加入核心，學習更多知識
                 </h3>
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
@@ -176,7 +194,7 @@ export default function BeginnerPage() {
                 </div>
               </div>
             </Reveal>
-          </section>
+          </ScrollChapter>
         </div>
 
         <VideoLightbox
@@ -229,7 +247,8 @@ function VideoCard({ lesson, onOpen }: { lesson: Lesson; onOpen: (lesson: Lesson
       <button
         type="button"
         onClick={() => onOpen(lesson)}
-        className="surface-raised group block w-full cursor-pointer overflow-hidden rounded-xl text-left transition hover:border-gold/40"
+        onPointerMove={trackPointerGlow}
+        className="surface-raised cursor-glow story-card group block w-full cursor-pointer overflow-hidden rounded-xl text-left transition hover:border-gold/40"
       >
         {thumb}
         <div className="p-4">
@@ -240,7 +259,7 @@ function VideoCard({ lesson, onOpen }: { lesson: Lesson; onOpen: (lesson: Lesson
   }
 
   return (
-    <div className="surface-raised block w-full cursor-default overflow-hidden rounded-xl text-left opacity-90">
+    <div className="surface-raised story-card block w-full cursor-default overflow-hidden rounded-xl text-left opacity-90">
       {thumb}
       <div className="p-4">
         <p className="text-sm font-semibold text-slate-100">{lesson.title}</p>
@@ -266,7 +285,8 @@ function CourseList({ lessons, onOpen }: { lessons: Lesson[]; onOpen: (lesson: L
                   <button
                     type="button"
                     onClick={() => onOpen(lesson)}
-                    className="surface-raised flex flex-1 cursor-pointer items-center justify-between rounded-lg px-4 py-3 text-left transition hover:border-gold/40"
+                    onPointerMove={trackPointerGlow}
+                    className="surface-raised cursor-glow flex flex-1 cursor-pointer items-center justify-between rounded-lg px-4 py-3 text-left transition hover:border-gold/40"
                   >
                     <span className="text-sm font-medium text-slate-100">{lesson.label}</span>
                     <Play className="h-4 w-4 text-gold" />
