@@ -73,10 +73,10 @@ export function AnomalyPanel({ items, selectedSymbol, onSelect, onShowHistory }:
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-white/10 pb-2">
           <span className="inline-flex items-center gap-2 text-base font-semibold text-slate-50">
             <ShieldCheck className="h-4 w-4 text-gold" />
-            高分推薦
+            做多／做空推薦
           </span>
           <span className="text-xs text-slate-500">
-            分數 80 以上才會進入推薦榜，每個方向只顯示前三名
+            方向、資金結構與 5m 時機全部確認後才會進榜，每個方向最多三名
           </span>
         </div>
 
@@ -217,7 +217,7 @@ function RecommendationLane({
           ))
         ) : (
           <div className="flex h-[154px] items-center justify-center rounded-lg border border-dashed border-white/10 bg-black/10 text-sm text-slate-600">
-            目前沒有 80 分以上的{isLong ? "做多" : "做空"}推薦
+            目前沒有符合條件的{isLong ? "做多" : "做空"}推薦
           </div>
         )}
       </div>

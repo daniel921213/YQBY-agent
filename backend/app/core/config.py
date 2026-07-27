@@ -65,8 +65,8 @@ class Settings(BaseSettings):
     gate_request_timeout: float = 10.0
     gate_max_requests_per_second: float = 15.0
 
-    # Background full-universe scan: refresh the cached top-20/direction every N
-    # seconds so the frontend reads a fresh result instantly instead of each page
+    # Background full-universe scan: refresh the condition-qualified top 3 per
+    # direction every N seconds so the frontend reads a fresh result instead of each page
     # load triggering a multi-minute scan.
     scan_background: bool = True
     scan_refresh_seconds: float = 300.0

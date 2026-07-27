@@ -5,7 +5,7 @@ from dataclasses import asdict, replace
 import pandas as pd
 
 from app.core.config import get_settings
-from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE, RECOMMEND_SCORE
+from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE
 from app.indicators.risk_radar import RiskRadarReading, analyze_five_minute_risk
 from app.schemas.indicators import EvidenceItem
 from app.schemas.market import CandlePoint, LinePoint, MarketChartPayload
@@ -24,6 +24,10 @@ from app.schemas.scoring import (
     ScanResponse,
     ScreenerRow,
 )
+from app.scoring.trade_recommendation import (
+    TradeRecommendationDecision,
+    evaluate_trade_recommendation,
+)
 from app.utils.numeric import pct_change
 from app.utils.timeframes import timeframe_to_seconds
 
@@ -35,6 +39,7 @@ PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多�
 OI_MOVERS_CAP = 40
 RISK_RADAR_LOOKBACK = 96
 RISK_RADAR_ITEMS_CAP = 40
+RECOMMENDATIONS_PER_DIRECTION = 3
 # Below this score a screener row reads as 中性 rather than forcing 做多/做空.
 SCREENER_NEUTRAL_SCORE = 15.0
 # Independent axis deadbands for a true 3x3 price/OI state map.
@@ -335,7 +340,7 @@ class AnalysisService:
         trigger_timeframe: str,
         trend_timeframe: str,
         lookback: int,
-        top_per_direction: int = 20,
+        top_per_direction: int = RECOMMENDATIONS_PER_DIRECTION,
         track: bool = False,
     ) -> ScanResponse:
         # No explicit symbols => scan the entire tradable universe.
@@ -363,18 +368,65 @@ class AnalysisService:
         longs = [a for a in analyses if a.recommendation.direction == "LONG"]
         shorts = [a for a in analyses if a.recommendation.direction == "SHORT"]
 
-        # High-conviction recommendations (score >= 80) + categorised anomalies.
+        # Recommendation eligibility is condition-based, not a score threshold.
+        # The same scan's 1h OI state and closed-5m reading are reused here, so
+        # qualification never mixes snapshots or adds another provider request.
         ranked = sorted(analyses, key=lambda a: a.recommendation.score, reverse=True)
-        recommends = [a for a in ranked if a.recommendation.score >= RECOMMEND_SCORE]
+        oi_movers, oi_by_symbol = self._build_oi_movers(
+            analyses, primary_timeframe, track=track
+        )
+        risk_radar, risk_by_symbol = self._build_risk_radar(analyses, track=track)
+
+        eligible: dict[str, list[tuple[AnalysisResponse, TradeRecommendationDecision]]] = {
+            "LONG": [],
+            "SHORT": [],
+        }
+        for analysis in analyses:
+            symbol = analysis.recommendation.symbol
+            mover = oi_by_symbol.get(symbol)
+            decision = evaluate_trade_recommendation(
+                direction=analysis.recommendation.direction,
+                stage=analysis.stage,
+                evidence=analysis.evidence,
+                metrics=analysis.metrics,
+                oi_side=mover.side if mover else None,
+                oi_change_1h=mover.oi_change_1h if mover else 0.0,
+                five_minute=risk_by_symbol.get(symbol),
+            )
+            if decision.eligible:
+                eligible[analysis.recommendation.direction].append((analysis, decision))
+
+        recommendation_limit = min(
+            max(top_per_direction, 1), RECOMMENDATIONS_PER_DIRECTION
+        )
+        selected: list[tuple[AnalysisResponse, TradeRecommendationDecision]] = []
+        for direction in ("LONG", "SHORT"):
+            lane = sorted(
+                eligible[direction],
+                key=lambda pair: pair[1].rank_key(pair[0].recommendation.score),
+                reverse=True,
+            )[:recommendation_limit]
+            selected.extend(lane)
+        selected.sort(
+            key=lambda pair: pair[1].rank_key(pair[0].recommendation.score),
+            reverse=True,
+        )
+        recommends = [analysis for analysis, _decision in selected]
+
+        recommended_symbols = {analysis.recommendation.symbol for analysis in recommends}
         anomalies = [
             a
             for a in ranked
-            if a.recommendation.score < RECOMMEND_SCORE
+            if a.recommendation.symbol not in recommended_symbols
             and a.recommendation.confluence_pillars >= ANOMALY_MIN_CONFLUENCE
         ][:ANOMALY_CAP]
         items: list[ScanItem] = []
         for rank, analysis in enumerate(recommends + anomalies, 1):
-            item = self._build_item(rank, analysis)
+            item = self._build_item(
+                rank,
+                analysis,
+                is_recommend=analysis.recommendation.symbol in recommended_symbols,
+            )
             item.price, item.change_24h = _price_and_change_24h(
                 analysis.chart, primary_timeframe
             )
@@ -392,10 +444,8 @@ class AnalysisService:
             anomaly_count=sum(1 for a in analyses if _is_anomaly(a.recommendation)),
         )
 
-        oi_movers = self._build_oi_movers(analyses, primary_timeframe, track=track)
         altseason = self._build_altseason(analyses, record=track)
         universe = self._build_universe(analyses, primary_timeframe)
-        risk_radar = self._build_risk_radar(analyses, track=track)
         official_closes = [
             a.meta.official_close_time for a in analyses if a.meta.official_close_time is not None
         ]
@@ -424,7 +474,7 @@ class AnalysisService:
         analyses: list[AnalysisResponse],
         *,
         track: bool,
-    ) -> RiskRadar:
+    ) -> tuple[RiskRadar, dict[str, RiskRadarReading]]:
         """Fetch a separate closed-5m frame and emit an independent risk overlay."""
 
         official = {
@@ -443,7 +493,7 @@ class AnalysisService:
 
         symbols = list(official)
         if not symbols:
-            return RiskRadar(generated_at=int(time.time()))
+            return RiskRadar(generated_at=int(time.time())), {}
         workers = max(1, min(self.settings.scan_max_workers, len(symbols)))
         with ThreadPoolExecutor(max_workers=workers) as pool:
             readings = [reading for reading in pool.map(run, symbols) if reading is not None]
@@ -478,7 +528,7 @@ class AnalysisService:
             ),
             reverse=True,
         )
-        return RiskRadar(
+        radar = RiskRadar(
             generated_at=int(time.time()),
             scanned_count=len(symbols),
             covered_count=len(readings),
@@ -487,6 +537,7 @@ class AnalysisService:
                 for reading in actionable[:RISK_RADAR_ITEMS_CAP]
             ],
         )
+        return radar, {reading.symbol: reading for reading in readings}
 
     @staticmethod
     def _build_universe(
@@ -522,7 +573,7 @@ class AnalysisService:
     @staticmethod
     def _build_oi_movers(
         analyses: list[AnalysisResponse], primary_timeframe: str, track: bool = False
-    ) -> list[OiMover]:
+    ) -> tuple[list[OiMover], dict[str, OiMover]]:
         movers: list[OiMover] = []
         for a in analyses:
             price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
@@ -548,7 +599,7 @@ class AnalysisService:
 
         # Rank/bubble by USD exposure; quadrant signs above use quantity OI.
         movers.sort(key=lambda m: abs(m.oi_delta), reverse=True)
-        return movers[:OI_MOVERS_CAP]
+        return movers[:OI_MOVERS_CAP], {mover.symbol: mover for mover in movers}
 
     @staticmethod
     def _build_altseason(analyses: list[AnalysisResponse], record: bool) -> AltseasonIndex:
@@ -560,7 +611,9 @@ class AnalysisService:
         return anomaly_tracker.build_altseason(outperform, len(analyses), record=record)
 
     @staticmethod
-    def _build_item(rank: int, analysis: AnalysisResponse) -> ScanItem:
+    def _build_item(
+        rank: int, analysis: AnalysisResponse, *, is_recommend: bool
+    ) -> ScanItem:
         recommendation = analysis.recommendation
         score_gap = abs(recommendation.long_score - recommendation.short_score)
         directional_evidence = [
@@ -577,7 +630,7 @@ class AnalysisService:
             short_score=recommendation.short_score,
             score_gap=round(score_gap, 2),
             is_anomaly=_is_anomaly(recommendation),
-            is_recommend=recommendation.score >= RECOMMEND_SCORE,
+            is_recommend=is_recommend,
             stage=analysis.stage,
             stage_reasons=analysis.stage_reasons,
             triggered_count=len(directional_evidence),

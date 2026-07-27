@@ -52,7 +52,12 @@ def scan_market(
     trigger_timeframe: str = Query(default=TRIGGER_TIMEFRAME),
     trend_timeframe: str = Query(default=TREND_TIMEFRAME),
     lookback: int = Query(default=DEFAULT_LOOKBACK_CANDLES, ge=80, le=500),
-    top: int = Query(default=20, ge=1, le=100, description="Top N per direction by score."),
+    top: int = Query(
+        default=3,
+        ge=1,
+        le=100,
+        description="Requested recommendations per direction (server-capped at 3).",
+    ),
 ) -> ScanResponse:
     selected_symbols = (
         [item.strip().upper() for item in symbols.split(",") if item.strip()]

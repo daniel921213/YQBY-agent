@@ -50,7 +50,7 @@ class ScanCache:
             trigger_timeframe=TRIGGER_TIMEFRAME,
             trend_timeframe=TREND_TIMEFRAME,
             lookback=DEFAULT_LOOKBACK_CANDLES,
-            top_per_direction=20,
+            top_per_direction=3,
             track=True,
         )
         if result.breadth.total == 0:
