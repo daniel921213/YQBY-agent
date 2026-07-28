@@ -561,6 +561,75 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   left: 130%;
 }
 
+/* 手機主控台：保留深空質感，但避免多個全螢幕濾鏡在行動 GPU 上持續重繪。 */
+@media (max-width: 767px) {
+  .dashboard-shell .space-particle-field::before,
+  .dashboard-shell .space-nebula-b,
+  .dashboard-shell .space-stars-near,
+  .dashboard-shell .space-scanline,
+  .dashboard-shell .space-grid {
+    display: none;
+  }
+
+  .dashboard-shell .space-nebula-a {
+    animation: none;
+    filter: blur(12px);
+    opacity: 0.34;
+  }
+
+  .dashboard-shell .space-stars-far {
+    animation-duration: 120s;
+    opacity: 0.4;
+  }
+
+  .dashboard-shell .space-stars-twinkle {
+    animation-duration: 9s;
+  }
+
+  .dashboard-shell .space-drift-particles {
+    animation-duration: 18s;
+    opacity: 0.48;
+  }
+
+  .mobile-dashboard .glass-panel,
+  .mobile-dashboard-top {
+    backdrop-filter: blur(12px) saturate(135%);
+    -webkit-backdrop-filter: blur(12px) saturate(135%);
+  }
+
+  .detail-modal {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .detail-modal-card {
+    display: flex;
+    height: 100dvh;
+    max-width: none;
+    flex-direction: column;
+    border-radius: 0;
+  }
+
+  .detail-modal-card > div:last-child {
+    min-height: 0;
+    flex: 1;
+    padding: 0.75rem;
+  }
+
+  .detail-modal-card section {
+    max-height: calc(100dvh - 5.25rem);
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  html[data-theme="light"] .mobile-dashboard-top {
+    background: rgba(245, 248, 253, 0.9);
+  }
+
+  html[data-theme="light"] .mobile-dashboard nav[aria-label="手機版主要功能"] {
+    background: rgba(247, 250, 254, 0.94);
+  }
+}
+
 /* ──────────────────────────────────────────────────────────────
    品牌敘事共用元件：章節進度、游標邊光、發光分隔線。
    全部只操作 opacity / transform / CSS 變數，不干預內容高度與互動。

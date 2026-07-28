@@ -257,8 +257,8 @@ function ModalFrame({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
-      <div className="glass-panel animate-signal-rise w-full max-w-4xl rounded-xl">
+    <div className="detail-modal fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
+      <div className="detail-modal-card glass-panel animate-signal-rise w-full max-w-4xl rounded-xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <div className="text-xs tracking-[0.18em] text-gold">訊號詳情</div>

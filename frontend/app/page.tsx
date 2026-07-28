@@ -8,6 +8,7 @@ import { MarketOverviewBar } from "@/components/dashboard/MarketOverviewBar";
 import { AnomalyPanel } from "@/components/dashboard/AnomalyPanel";
 import { ScreenerTable } from "@/components/dashboard/ScreenerTable";
 import { DataRankings } from "@/components/dashboard/DataRankings";
+import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { AnomalyHistoryModal } from "@/components/dashboard/AnomalyHistoryModal";
 import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -93,80 +94,97 @@ function Dashboard() {
   }
 
   return (
-    <main className="dashboard-shell relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+    <main className="dashboard-shell relative min-h-screen overflow-hidden px-3 md:px-6 md:py-5 lg:px-8">
       <SpaceParticleField />
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-5">
-        <MarketHeader
-          onRefresh={refresh}
-          updatedLabel={updatedLabel}
-          loading={scanLoading}
-          scan={scan}
-          entitlement={me}
-        />
+      <div className="relative z-10 mx-auto w-full max-w-7xl">
+        <div className="md:hidden">
+          <MobileDashboard
+            scan={scan}
+            loading={scanLoading}
+            error={scanError}
+            updatedLabel={updatedLabel}
+            entitlement={me}
+            selectedSymbol={selectedSymbol}
+            onSelect={setSelectedSymbol}
+            onRefresh={refresh}
+            onShowHistory={() => setHistoryOpen(true)}
+            onOpenAnalyst={() => setAnalystOpen(true)}
+          />
+        </div>
 
-        <MarketOverviewBar scan={scan} />
+        <div className="hidden flex-col gap-5 md:flex">
+          <MarketHeader
+            onRefresh={refresh}
+            updatedLabel={updatedLabel}
+            loading={scanLoading}
+            scan={scan}
+            entitlement={me}
+          />
 
-        {scanError ? (
-          <section className="rounded-md border border-short/30 bg-short/10 px-4 py-4 text-sm text-red-100">
-            {scanError}
-          </section>
-        ) : !scan ? (
-          <section className="surface-sunken flex h-36 items-center justify-center rounded-lg text-sm text-slate-400">
-            {scanLoading ? "掃描中…" : "目前沒有掃描資料"}
-          </section>
-        ) : (
-          <>
-            <nav className="font-kicker flex flex-wrap gap-1 border-b border-white/10">
-              {tabs.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setTab(t.key)}
-                  className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm transition ${
-                    tab === t.key
-                      ? "border-gold text-slate-50"
-                      : "border-transparent text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  {t.icon}
-                  {t.label}
-                  {typeof t.count === "number" ? (
-                    <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-slate-400">
-                      {t.count}
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </nav>
+          <MarketOverviewBar scan={scan} />
 
-            {tab === "anomaly" ? (
-              <AnomalyPanel
-                items={items}
-                selectedSymbol={selectedSymbol}
-                onSelect={setSelectedSymbol}
-                onShowHistory={() => setHistoryOpen(true)}
-              />
-            ) : null}
-            {tab === "screener" ? (
-              <ScreenerTable
-                rows={universe}
-                onSelect={setSelectedSymbol}
-                selectedSymbol={selectedSymbol}
-              />
-            ) : null}
-            {tab === "data" ? (
-              <DataRankings
-                universe={universe}
-                movers={scan.oi_movers}
-                riskRadar={scan.risk_radar}
-                dataProvider={scan.meta.data_provider}
-                primaryTimeframe={scan.meta.primary_timeframe}
-                officialCloseTime={scan.meta.official_close_time}
-                onSelect={setSelectedSymbol}
-              />
-            ) : null}
-          </>
-        )}
+          {scanError ? (
+            <section className="rounded-md border border-short/30 bg-short/10 px-4 py-4 text-sm text-red-100">
+              {scanError}
+            </section>
+          ) : !scan ? (
+            <section className="surface-sunken flex h-36 items-center justify-center rounded-lg text-sm text-slate-400">
+              {scanLoading ? "掃描中…" : "目前沒有掃描資料"}
+            </section>
+          ) : (
+            <>
+              <nav className="font-kicker flex flex-wrap gap-1 border-b border-white/10">
+                {tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm transition ${
+                      tab === t.key
+                        ? "border-gold text-slate-50"
+                        : "border-transparent text-slate-500 hover:text-slate-300"
+                    }`}
+                  >
+                    {t.icon}
+                    {t.label}
+                    {typeof t.count === "number" ? (
+                      <span className="rounded-sm bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-slate-400">
+                        {t.count}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </nav>
+
+              {tab === "anomaly" ? (
+                <AnomalyPanel
+                  items={items}
+                  selectedSymbol={selectedSymbol}
+                  onSelect={setSelectedSymbol}
+                  onShowHistory={() => setHistoryOpen(true)}
+                />
+              ) : null}
+              {tab === "screener" ? (
+                <ScreenerTable
+                  rows={universe}
+                  onSelect={setSelectedSymbol}
+                  selectedSymbol={selectedSymbol}
+                />
+              ) : null}
+              {tab === "data" ? (
+                <DataRankings
+                  universe={universe}
+                  movers={scan.oi_movers}
+                  riskRadar={scan.risk_radar}
+                  dataProvider={scan.meta.data_provider}
+                  primaryTimeframe={scan.meta.primary_timeframe}
+                  officialCloseTime={scan.meta.official_close_time}
+                  onSelect={setSelectedSymbol}
+                />
+              ) : null}
+            </>
+          )}
+        </div>
 
         {selectedSymbol ? (
           <DetailPanel
@@ -188,7 +206,7 @@ function Dashboard() {
         <button
           type="button"
           onClick={() => setAnalystOpen(true)}
-          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(202,138,4,0.3)] backdrop-blur transition hover:bg-gold/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(202,138,4,0.45)]"
+          className="fixed bottom-5 right-5 z-30 hidden items-center gap-2 rounded-full border border-gold/40 bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(202,138,4,0.3)] backdrop-blur transition hover:bg-gold/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(202,138,4,0.45)] md:inline-flex"
         >
           <Bot className="h-4 w-4" />
           分析師
