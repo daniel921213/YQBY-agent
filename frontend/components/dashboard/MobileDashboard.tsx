@@ -125,7 +125,7 @@ export function MobileDashboard({
   };
 
   return (
-    <div className="mobile-dashboard min-h-screen pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
+    <div className="mobile-dashboard min-h-screen w-full min-w-0 max-w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
       <div className="mobile-dashboard-top sticky top-0 z-30 -mx-3 border-b border-white/10 bg-[#05080f]/88 px-3 pb-3 pt-[max(.7rem,env(safe-area-inset-top))] backdrop-blur-xl">
         <header className="flex items-center gap-2.5">
           <SideNav />
@@ -204,7 +204,7 @@ export function MobileDashboard({
         </div>
       </div>
 
-      <main className="pt-4">
+      <main className="min-w-0 max-w-full pt-4">
         {error ? <ErrorNotice error={error} /> : null}
         {!scan ? (
           <LoadingState loading={loading} />
@@ -415,13 +415,13 @@ function MobileRecommendations({
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid min-w-0 max-w-full gap-5">
       <MobilePageIntro kicker="CONDITION VERIFIED" title="做多／做空推薦" description="只有方向、資金結構與 5m 時機全部確認後才會出現在這裡。" />
 
       <MobileRecommendationLane title="做多推薦" direction="LONG" items={longs} selectedSymbol={selectedSymbol} onSelect={onSelect} />
       <MobileRecommendationLane title="做空推薦" direction="SHORT" items={shorts} selectedSymbol={selectedSymbol} onSelect={onSelect} />
 
-      <section>
+      <section className="min-w-0 max-w-full">
         <div className="mb-2 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-slate-100">市場狀態觀察</h2>
@@ -432,7 +432,7 @@ function MobileRecommendations({
           </button>
         </div>
 
-        <div className="-mx-3 mb-2 overflow-x-auto px-3 [scrollbar-width:none]">
+        <div className="mb-2 w-full max-w-full overflow-x-auto [scrollbar-width:none]">
           <div className="flex w-max gap-2 pb-1">
             {MOBILE_STAGE_FILTERS.map((filter) => {
               const count = filter === "ALL" ? anomalies.length : stageCounts.get(filter) ?? 0;
