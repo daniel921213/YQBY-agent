@@ -11,6 +11,7 @@ import {
   BookOpen,
   Bot,
   ChevronRight,
+  Clock,
   Gauge,
   History,
   Home,
@@ -32,6 +33,7 @@ import {
   formatCompactNumber,
   formatPercent,
   formatPrice,
+  formatRelativeTime,
   percentTone,
   stageHint,
   stagePriority,
@@ -298,6 +300,9 @@ function MobileOverview({
   const longRecommendations = recommendations.filter((item) => item.direction === "LONG").length;
   const shortRecommendations = recommendations.filter((item) => item.direction === "SHORT").length;
   const riskItems = scan.risk_radar?.items ?? [];
+  const marketStates = [...scan.items.filter((item) => !item.is_recommend)].sort(
+    (a, b) => stagePriority(a.stage) - stagePriority(b.stage) || b.score - a.score
+  );
   const total = Math.max(scan.breadth.total, 1);
   const longShare = (scan.breadth.long_count / total) * 100;
   const shortShare = (scan.breadth.short_count / total) * 100;
@@ -360,19 +365,19 @@ function MobileOverview({
 
       <MobileSectionHeader
         icon={<Activity className="h-4 w-4" />}
-        title="5m 短線雷達"
-        hint={`${riskItems.length} 件事件`}
-        action="進入雷達"
-        onAction={() => onNavigate("radar")}
+        title="15m 市場狀態"
+        hint={`${marketStates.length} 筆異動`}
+        action="查看全部"
+        onAction={() => onNavigate("signals")}
       />
-      {riskItems.length ? (
-        <div className="surface-sunken divide-y divide-white/5 overflow-hidden rounded-2xl">
-          {riskItems.slice(0, 3).map((item, index) => (
-            <MobileRiskRow key={riskKey(item, index)} item={item} onSelect={onSelect} />
+      {marketStates.length ? (
+        <div className="grid gap-2">
+          {marketStates.slice(0, 3).map((item) => (
+            <MobileMarketStateCard key={item.symbol} item={item} onSelect={onSelect} />
           ))}
         </div>
       ) : (
-        <CompactEmpty text="目前沒有需要優先注意的 5m 事件" />
+        <CompactEmpty text="目前沒有正式 15m 市場狀態異動" />
       )}
     </div>
   );
@@ -464,27 +469,12 @@ function MobileRecommendations({
         {visibleAnomalies.length ? (
           <div className="grid gap-2">
             {visibleAnomalies.map((item) => (
-              <button
+              <MobileMarketStateCard
                 key={item.symbol}
-                type="button"
-                onClick={() => onSelect(item.symbol)}
-                className={`surface flex min-h-16 items-center gap-3 rounded-xl px-3 py-2.5 text-left ${
-                  selectedSymbol === item.symbol ? "signal-glow" : ""
-                }`}
-              >
-                <span className={`h-8 w-1 rounded-full ${item.direction === "LONG" ? "bg-long" : "bg-short"}`} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <strong className="text-sm text-slate-50">{shortSymbol(item.symbol)}</strong>
-                    <span className={`rounded-sm border px-1.5 py-0.5 text-[10px] ${stageTone(item.stage)}`}>{item.stage}</span>
-                  </span>
-                  <span className="mt-1 block truncate text-[11px] text-slate-500">{item.stage_reasons[0] ?? stageHint(item.stage)}</span>
-                </span>
-                <span className="text-right">
-                  <span className={`block text-xs ${directionTone(item.direction)}`}>{directionLabel(item.direction)}</span>
-                  <span className={`mt-1 block text-[11px] tabular-nums ${percentTone(item.change_24h)}`}>{formatPercent(item.change_24h)}</span>
-                </span>
-              </button>
+                item={item}
+                selected={selectedSymbol === item.symbol}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         ) : (
@@ -547,6 +537,7 @@ function MobileRecommendationLane({
 
 function MobileRecommendationCard({ item, selected = false, onClick }: { item: ScanItem; selected?: boolean; onClick: () => void }) {
   const isLong = item.direction === "LONG";
+  const tracked = item.first_seen_ts !== null;
   return (
     <button
       type="button"
@@ -566,6 +557,12 @@ function MobileRecommendationCard({ item, selected = false, onClick }: { item: S
           <span className="mt-1.5 block text-[11px] text-slate-500">{item.stage} · {item.confluence_pillars}/5 支柱同向</span>
         </span>
         <span className="text-right">
+          {tracked ? (
+            <span className="mb-1 inline-flex items-center gap-1 text-[10px] tabular-nums text-slate-500">
+              <Clock className="h-3 w-3" />
+              {formatRelativeTime(item.minutes_since_first)}
+            </span>
+          ) : null}
           <span className="block text-sm font-medium tabular-nums text-slate-200">{formatPrice(item.price)}</span>
           <span className={`mt-1 block text-xs tabular-nums ${percentTone(item.change_24h)}`}>{formatPercent(item.change_24h)}</span>
         </span>
@@ -573,6 +570,46 @@ function MobileRecommendationCard({ item, selected = false, onClick }: { item: S
       <span className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px]">
         <span className="text-gold">條件已確認</span>
         <span className="tabular-nums text-slate-600">正式分數 {item.score.toFixed(1)}</span>
+      </span>
+    </button>
+  );
+}
+
+function MobileMarketStateCard({
+  item,
+  selected = false,
+  onSelect
+}: {
+  item: ScanItem;
+  selected?: boolean;
+  onSelect: (symbol: string) => void;
+}) {
+  const tracked = item.first_seen_ts !== null;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(item.symbol)}
+      className={`surface flex min-h-16 w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left ${
+        selected ? "signal-glow" : ""
+      }`}
+    >
+      <span className={`h-8 w-1 shrink-0 rounded-full ${item.direction === "LONG" ? "bg-long" : "bg-short"}`} />
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2">
+          <strong className="shrink-0 text-sm text-slate-50">{shortSymbol(item.symbol)}</strong>
+          <span className={`truncate rounded-sm border px-1.5 py-0.5 text-[10px] ${stageTone(item.stage)}`}>{item.stage}</span>
+        </span>
+        <span className="mt-1 block truncate text-[11px] text-slate-500">{item.stage_reasons[0] ?? stageHint(item.stage)}</span>
+      </span>
+      <span className="shrink-0 text-right">
+        {tracked ? (
+          <span className="mb-1 flex items-center justify-end gap-1 text-[10px] tabular-nums text-slate-500">
+            <Clock className="h-3 w-3" />
+            {formatRelativeTime(item.minutes_since_first)}
+          </span>
+        ) : null}
+        <span className={`block text-xs ${directionTone(item.direction)}`}>{directionLabel(item.direction)}</span>
+        <span className={`mt-1 block text-[11px] tabular-nums ${percentTone(item.change_24h)}`}>{formatPercent(item.change_24h)}</span>
       </span>
     </button>
   );
