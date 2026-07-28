@@ -563,6 +563,37 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 
 /* 手機主控台：保留深空質感，但避免多個全螢幕濾鏡在行動 GPU 上持續重繪。 */
 @media (max-width: 767px) {
+  .mobile-dashboard {
+    font-family: var(--font-noto-tc), ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+  }
+
+  /* 手機與桌機沿用同一套品牌字型，只放大原本過小的輔助資訊。 */
+  .mobile-dashboard .text-\[9px\] {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+  }
+
+  .mobile-dashboard .text-\[10px\] {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .mobile-dashboard .text-\[11px\] {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+
+  .mobile-dashboard .text-xs {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .mobile-dashboard .text-sm {
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+  }
+
   .dashboard-shell .space-particle-field::before,
   .dashboard-shell .space-nebula-b,
   .dashboard-shell .space-stars-near,

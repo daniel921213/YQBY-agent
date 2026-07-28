@@ -16,7 +16,6 @@ import {
   Home,
   ListFilter,
   MoreHorizontal,
-  Radar,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -30,10 +29,12 @@ import type { Entitlement } from "@/lib/api";
 import {
   directionLabel,
   directionTone,
+  formatCompactNumber,
   formatPercent,
   formatPrice,
   percentTone,
   stageHint,
+  stagePriority,
   stageTone
 } from "@/lib/format";
 import { ThemeToggle } from "@/lib/theme";
@@ -44,12 +45,14 @@ import type {
   ScanItem,
   ScanResponse,
   ScreenerRow,
+  Stage,
   TradeDirection
 } from "@/lib/types";
 
-type MobileTab = "overview" | "recommendations" | "radar" | "screener" | "more";
+type MobileTab = "overview" | "signals" | "radar" | "screener" | "more";
 type RadarFilter = "ALL" | "HIGH" | "CONFLICT" | "LIQUIDATION";
 type ScreenerSort = "score" | "gainers" | "losers" | "oi";
+type StageFilter = "ALL" | Stage;
 
 interface MobileDashboardProps {
   scan: ScanResponse | null;
@@ -71,10 +74,20 @@ const NAV_ITEMS: Array<{
   primary?: boolean;
 }> = [
   { key: "overview", label: "總覽", icon: Home },
-  { key: "recommendations", label: "推薦", icon: ShieldCheck },
-  { key: "radar", label: "雷達", icon: Radar, primary: true },
+  { key: "radar", label: "5m", icon: Activity },
+  { key: "signals", label: "訊號", icon: ShieldCheck, primary: true },
   { key: "screener", label: "選幣", icon: ListFilter },
   { key: "more", label: "更多", icon: MoreHorizontal }
+];
+
+const MOBILE_STAGE_FILTERS: StageFilter[] = [
+  "ALL",
+  "早期異動",
+  "趨勢啟動",
+  "趨勢延續",
+  "過熱風險",
+  "反轉警訊",
+  "觀察"
 ];
 
 export function MobileDashboard({
@@ -197,7 +210,7 @@ export function MobileDashboard({
           <LoadingState loading={loading} />
         ) : tab === "overview" ? (
           <MobileOverview scan={scan} onSelect={onSelect} onNavigate={setTab} />
-        ) : tab === "recommendations" ? (
+        ) : tab === "signals" ? (
           <MobileRecommendations
             items={scan.items}
             selectedSymbol={selectedSymbol}
@@ -213,10 +226,19 @@ export function MobileDashboard({
             scan={scan}
             entitlement={entitlement}
             onSelect={onSelect}
-            onOpenAnalyst={onOpenAnalyst}
           />
         )}
       </main>
+
+      <button
+        type="button"
+        onClick={onOpenAnalyst}
+        aria-label="開啟 CT 分析師"
+        title="CT 分析師"
+        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-gold/50 bg-[#11101a]/92 text-gold shadow-[0_12px_34px_rgba(0,0,0,.5),0_0_24px_rgba(212,175,55,.25)] backdrop-blur-md"
+      >
+        <Bot className="h-5 w-5" />
+      </button>
 
       <nav
         aria-label="手機版主要功能"
@@ -251,7 +273,7 @@ export function MobileDashboard({
                       : "h-6 w-8"
                   }`}
                 >
-                  <Icon className={item.primary ? "h-5 w-5" : "h-5 w-5"} />
+                  {item.primary ? <MobileCtMark /> : <Icon className="h-5 w-5" />}
                 </span>
                 <span className={item.primary ? "-mt-3" : ""}>{item.label}</span>
               </button>
@@ -324,7 +346,7 @@ function MobileOverview({
         title="做多／做空推薦"
         hint={`多 ${longRecommendations}/3 · 空 ${shortRecommendations}/3`}
         action="查看全部"
-        onAction={() => onNavigate("recommendations")}
+        onAction={() => onNavigate("signals")}
       />
       {recommendations.length ? (
         <div className="grid gap-2">
@@ -367,10 +389,30 @@ function MobileRecommendations({
   onSelect: (symbol: string) => void;
   onShowHistory: () => void;
 }) {
+  const [stageFilter, setStageFilter] = useState<StageFilter>("ALL");
+  const [showAllStages, setShowAllStages] = useState(false);
   const recommendations = items.filter((item) => item.is_recommend);
   const longs = recommendations.filter((item) => item.direction === "LONG").slice(0, 3);
   const shorts = recommendations.filter((item) => item.direction === "SHORT").slice(0, 3);
-  const anomalies = items.filter((item) => !item.is_recommend);
+  const anomalies = [...items.filter((item) => !item.is_recommend)].sort(
+    (a, b) => stagePriority(a.stage) - stagePriority(b.stage) || b.score - a.score
+  );
+  const stageCounts = new Map<Stage, number>();
+  for (const item of anomalies) {
+    stageCounts.set(item.stage, (stageCounts.get(item.stage) ?? 0) + 1);
+  }
+  const filteredAnomalies =
+    stageFilter === "ALL"
+      ? anomalies
+      : anomalies.filter((item) => item.stage === stageFilter);
+  const visibleAnomalies = showAllStages
+    ? filteredAnomalies
+    : filteredAnomalies.slice(0, 12);
+
+  const selectStage = (next: StageFilter) => {
+    setStageFilter(next);
+    setShowAllStages(false);
+  };
 
   return (
     <div className="grid gap-5">
@@ -382,16 +424,46 @@ function MobileRecommendations({
       <section>
         <div className="mb-2 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">早期異動觀察</h2>
-            <p className="mt-0.5 text-[11px] text-slate-500">尚未成為直接推薦，但已有資金或結構異動</p>
+            <h2 className="text-sm font-semibold text-slate-100">市場狀態觀察</h2>
+            <p className="mt-0.5 text-[11px] text-slate-500">未進入推薦榜的正式 15m 市場階段</p>
           </div>
           <button type="button" onClick={onShowHistory} className="inline-flex h-10 items-center gap-1.5 px-2 text-xs text-gold">
             <History className="h-3.5 w-3.5" />歷史
           </button>
         </div>
-        {anomalies.length ? (
+
+        <div className="-mx-3 mb-2 overflow-x-auto px-3 [scrollbar-width:none]">
+          <div className="flex w-max gap-2 pb-1">
+            {MOBILE_STAGE_FILTERS.map((filter) => {
+              const count = filter === "ALL" ? anomalies.length : stageCounts.get(filter) ?? 0;
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => selectStage(filter)}
+                  aria-pressed={stageFilter === filter}
+                  className={`h-10 rounded-xl border px-3 text-xs tabular-nums ${
+                    stageFilter === filter
+                      ? "border-gold/45 bg-gold/10 text-gold"
+                      : "border-white/10 bg-white/[0.03] text-slate-500"
+                  }`}
+                >
+                  {filter === "ALL" ? "全部" : filter} {count}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <p className="mb-2 text-[11px] leading-5 text-slate-500">
+          {stageFilter === "ALL"
+            ? "早期、啟動、延續、過熱、反轉與一般觀察分開判讀；過熱與反轉不是反向進場推薦。"
+            : stageHint(stageFilter)}
+        </p>
+
+        {visibleAnomalies.length ? (
           <div className="grid gap-2">
-            {anomalies.slice(0, 12).map((item) => (
+            {visibleAnomalies.map((item) => (
               <button
                 key={item.symbol}
                 type="button"
@@ -416,8 +488,20 @@ function MobileRecommendations({
             ))}
           </div>
         ) : (
-          <CompactEmpty text="目前沒有早期異動事件" />
+          <CompactEmpty text={`目前沒有${stageFilter === "ALL" ? "市場狀態" : stageFilter}事件`} />
         )}
+
+        {filteredAnomalies.length > 12 ? (
+          <button
+            type="button"
+            onClick={() => setShowAllStages((value) => !value)}
+            className="mt-3 h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] text-xs text-slate-300"
+          >
+            {showAllStages
+              ? "收合至前 12 筆"
+              : `查看全部 ${filteredAnomalies.length} 筆`}
+          </button>
+        ) : null}
       </section>
     </div>
   );
@@ -650,13 +734,13 @@ function MobileScreener({ rows, selectedSymbol, onSelect }: { rows: ScreenerRow[
   );
 }
 
-function MobileMore({ scan, entitlement, onSelect, onOpenAnalyst }: { scan: ScanResponse; entitlement?: Entitlement | null; onSelect: (symbol: string) => void; onOpenAnalyst: () => void }) {
+function MobileMore({ scan, entitlement, onSelect }: { scan: ScanResponse; entitlement?: Entitlement | null; onSelect: (symbol: string) => void }) {
   return (
     <div className="grid gap-5">
-      <MobilePageIntro kicker="DATA & LEARNING" title="資料與更多功能" description="OI 資金動向、教學資源、分析師與帳戶設定。" />
+      <MobilePageIntro kicker="DATA & LEARNING" title="資料與更多功能" description="OI 資金動向、教學資源與帳戶設定。" />
 
       <section>
-        <MobileSectionHeader icon={<BarChart3 className="h-4 w-4" />} title="OI 異動焦點" hint="近 1 小時" />
+        <MobileSectionHeader icon={<BarChart3 className="h-4 w-4" />} title="OI 資金變動 Top 8" hint="近 1 小時 · 依美元變動排序" />
         {scan.oi_movers.length ? (
           <div className="surface-sunken mt-2 divide-y divide-white/5 overflow-hidden rounded-2xl">
             {scan.oi_movers.slice(0, 8).map((item) => <MobileOiRow key={item.symbol} item={item} onSelect={onSelect} />)}
@@ -668,11 +752,7 @@ function MobileMore({ scan, entitlement, onSelect, onOpenAnalyst }: { scan: Scan
         <MoreLink href="/beginner" icon={<BookOpen className="h-5 w-5" />} title="新手教學" subtitle="系統使用方式" />
         <MoreLink href="/indicators" icon={<Gauge className="h-5 w-5" />} title="指標專區" subtitle="理解數據邏輯" />
         <MoreLink href="/mentors" icon={<UsersRound className="h-5 w-5" />} title="團隊導師" subtitle="認識核心團隊" />
-        <button type="button" onClick={onOpenAnalyst} className="surface lift min-h-28 rounded-2xl p-3 text-left">
-          <Bot className="h-5 w-5 text-gold" />
-          <strong className="mt-4 block text-sm text-slate-100">分析師</strong>
-          <span className="mt-1 block text-[11px] text-slate-500">詢問目前市場資料</span>
-        </button>
+        <MoreLink href="/indicators/ct-nova" icon={<Sparkles className="h-5 w-5" />} title="CT NOVA" subtitle="查看指標詳情" />
       </section>
 
       <section className="surface rounded-2xl p-4">
@@ -692,14 +772,15 @@ function MobileMore({ scan, entitlement, onSelect, onOpenAnalyst }: { scan: Scan
 }
 
 function MobileOiRow({ item, onSelect }: { item: OiMover; onSelect: (symbol: string) => void }) {
+  const quantityChange = item.oi_qty_change_1h ?? item.oi_change_1h;
   return (
     <button type="button" onClick={() => onSelect(item.symbol)} className="flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left active:bg-white/[0.04]">
       <strong className="w-16 shrink-0 text-sm text-slate-50">{shortSymbol(item.symbol)}</strong>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs text-slate-300">{item.side}</span>
-        <span className="mt-1 block text-[10px] text-slate-600">1h 價格 {formatPercent(item.price_change_1h)}</span>
+        <span className="mt-1 block text-[10px] text-slate-600">數量 {formatPercent(quantityChange)} · 價格 {formatPercent(item.price_change_1h)}</span>
       </span>
-      <span className={`text-sm font-medium tabular-nums ${percentTone(item.oi_change_1h)}`}>OI {formatPercent(item.oi_change_1h)}</span>
+      <span className={`text-sm font-medium tabular-nums ${percentTone(item.oi_delta)}`}>{formatSignedUsd(item.oi_delta)}</span>
     </button>
   );
 }
@@ -711,6 +792,18 @@ function MoreLink({ href, icon, title, subtitle }: { href: string; icon: React.R
       <strong className="mt-4 block text-sm text-slate-100">{title}</strong>
       <span className="mt-1 block text-[11px] text-slate-500">{subtitle}</span>
     </Link>
+  );
+}
+
+function MobileCtMark() {
+  return (
+    <span className="relative block h-8 w-8 overflow-hidden rounded-full" aria-hidden>
+      <img
+        src="/logo.png"
+        alt=""
+        className="absolute left-0 top-1/2 h-8 w-auto max-w-none -translate-y-1/2"
+      />
+    </span>
   );
 }
 
@@ -776,6 +869,11 @@ function flowText(value: number): string {
   if (value > 0.005) return `買方 ${formatPercent(value)}`;
   if (value < -0.005) return `賣方 ${formatPercent(value)}`;
   return `主動流 ${formatPercent(value)}`;
+}
+
+function formatSignedUsd(value: number): string {
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}$${formatCompactNumber(Math.abs(value))}`;
 }
 
 function isLiquidation(item: RiskRadarItem): boolean {
