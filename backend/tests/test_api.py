@@ -30,6 +30,7 @@ def test_data_endpoints_require_auth() -> None:
         assert client.get("/api/v1/analysis", params={"symbol": "BTCUSDT"}).status_code == 401
         assert client.get("/api/v1/scan").status_code == 401
         assert client.get("/api/v1/anomaly-history").status_code == 401
+        assert client.get("/api/v1/yokai").status_code == 401
         assert client.post("/api/v1/analyst/chat", json={"messages": []}).status_code == 401
 
 
@@ -134,3 +135,14 @@ def test_anomaly_history_endpoint() -> None:
         response = client.get("/api/v1/anomaly-history", headers=headers)
         assert response.status_code == 200
         assert isinstance(response.json()["items"], list)
+
+
+def test_yokai_endpoint_has_stable_empty_warmup_payload() -> None:
+    with TestClient(app) as client:
+        headers = _register_headers(client)
+        response = client.get("/api/v1/yokai", headers=headers)
+        assert response.status_code == 200
+        payload = response.json()
+        assert isinstance(payload["narratives"], list)
+        assert isinstance(payload["qualified_longs"], list)
+        assert "external_ready" in payload and "gate_ready" in payload

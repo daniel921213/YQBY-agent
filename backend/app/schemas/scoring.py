@@ -202,6 +202,20 @@ class ScreenerRow(BaseModel):
     account_ratio_avg: float = 1.0
     oi_change_1h: float
     stage: Stage = "觀察"
+    # Full-universe condition gate. Existing dashboard lanes may still display
+    # only their configured top-N; Yokai uses these fields to see every symbol
+    # that actually passed the same formal recommendation definition.
+    trade_eligible: bool = False
+    trade_reasons: list[str] = []
+    trade_failed_reasons: list[str] = []
+    flow_quality: Literal["REAL", "MISSING", "PROXY", "STALE"] = "MISSING"
+    oi_side: OiSide | None = None
+    five_minute_state: str | None = None
+    five_minute_direction: Literal["LONG", "SHORT", "NEUTRAL"] | None = None
+    five_minute_quality: Literal["REAL", "PARTIAL", "MISSING"] | None = None
+    active_flow_direction: Literal["LONG", "SHORT", "NEUTRAL"] = "NEUTRAL"
+    active_flow_strength: float = 0.0
+    cvd_signal: str | None = None
 
 
 class MarketBreadth(BaseModel):

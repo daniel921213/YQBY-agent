@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, Integer, String, func
+from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -31,3 +31,14 @@ class ActivationCode(Base):
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
     used_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
     used_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class YokaiSnapshot(Base):
+    """Latest external narrative intelligence, persisted across Railway restarts."""
+
+    __tablename__ = "yokai_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    generated_at: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())

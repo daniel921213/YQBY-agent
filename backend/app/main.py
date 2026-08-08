@@ -7,10 +7,12 @@ from app.api.v1.routes.admin import router as admin_router
 from app.api.v1.routes.analysis import router as analysis_router
 from app.api.v1.routes.analyst import router as analyst_router
 from app.api.v1.routes.auth import router as auth_router
+from app.api.v1.routes.yokai import router as yokai_router
 from app.core.config import get_settings
 from app.db import SessionLocal, engine, init_db
 from app.services.entitlement_migration import run_entitlement_migration
 from app.services.scan_cache import scan_cache
+from app.services.yokai_service import yokai_cache
 
 
 settings = get_settings()
@@ -31,7 +33,10 @@ async def lifespan(app: FastAPI):
     # (binance/gate); the mock provider is fast enough to scan per request.
     if settings.is_live_provider and settings.scan_background:
         scan_cache.start()
+    if settings.yokai_background:
+        yokai_cache.start()
     yield
+    yokai_cache.stop()
     scan_cache.stop()
 
 
@@ -49,6 +54,7 @@ app.include_router(analysis_router, prefix=settings.api_v1_prefix)
 app.include_router(analyst_router, prefix=settings.api_v1_prefix)
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(admin_router, prefix=settings.api_v1_prefix)
+app.include_router(yokai_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

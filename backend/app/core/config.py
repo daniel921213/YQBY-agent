@@ -74,6 +74,32 @@ class Settings(BaseSettings):
     # dashboard has data within ~1 min while the full scan builds in background.
     scan_warmup_size: int = 60
 
+    # Yokai narrative intelligence. External collectors are isolated from the
+    # market scanner. A persisted last-good
+    # snapshot keeps the feature useful during upstream outages/redeploys.
+    yokai_background: bool = True
+    yokai_refresh_seconds: float = 900.0
+    yokai_request_timeout: float = 10.0
+    coingecko_base_url: str = "https://api.coingecko.com/api/v3"
+    coingecko_demo_api_key: str | None = None
+    gdelt_doc_url: str = "https://api.gdeltproject.org/api/v2/doc/doc"
+    yokai_rss_feeds_raw: str = Field(
+        default=(
+            "Ethereum Blog|https://blog.ethereum.org/feed.xml,"
+            "CoinDesk|https://www.coindesk.com/arc/outboundfeeds/rss/"
+        ),
+        alias="YOKAI_RSS_FEEDS",
+    )
+
+    @property
+    def yokai_rss_feeds(self) -> list[tuple[str, str]]:
+        feeds: list[tuple[str, str]] = []
+        for raw in self.yokai_rss_feeds_raw.split(","):
+            name, separator, url = raw.strip().partition("|")
+            if separator and name and url:
+                feeds.append((name.strip(), url.strip()))
+        return feeds
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

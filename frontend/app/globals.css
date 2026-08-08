@@ -213,6 +213,162 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   妖怪篩選器：沿用 CT 深空材質，金色代表題材熱度、冰藍代表情報流。
+   動畫只作用在專區的局部合成層，不讓整頁持續重繪。
+   ────────────────────────────────────────────────────────────── */
+.yokai-shell {
+  isolation: isolate;
+  background:
+    radial-gradient(900px 620px at 84% 12%, rgba(30, 112, 194, 0.13), transparent 67%),
+    radial-gradient(720px 520px at 8% 48%, rgba(202, 138, 4, 0.055), transparent 70%);
+}
+
+.yokai-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.yokai-aurora::before,
+.yokai-aurora::after {
+  content: "";
+  position: absolute;
+  width: min(62vw, 880px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  filter: blur(110px);
+  opacity: 0.11;
+  will-change: transform;
+}
+
+.yokai-aurora::before {
+  right: -24vw;
+  top: 8vh;
+  background: #3fa9f5;
+  animation: yokai-drift-a 18s ease-in-out infinite alternate;
+}
+
+.yokai-aurora::after {
+  bottom: -32vw;
+  left: -18vw;
+  background: #d4af37;
+  animation: yokai-drift-b 22s ease-in-out infinite alternate;
+}
+
+.yokai-core-frame {
+  background: conic-gradient(
+    from var(--yokai-angle, 0deg),
+    rgba(76, 194, 255, 0.08),
+    rgba(76, 194, 255, 0.76),
+    rgba(240, 200, 118, 0.36),
+    rgba(255, 255, 255, 0.04),
+    rgba(76, 194, 255, 0.08)
+  );
+  box-shadow:
+    0 34px 100px -52px rgba(35, 135, 220, 0.72),
+    0 0 54px -34px rgba(240, 200, 118, 0.55);
+  animation: yokai-border-spin 10s linear infinite;
+}
+
+.yokai-network {
+  background:
+    linear-gradient(rgba(76, 194, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 194, 255, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(30, 112, 194, 0.12), transparent 48%),
+    linear-gradient(160deg, rgba(9, 17, 34, 0.94), rgba(2, 5, 12, 0.98));
+  background-size: 32px 32px, 32px 32px, auto, auto;
+}
+
+.yokai-network::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 34%, rgba(197, 231, 255, 0.045) 48%, transparent 60%);
+  transform: translateX(-110%);
+  animation: yokai-scan 7s ease-in-out infinite;
+}
+
+.yokai-gradient-text {
+  background: linear-gradient(104deg, #eef8ff 3%, #75cfff 45%, #f0c876 90%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 26px rgba(76, 194, 255, 0.18));
+}
+
+.yokai-narrative-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(112deg, transparent 34%, rgba(255, 255, 255, 0.055) 48%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.65s ease;
+}
+
+.yokai-narrative-card:hover::after {
+  transform: translateX(120%);
+}
+
+@property --yokai-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes yokai-border-spin {
+  to { --yokai-angle: 360deg; }
+}
+
+@keyframes yokai-scan {
+  0%, 62% { transform: translateX(-110%); }
+  88%, 100% { transform: translateX(110%); }
+}
+
+@keyframes yokai-drift-a {
+  to { transform: translate3d(-9vw, 8vh, 0) scale(1.08); }
+}
+
+@keyframes yokai-drift-b {
+  to { transform: translate3d(10vw, -6vh, 0) scale(0.94); }
+}
+
+html[data-theme="light"] .yokai-network {
+  background:
+    linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(2, 132, 199, 0.1), transparent 50%),
+    rgba(239, 246, 255, 0.94);
+  background-size: 32px 32px, 32px 32px, auto, auto;
+}
+
+@media (max-width: 639px) {
+  .yokai-shell {
+    background: radial-gradient(520px 440px at 78% 10%, rgba(30, 112, 194, 0.12), transparent 70%);
+  }
+  .yokai-aurora::before,
+  .yokai-aurora::after {
+    opacity: 0.07;
+    filter: blur(80px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yokai-aurora::before,
+  .yokai-aurora::after,
+  .yokai-core-frame,
+  .yokai-network::after {
+    animation: none !important;
+  }
+  .yokai-narrative-card {
+    transition: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
    受光表面設計系統 — 質感來自光影與層次，不是模糊。
    每個 class 是一種「材質 + 高度」，元件只要套上對應語意即可。
    ────────────────────────────────────────────────────────────── */
