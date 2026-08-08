@@ -381,6 +381,7 @@ class AnalysisService:
             "LONG": [],
             "SHORT": [],
         }
+        decisions_by_symbol: dict[str, TradeRecommendationDecision] = {}
         for analysis in analyses:
             symbol = analysis.recommendation.symbol
             mover = oi_by_symbol.get(symbol)
@@ -393,6 +394,7 @@ class AnalysisService:
                 oi_change_1h=mover.oi_change_1h if mover else 0.0,
                 five_minute=risk_by_symbol.get(symbol),
             )
+            decisions_by_symbol[symbol] = decision
             if decision.eligible:
                 eligible[analysis.recommendation.direction].append((analysis, decision))
 
@@ -445,7 +447,13 @@ class AnalysisService:
         )
 
         altseason = self._build_altseason(analyses, record=track)
-        universe = self._build_universe(analyses, primary_timeframe)
+        universe = self._build_universe(
+            analyses,
+            primary_timeframe,
+            decisions_by_symbol,
+            oi_by_symbol,
+            risk_by_symbol,
+        )
         official_closes = [
             a.meta.official_close_time for a in analyses if a.meta.official_close_time is not None
         ]
@@ -541,14 +549,28 @@ class AnalysisService:
 
     @staticmethod
     def _build_universe(
-        analyses: list[AnalysisResponse], primary_timeframe: str
+        analyses: list[AnalysisResponse],
+        primary_timeframe: str,
+        decisions_by_symbol: dict[str, TradeRecommendationDecision] | None = None,
+        oi_by_symbol: dict[str, OiMover] | None = None,
+        risk_by_symbol: dict[str, RiskRadarReading] | None = None,
     ) -> list[ScreenerRow]:
+        decisions_by_symbol = decisions_by_symbol or {}
+        oi_by_symbol = oi_by_symbol or {}
+        risk_by_symbol = risk_by_symbol or {}
         rows: list[ScreenerRow] = []
         for a in analyses:
             r = a.recommendation
             price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
             direction = "NEUTRAL" if r.score < SCREENER_NEUTRAL_SCORE else r.direction
             m = a.metrics
+            decision = decisions_by_symbol.get(r.symbol)
+            mover = oi_by_symbol.get(r.symbol)
+            five_minute = risk_by_symbol.get(r.symbol)
+            flow_items = [item for item in a.evidence if item.key == "cvd_thrust"]
+            active_flow = max(flow_items, key=lambda item: item.strength, default=None)
+            cvd_items = [item for item in a.evidence if item.key.startswith("cvd_")]
+            cvd_signal = max(cvd_items, key=lambda item: item.strength, default=None)
             rows.append(
                 ScreenerRow(
                     symbol=r.symbol,
@@ -565,6 +587,17 @@ class AnalysisService:
                     account_ratio_avg=m.account_ratio_avg if m else 1.0,
                     oi_change_1h=_oi_change_1h(a.chart, primary_timeframe),
                     stage=a.stage,
+                    trade_eligible=decision.eligible if decision else False,
+                    trade_reasons=list(decision.passed_reasons) if decision else [],
+                    trade_failed_reasons=list(decision.failed_reasons) if decision else [],
+                    flow_quality=m.flow_quality if m else "MISSING",
+                    oi_side=mover.side if mover else None,
+                    five_minute_state=five_minute.state if five_minute else None,
+                    five_minute_direction=five_minute.direction if five_minute else None,
+                    five_minute_quality=five_minute.data_quality if five_minute else None,
+                    active_flow_direction=active_flow.direction if active_flow else "NEUTRAL",
+                    active_flow_strength=active_flow.strength if active_flow else 0.0,
+                    cvd_signal=cvd_signal.label if cvd_signal else None,
                 )
             )
         rows.sort(key=lambda row: row.score, reverse=True)

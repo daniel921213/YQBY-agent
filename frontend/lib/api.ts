@@ -1,4 +1,4 @@
-import type { AnalysisResponse, AnomalyHistoryResponse, ScanResponse } from "@/lib/types";
+import type { AnalysisResponse, AnomalyHistoryResponse, ScanResponse, YokaiResponse } from "@/lib/types";
 import { getToken } from "@/lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -78,6 +78,10 @@ export async function fetchMarketScan(): Promise<ScanResponse> {
 
 export async function fetchAnomalyHistory(): Promise<AnomalyHistoryResponse> {
   return request("/api/v1/anomaly-history", "歷史紀錄讀取失敗");
+}
+
+export async function fetchYokai(): Promise<YokaiResponse> {
+  return request("/api/v1/yokai", "妖怪情報讀取失敗");
 }
 
 export interface Entitlement {

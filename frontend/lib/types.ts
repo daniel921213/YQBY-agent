@@ -258,3 +258,93 @@ export interface AnomalyHistoryItem {
 export interface AnomalyHistoryResponse {
   items: AnomalyHistoryItem[];
 }
+
+export type YokaiLifecycle = "潛伏" | "顯形" | "發酵" | "狂熱" | "退散";
+export type YokaiSourceHealth = "HEALTHY" | "STALE" | "OFFLINE";
+export type YokaiTokenStatus = "QUALIFIED" | "WATCH" | "RISK";
+
+export interface YokaiSourceStatus {
+  key: string;
+  name: string;
+  health: YokaiSourceHealth;
+  item_count: number;
+  last_success_at: number | null;
+  note: string;
+}
+
+export interface YokaiArticle {
+  id: string;
+  title: string;
+  url: string;
+  source: string;
+  published_at: number;
+  narrative_ids: string[];
+  symbols: string[];
+}
+
+export interface YokaiHistoryPoint {
+  time: number;
+  value: number;
+}
+
+export interface YokaiNarrative {
+  id: string;
+  name: string;
+  english_name: string;
+  summary: string;
+  lifecycle: YokaiLifecycle;
+  heat_score: number;
+  heat_change: number;
+  mentions_1h: number;
+  mentions_6h: number;
+  mentions_24h: number;
+  mentions_7d: number;
+  source_count: number;
+  related_token_count: number;
+  qualified_long_count: number;
+  keywords: string[];
+  history: YokaiHistoryPoint[];
+  articles: YokaiArticle[];
+}
+
+export interface YokaiToken {
+  symbol: string;
+  narrative_ids: string[];
+  narrative_names: string[];
+  narrative_heat: number;
+  narrative_lifecycle: YokaiLifecycle;
+  status: YokaiTokenStatus;
+  qualified_long: boolean;
+  price: number;
+  change_24h: number;
+  formal_direction: TradeDirection | "NEUTRAL";
+  formal_stage: Stage;
+  formal_score: number;
+  oi_change_1h: number;
+  oi_side: string | null;
+  funding_rate: number;
+  account_ratio: number;
+  flow_quality: "REAL" | "MISSING" | "PROXY" | "STALE";
+  five_minute_state: string | null;
+  five_minute_direction: EvidenceDirection | null;
+  active_flow_direction: EvidenceDirection;
+  active_flow_strength: number;
+  cvd_signal: string | null;
+  reasons: string[];
+  blocked_reasons: string[];
+}
+
+export interface YokaiResponse {
+  generated_at: number;
+  external_generated_at: number;
+  gate_generated_at: number;
+  refresh_interval_seconds: number;
+  external_ready: boolean;
+  gate_ready: boolean;
+  sources: YokaiSourceStatus[];
+  narratives: YokaiNarrative[];
+  tokens: YokaiToken[];
+  qualified_longs: YokaiToken[];
+  coverage_symbols: number;
+  notice: string;
+}
