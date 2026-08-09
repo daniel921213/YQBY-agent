@@ -538,7 +538,7 @@ def _row_to_token(
         primary.get("lifecycle") in {"顯形", "發酵"}
         and int(primary.get("source_count", 0)) >= 2
     )
-    gate_pass = row.trade_eligible and row.direction == "LONG"
+    gate_pass = row.yokai_long_eligible and row.direction == "LONG"
     qualified = external_pass and gate_pass
 
     reasons: list[str] = []
@@ -558,8 +558,8 @@ def _row_to_token(
 
     if row.direction != "LONG":
         blocked.append("Gate 正式方向尚未偏多")
-    reasons.extend(row.trade_reasons if gate_pass else [])
-    blocked.extend(row.trade_failed_reasons if not gate_pass else [])
+    reasons.extend(row.yokai_long_reasons if gate_pass else [])
+    blocked.extend(row.yokai_long_failed_reasons if not gate_pass else [])
     # Preserve order but remove repeated explanations.
     reasons = list(dict.fromkeys(reasons))
     blocked = list(dict.fromkeys(blocked))

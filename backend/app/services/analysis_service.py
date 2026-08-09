@@ -27,6 +27,7 @@ from app.schemas.scoring import (
 from app.scoring.trade_recommendation import (
     TradeRecommendationDecision,
     evaluate_trade_recommendation,
+    evaluate_yokai_long_confirmation,
 )
 from app.utils.numeric import pct_change
 from app.utils.timeframes import timeframe_to_seconds
@@ -382,6 +383,7 @@ class AnalysisService:
             "SHORT": [],
         }
         decisions_by_symbol: dict[str, TradeRecommendationDecision] = {}
+        yokai_decisions_by_symbol: dict[str, TradeRecommendationDecision] = {}
         for analysis in analyses:
             symbol = analysis.recommendation.symbol
             mover = oi_by_symbol.get(symbol)
@@ -395,6 +397,15 @@ class AnalysisService:
                 five_minute=risk_by_symbol.get(symbol),
             )
             decisions_by_symbol[symbol] = decision
+            yokai_decisions_by_symbol[symbol] = evaluate_yokai_long_confirmation(
+                direction=analysis.recommendation.direction,
+                stage=analysis.stage,
+                evidence=analysis.evidence,
+                metrics=analysis.metrics,
+                oi_side=mover.side if mover else None,
+                oi_change_1h=mover.oi_change_1h if mover else 0.0,
+                five_minute=risk_by_symbol.get(symbol),
+            )
             if decision.eligible:
                 eligible[analysis.recommendation.direction].append((analysis, decision))
 
@@ -451,6 +462,7 @@ class AnalysisService:
             analyses,
             primary_timeframe,
             decisions_by_symbol,
+            yokai_decisions_by_symbol,
             oi_by_symbol,
             risk_by_symbol,
         )
@@ -552,10 +564,12 @@ class AnalysisService:
         analyses: list[AnalysisResponse],
         primary_timeframe: str,
         decisions_by_symbol: dict[str, TradeRecommendationDecision] | None = None,
+        yokai_decisions_by_symbol: dict[str, TradeRecommendationDecision] | None = None,
         oi_by_symbol: dict[str, OiMover] | None = None,
         risk_by_symbol: dict[str, RiskRadarReading] | None = None,
     ) -> list[ScreenerRow]:
         decisions_by_symbol = decisions_by_symbol or {}
+        yokai_decisions_by_symbol = yokai_decisions_by_symbol or {}
         oi_by_symbol = oi_by_symbol or {}
         risk_by_symbol = risk_by_symbol or {}
         rows: list[ScreenerRow] = []
@@ -565,6 +579,7 @@ class AnalysisService:
             direction = "NEUTRAL" if r.score < SCREENER_NEUTRAL_SCORE else r.direction
             m = a.metrics
             decision = decisions_by_symbol.get(r.symbol)
+            yokai_decision = yokai_decisions_by_symbol.get(r.symbol)
             mover = oi_by_symbol.get(r.symbol)
             five_minute = risk_by_symbol.get(r.symbol)
             flow_items = [item for item in a.evidence if item.key == "cvd_thrust"]
@@ -590,6 +605,13 @@ class AnalysisService:
                     trade_eligible=decision.eligible if decision else False,
                     trade_reasons=list(decision.passed_reasons) if decision else [],
                     trade_failed_reasons=list(decision.failed_reasons) if decision else [],
+                    yokai_long_eligible=yokai_decision.eligible if yokai_decision else False,
+                    yokai_long_reasons=(
+                        list(yokai_decision.passed_reasons) if yokai_decision else []
+                    ),
+                    yokai_long_failed_reasons=(
+                        list(yokai_decision.failed_reasons) if yokai_decision else []
+                    ),
                     flow_quality=m.flow_quality if m else "MISSING",
                     oi_side=mover.side if mover else None,
                     five_minute_state=five_minute.state if five_minute else None,

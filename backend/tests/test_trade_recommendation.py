@@ -5,7 +5,10 @@ import pytest
 from app.indicators.risk_radar import RiskRadarReading
 from app.schemas.indicators import EvidenceItem
 from app.schemas.scoring import MarketSnapshot
-from app.scoring.trade_recommendation import evaluate_trade_recommendation
+from app.scoring.trade_recommendation import (
+    evaluate_trade_recommendation,
+    evaluate_yokai_long_confirmation,
+)
 
 
 def _evidence(direction: str) -> list[EvidenceItem]:
@@ -80,6 +83,27 @@ def _decision(
     )
 
 
+def _yokai_decision(
+    direction: str = "LONG",
+    *,
+    stage: str = "早期異動",
+    risk: RiskRadarReading | None = None,
+):
+    return evaluate_yokai_long_confirmation(
+        direction=direction,  # type: ignore[arg-type]
+        stage=stage,  # type: ignore[arg-type]
+        evidence=_evidence(direction),
+        metrics=MarketSnapshot(
+            funding_rate=0.0,
+            account_ratio=1.0,
+            flow_quality="REAL",
+        ),
+        oi_side="多頭建倉" if direction == "LONG" else "空頭建倉",
+        oi_change_1h=0.025,
+        five_minute=risk or _risk(direction),
+    )
+
+
 @pytest.mark.parametrize("direction", ["LONG", "SHORT"])
 def test_complete_ignition_setup_is_eligible_without_a_score_gate(direction: str) -> None:
     decision = _decision(direction)
@@ -91,6 +115,31 @@ def test_complete_ignition_setup_is_eligible_without_a_score_gate(direction: str
 @pytest.mark.parametrize("stage", ["早期異動", "過熱風險", "反轉警訊", "觀察"])
 def test_non_executable_lifecycle_stages_never_recommend(stage: str) -> None:
     assert _decision(stage=stage).eligible is False
+
+
+def test_yokai_early_long_requires_a_confirmed_five_minute_transition() -> None:
+    assert _yokai_decision().eligible is False
+
+    confirmed = replace(
+        _risk("LONG"),
+        flags=["5m狀態確認切換：持平 → 多頭建倉"],
+    )
+    decision = _yokai_decision(risk=confirmed)
+
+    assert decision.eligible is True
+    assert decision.stage_priority == 3
+    assert "5m 狀態切換已確認" in decision.passed_reasons
+
+
+def test_yokai_never_confirms_a_short_setup() -> None:
+    confirmed = replace(
+        _risk("SHORT"),
+        flags=["5m狀態確認切換：持平 → 空頭建倉"],
+    )
+    decision = _yokai_decision(direction="SHORT", risk=confirmed)
+
+    assert decision.eligible is False
+    assert decision.failed_reasons == ("妖怪篩選器只提供做多確認",)
 
 
 def test_oi_exit_or_wrong_buildup_side_never_recommends() -> None:
