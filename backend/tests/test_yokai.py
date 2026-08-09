@@ -47,7 +47,13 @@ def _external(lifecycle: str = "發酵") -> dict:
     }
 
 
-def _scan() -> ScanResponse:
+def _scan(
+    *,
+    stage: str = "趨勢啟動",
+    trade_eligible: bool = True,
+    yokai_long_eligible: bool = True,
+    yokai_long_failed_reasons: list[str] | None = None,
+) -> ScanResponse:
     row = ScreenerRow(
         symbol="ONDOUSDT",
         price=1.25,
@@ -61,9 +67,12 @@ def _scan() -> ScanResponse:
         top_trader_ratio=1.1,
         account_ratio=1.2,
         oi_change_1h=0.04,
-        stage="趨勢啟動",
-        trade_eligible=True,
+        stage=stage,  # type: ignore[arg-type]
+        trade_eligible=trade_eligible,
         trade_reasons=["15m 趨勢啟動", "OI 多頭建倉"],
+        yokai_long_eligible=yokai_long_eligible,
+        yokai_long_reasons=[f"15m {stage}", "OI 多頭建倉", "5m 狀態切換已確認"],
+        yokai_long_failed_reasons=yokai_long_failed_reasons or [],
         flow_quality="REAL",
         oi_side="多頭建倉",
         five_minute_state="多頭建倉",
@@ -93,6 +102,33 @@ def test_yokai_requires_both_narrative_and_gate_confirmation() -> None:
     assert len(response.qualified_longs) == 1
     assert response.qualified_longs[0].symbol == "ONDOUSDT"
     assert response.narratives[0].qualified_long_count == 1
+
+
+def test_yokai_can_confirm_an_early_long_without_changing_dashboard_eligibility() -> None:
+    response = build_yokai_response(
+        _external(),
+        _scan(stage="早期異動", trade_eligible=False, yokai_long_eligible=True),
+    )
+
+    assert len(response.qualified_longs) == 1
+    assert response.qualified_longs[0].formal_stage == "早期異動"
+    assert "5m 狀態切換已確認" in response.qualified_longs[0].reasons
+
+
+def test_unconfirmed_early_long_stays_in_yokai_watchlist() -> None:
+    response = build_yokai_response(
+        _external(),
+        _scan(
+            stage="早期異動",
+            trade_eligible=False,
+            yokai_long_eligible=False,
+            yokai_long_failed_reasons=["早期異動缺少 5m 狀態切換確認"],
+        ),
+    )
+
+    assert response.qualified_longs == []
+    assert response.tokens[0].status == "WATCH"
+    assert "早期異動缺少 5m 狀態切換確認" in response.tokens[0].blocked_reasons
 
 
 def test_yokai_overheated_narrative_blocks_long_even_when_gate_passes() -> None:

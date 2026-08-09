@@ -38,6 +38,15 @@ _REQUIRED_OI_SIDE: dict[TradeDirection, str] = {
     "SHORT": "空頭建倉",
 }
 
+_DASHBOARD_STAGES: frozenset[Stage] = frozenset({"趨勢啟動", "趨勢延續"})
+_YOKAI_LONG_STAGES: frozenset[Stage] = frozenset(
+    {"早期異動", "趨勢啟動", "趨勢延續"}
+)
+_DASHBOARD_TRANSITION_STAGES: frozenset[Stage] = frozenset({"趨勢延續"})
+_YOKAI_TRANSITION_STAGES: frozenset[Stage] = frozenset(
+    {"早期異動", "趨勢延續"}
+)
+
 
 @dataclass(frozen=True)
 class TradeRecommendationDecision:
@@ -74,6 +83,73 @@ def evaluate_trade_recommendation(
     five_minute: RiskRadarReading | None,
 ) -> TradeRecommendationDecision:
     """Return whether one symbol qualifies for a direct long/short recommendation."""
+    return _evaluate_trade_recommendation(
+        direction=direction,
+        stage=stage,
+        evidence=evidence,
+        metrics=metrics,
+        oi_side=oi_side,
+        oi_change_1h=oi_change_1h,
+        five_minute=five_minute,
+        allowed_stages=_DASHBOARD_STAGES,
+        transition_stages=_DASHBOARD_TRANSITION_STAGES,
+        stage_priorities={"趨勢啟動": 2, "趨勢延續": 1},
+        stage_failure="15m 尚未進入趨勢啟動／延續",
+    )
+
+
+def evaluate_yokai_long_confirmation(
+    *,
+    direction: TradeDirection,
+    stage: Stage,
+    evidence: list[EvidenceItem],
+    metrics: MarketSnapshot | None,
+    oi_side: str | None,
+    oi_change_1h: float,
+    five_minute: RiskRadarReading | None,
+) -> TradeRecommendationDecision:
+    """Return whether a Gate setup confirms a Yokai LONG candidate.
+
+    Unlike the dashboard lanes, Yokai may confirm a 15m early anomaly, but
+    only after a newly closed 5m state has switched into the same long setup.
+    Yokai never turns a SHORT reading into an actionable recommendation.
+    """
+
+    if direction != "LONG":
+        return TradeRecommendationDecision(
+            eligible=False,
+            failed_reasons=("妖怪篩選器只提供做多確認",),
+        )
+
+    return _evaluate_trade_recommendation(
+        direction=direction,
+        stage=stage,
+        evidence=evidence,
+        metrics=metrics,
+        oi_side=oi_side,
+        oi_change_1h=oi_change_1h,
+        five_minute=five_minute,
+        allowed_stages=_YOKAI_LONG_STAGES,
+        transition_stages=_YOKAI_TRANSITION_STAGES,
+        stage_priorities={"早期異動": 3, "趨勢啟動": 2, "趨勢延續": 1},
+        stage_failure="15m 尚未進入早期異動／趨勢啟動／延續",
+    )
+
+
+def _evaluate_trade_recommendation(
+    *,
+    direction: TradeDirection,
+    stage: Stage,
+    evidence: list[EvidenceItem],
+    metrics: MarketSnapshot | None,
+    oi_side: str | None,
+    oi_change_1h: float,
+    five_minute: RiskRadarReading | None,
+    allowed_stages: frozenset[Stage],
+    transition_stages: frozenset[Stage],
+    stage_priorities: dict[Stage, int],
+    stage_failure: str,
+) -> TradeRecommendationDecision:
     structure_strength = _evidence_strength(
         evidence,
         direction,
@@ -107,9 +183,9 @@ def evaluate_trade_recommendation(
         "主動流資料不是 REAL",
     )
     check(
-        stage in {"趨勢啟動", "趨勢延續"},
+        stage in allowed_stages,
         f"15m {stage}",
-        "15m 尚未進入趨勢啟動／延續",
+        stage_failure,
     )
     required_oi = _REQUIRED_OI_SIDE[direction]
     check(
@@ -145,11 +221,11 @@ def evaluate_trade_recommendation(
         five_minute
         and any(flag.startswith(_TRANSITION_FLAG_PREFIX) for flag in five_minute.flags)
     )
-    if stage == "趨勢延續":
+    if stage in transition_stages:
         check(
             transition_confirmed,
             "5m 狀態切換已確認",
-            "趨勢延續缺少 5m 狀態切換確認",
+            f"{stage}缺少 5m 狀態切換確認",
         )
 
     if direction == "LONG":
@@ -198,7 +274,7 @@ def evaluate_trade_recommendation(
 
     return TradeRecommendationDecision(
         eligible=not failed,
-        stage_priority=2 if stage == "趨勢啟動" else 1,
+        stage_priority=stage_priorities.get(stage, 0),
         weakest_core_strength=min(core),
         flow_strength=flow_strength,
         five_minute_strength=five_minute_strength,
