@@ -28,7 +28,9 @@ import { ModalShell } from "@/components/dashboard/ModalShell";
 import { SideNav } from "@/components/nav/SideNav";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { NarrativeUniverse } from "@/components/yokai/NarrativeUniverse";
+import { YokaiAccessWall } from "@/components/yokai/YokaiAccessWall";
 import { YokaiNetwork } from "@/components/yokai/YokaiNetwork";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { useYokai } from "@/hooks/useYokai";
 import { directionLabel, directionTone, formatPercent, formatPrice, percentTone, stageTone } from "@/lib/format";
 import { ThemeToggle } from "@/lib/theme";
@@ -60,9 +62,35 @@ const SOURCE_TONE: Record<YokaiSourceHealth, string> = {
 export default function YokaiPage() {
   return (
     <AuthGuard>
-      <YokaiIntelligence />
+      <YokaiEntitlementGate />
     </AuthGuard>
   );
+}
+
+function YokaiEntitlementGate() {
+  const { me, loading, error, refresh } = useEntitlement();
+
+  if (loading || !me) {
+    return (
+      <main className="yokai-shell relative grid min-h-screen place-items-center overflow-hidden px-4">
+        <SpaceParticleField />
+        <div className="yokai-aurora" aria-hidden />
+        <div className="glass-panel relative z-10 flex max-w-sm flex-col items-center rounded-2xl px-8 py-9 text-center">
+          {loading ? <Loader2 className="h-6 w-6 animate-spin text-ember" /> : <ShieldAlert className="h-6 w-6 text-gold" />}
+          <p className="font-kicker mt-4 text-[9px] tracking-[0.24em] text-gold">YOKAI ACCESS CONTROL</p>
+          <p className="mt-2 text-sm text-slate-300">{loading ? "正在驗證內測權限…" : error ?? "帳號資格讀取失敗"}</p>
+          {!loading ? (
+            <button type="button" onClick={() => void refresh()} className="mt-5 rounded-md border border-white/10 px-4 py-2 text-xs text-slate-300 transition hover:border-ember/40 hover:text-ember">
+              重新驗證
+            </button>
+          ) : null}
+        </div>
+      </main>
+    );
+  }
+
+  if (me.plan !== "lifetime") return <YokaiAccessWall entitlement={me} />;
+  return <YokaiIntelligence />;
 }
 
 function YokaiIntelligence() {

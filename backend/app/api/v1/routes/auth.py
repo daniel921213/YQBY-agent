@@ -71,6 +71,17 @@ def require_active_user(user=Depends(current_user)):
     return user
 
 
+def require_lifetime_user(user=Depends(current_user)):
+    """Feature-preview gate for endpoints limited to permanent accounts.
+
+    Keep this separate from ``require_active_user`` so a preview can later be
+    opened to every valid activation tier by swapping one router dependency.
+    """
+    if user.plan != auth_service.PLAN_LIFETIME:
+        raise HTTPException(status_code=403, detail="lifetime_required")
+    return user
+
+
 def _me_response(user) -> MeResponse:
     return MeResponse(
         uid=user.uid,

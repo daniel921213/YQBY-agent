@@ -5,6 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8
 
 /** 後端 403 detail="expired" 時的統一訊息；hook 把它存進 error 字串，頁面比對後切打馬擋板。 */
 export const TRIAL_EXPIRED_MESSAGE = "試用已到期";
+export const LIFETIME_REQUIRED_MESSAGE = "妖怪篩選器目前僅開放永久帳號";
 
 export class ApiError extends Error {
   constructor(
@@ -37,10 +38,13 @@ async function request<T>(path: string, label: string, init?: RequestInit): Prom
       // 非 JSON 錯誤內容就算了
     }
     const expired = response.status === 403 && detail === "expired";
+    const lifetimeRequired = response.status === 403 && detail === "lifetime_required";
     // 後端給的中文 detail（如「啟用碼無效」）直接當訊息顯示。
     const message = expired
       ? TRIAL_EXPIRED_MESSAGE
-      : typeof detail === "string" && detail !== "expired"
+      : lifetimeRequired
+        ? LIFETIME_REQUIRED_MESSAGE
+        : typeof detail === "string" && detail !== "expired"
         ? detail
         : `${label}：${response.status}`;
     throw new ApiError(message, response.status, expired);

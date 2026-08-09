@@ -9,12 +9,19 @@ import { fetchMe, type Entitlement } from "@/lib/api";
  */
 export function useEntitlement() {
   const [me, setMe] = useState<Entitlement | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    setLoading(true);
     try {
       setMe(await fetchMe());
-    } catch {
+      setError(null);
+    } catch (caught) {
       setMe(null);
+      setError(caught instanceof Error ? caught.message : "帳號資格讀取失敗");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -22,5 +29,5 @@ export function useEntitlement() {
     refresh();
   }, [refresh]);
 
-  return { me, refresh };
+  return { me, loading, error, refresh };
 }

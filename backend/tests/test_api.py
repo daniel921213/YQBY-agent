@@ -5,8 +5,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def _register_headers(client: TestClient) -> dict[str, str]:
-    """Data endpoints are gated; register + redeem a 7d trial code (the real flow)."""
+def _register_headers(client: TestClient, tier: str = "7d") -> dict[str, str]:
+    """Register and redeem the requested activation tier."""
     uid = "t_" + uuid.uuid4().hex[:10]
     res = client.post("/api/v1/auth/register", json={"uid": uid, "password": "secret123"})
     assert res.status_code == 200
@@ -14,7 +14,7 @@ def _register_headers(client: TestClient) -> dict[str, str]:
 
     mint = client.post(
         "/api/v1/admin/codes",
-        json={"tier": "7d", "count": 1},
+        json={"tier": tier, "count": 1},
         headers={"X-Admin-Key": "test-admin-secret"},
     )
     assert mint.status_code == 200
@@ -139,10 +139,21 @@ def test_anomaly_history_endpoint() -> None:
 
 def test_yokai_endpoint_has_stable_empty_warmup_payload() -> None:
     with TestClient(app) as client:
-        headers = _register_headers(client)
+        headers = _register_headers(client, tier="lifetime")
         response = client.get("/api/v1/yokai", headers=headers)
         assert response.status_code == 200
         payload = response.json()
         assert isinstance(payload["narratives"], list)
         assert isinstance(payload["qualified_longs"], list)
         assert "external_ready" in payload and "gate_ready" in payload
+
+
+def test_yokai_preview_rejects_active_non_lifetime_user() -> None:
+    with TestClient(app) as client:
+        for tier in ("7d", "30d"):
+            headers = _register_headers(client, tier=tier)
+
+            assert client.get("/api/v1/scan", headers=headers).status_code == 200
+            response = client.get("/api/v1/yokai", headers=headers)
+            assert response.status_code == 403
+            assert response.json()["detail"] == "lifetime_required"
