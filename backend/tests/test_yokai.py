@@ -1,5 +1,6 @@
 from app.schemas.scoring import AnalysisMeta, MarketBreadth, ScanResponse, ScreenerRow
-from app.services.yokai_service import build_yokai_response
+from app.services.yokai_service import _classify_title, build_yokai_response
+from app.services.yokai_taxonomy import DEFINITION_BY_ID, NARRATIVES, TOKEN_TO_NARRATIVES
 
 
 def _external(lifecycle: str = "發酵") -> dict:
@@ -136,3 +137,21 @@ def test_yokai_overheated_narrative_blocks_long_even_when_gate_passes() -> None:
     assert response.qualified_longs == []
     assert response.tokens[0].status == "RISK"
     assert "題材已進入狂熱階段" in response.tokens[0].blocked_reasons[0]
+
+
+def test_yokai_taxonomy_has_unique_roots_and_valid_children() -> None:
+    ids = [item.id for item in NARRATIVES]
+    roots = [item for item in NARRATIVES if item.parent_id is None]
+
+    assert len(ids) == len(set(ids))
+    assert len(roots) == 30
+    assert all(item.parent_id in DEFINITION_BY_ID for item in NARRATIVES if item.parent_id)
+    assert {"bitcoin", "bitcoin-l2", "btcfi", "stablecoins", "payfi"}.issubset(ids)
+
+
+def test_bitcoin_subsectors_are_classified_and_share_gate_tokens() -> None:
+    classified = _classify_title("Bitcoin Layer 2 and BTCFi protocols expand bitcoin lending")
+
+    assert "bitcoin-l2" in classified
+    assert "btcfi" in classified
+    assert {"bitcoin", "bitcoin-l2", "btcfi"}.issubset(TOKEN_TO_NARRATIVES["STX"])

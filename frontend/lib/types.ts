@@ -292,6 +292,8 @@ export interface YokaiNarrative {
   name: string;
   english_name: string;
   summary: string;
+  group: "INFRA" | "FINANCE" | "APPLICATION" | "CULTURE" | "ECOSYSTEM";
+  parent_id: string | null;
   lifecycle: YokaiLifecycle;
   heat_score: number;
   heat_change: number;

@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  ArrowUpRight,
   Bot,
   CheckCircle2,
   ChevronRight,
   CircleAlert,
-  Clock3,
   Database,
   ExternalLink,
-  Flame,
   Gauge,
   Loader2,
   Newspaper,
@@ -30,6 +27,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { ModalShell } from "@/components/dashboard/ModalShell";
 import { SideNav } from "@/components/nav/SideNav";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
+import { NarrativeUniverse } from "@/components/yokai/NarrativeUniverse";
 import { YokaiNetwork } from "@/components/yokai/YokaiNetwork";
 import { useYokai } from "@/hooks/useYokai";
 import { directionLabel, directionTone, formatPercent, formatPrice, percentTone, stageTone } from "@/lib/format";
@@ -203,46 +201,22 @@ function YokaiIntelligence() {
             <p className="text-xs leading-5 text-slate-500">潛伏 → 顯形 → 發酵 → 狂熱 → 退散</p>
           </div>
 
-          <div className="yokai-narrative-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {(data?.narratives ?? []).map((narrative, index) => (
-              <button
-                key={narrative.id}
-                type="button"
-                onClick={() => {
-                  setSelectedId(narrative.id);
-                  setFilter("ALL");
-                }}
-                className={`yokai-narrative-card group relative overflow-hidden rounded-2xl border p-4 text-left transition duration-300 ${
-                  selectedNarrative?.id === narrative.id
-                    ? "border-gold/45 bg-gold/10 shadow-[0_0_40px_-18px_rgba(240,200,118,.65)]"
-                    : "border-white/10 bg-graphite/55 hover:-translate-y-1 hover:border-ember/30"
-                }`}
-              >
-                <span className="absolute right-3 top-2 font-data text-[10px] text-slate-700">{String(index + 1).padStart(2, "0")}</span>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-kicker text-[9px] tracking-[0.18em] text-slate-500">{narrative.english_name}</p>
-                    <h3 className="mt-1 text-base font-bold text-slate-100">{narrative.name}</h3>
-                  </div>
-                  <span className={`rounded-full border px-2.5 py-1 text-[11px] ${LIFECYCLE_TONE[narrative.lifecycle]}`}>{narrative.lifecycle}</span>
-                </div>
-                <div className="mt-5 flex items-end justify-between">
-                  <div>
-                    <div className="font-data text-3xl font-semibold text-slate-50">{narrative.heat_score.toFixed(1)}</div>
-                    <div className="mt-0.5 text-[10px] tracking-[0.16em] text-slate-600">YOKAI HEAT</div>
-                  </div>
-                  <div className="text-right text-xs leading-5 text-slate-500">
-                    <div>{narrative.source_count} 個來源</div>
-                    <div className={narrative.qualified_long_count ? "text-long" : ""}>{narrative.qualified_long_count} 筆做多確認</div>
-                  </div>
-                </div>
-                <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/5">
-                  <div className="h-full rounded-full bg-gradient-to-r from-ember/50 via-ember to-goldhi shadow-[0_0_12px_rgba(76,194,255,.55)]" style={{ width: `${Math.max(narrative.heat_score, 2)}%` }} />
-                </div>
-              </button>
-            ))}
-            {!loading && !data?.narratives.length ? <EmptyCard text="等待第一批題材資料，原有 Gate 功能仍正常運作。" /> : null}
-          </div>
+          {data?.narratives.length ? (
+            <NarrativeUniverse
+              narratives={data.narratives}
+              selectedId={selectedNarrative?.id ?? null}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setFilter("ALL");
+                setQuery("");
+              }}
+              onInspect={() => document.getElementById("narrative-room")?.scrollIntoView({ behavior: "smooth" })}
+            />
+          ) : (
+            <div className="grid min-h-72 place-items-center rounded-[1.6rem] border border-white/10 bg-[#030711]/92 p-6 text-center text-sm text-slate-500">
+              {loading ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />正在建立全市場敘事星圖…</> : "等待第一批題材資料，原有 Gate 功能仍正常運作。"}
+            </div>
+          )}
         </section>
 
         <SectionDivider label="INTELLIGENCE ROOM" />

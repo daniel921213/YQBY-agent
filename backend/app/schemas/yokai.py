@@ -8,6 +8,7 @@ from app.schemas.scoring import Stage
 YokaiLifecycle = Literal["潛伏", "顯形", "發酵", "狂熱", "退散"]
 YokaiSourceHealth = Literal["HEALTHY", "STALE", "OFFLINE"]
 YokaiTokenStatus = Literal["QUALIFIED", "WATCH", "RISK"]
+YokaiNarrativeGroup = Literal["INFRA", "FINANCE", "APPLICATION", "CULTURE", "ECOSYSTEM"]
 
 
 class YokaiSourceStatus(BaseModel):
@@ -39,6 +40,8 @@ class YokaiNarrative(BaseModel):
     name: str
     english_name: str
     summary: str
+    group: YokaiNarrativeGroup = "APPLICATION"
+    parent_id: str | None = None
     lifecycle: YokaiLifecycle
     heat_score: float
     heat_change: float = 0.0

@@ -8,7 +8,6 @@ import re
 import threading
 import time
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
@@ -29,111 +28,13 @@ from app.schemas.yokai import (
     YokaiSourceStatus,
     YokaiToken,
 )
+from app.services.yokai_taxonomy import (
+    NARRATIVES,
+    TOKEN_TO_NARRATIVES as _TOKEN_TO_NARRATIVES,
+)
 
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class NarrativeDefinition:
-    id: str
-    name: str
-    english_name: str
-    summary: str
-    keywords: tuple[str, ...]
-    category_terms: tuple[str, ...]
-    tokens: tuple[str, ...]
-
-
-NARRATIVES: tuple[NarrativeDefinition, ...] = (
-    NarrativeDefinition(
-        "rwa",
-        "RWA 實體資產",
-        "REAL WORLD ASSETS",
-        "實體資產代幣化、國債與鏈上金融基礎設施。",
-        ("real world asset", "tokenized asset", "tokenization", "tokenised", "tokenized treasury", "rwa"),
-        ("real world", "rwa", "tokenized asset", "tokenized treasury"),
-        ("ONDO", "LINK", "OM", "POLYX", "PENDLE", "TRU", "PLUME", "CFG", "CHEX"),
-    ),
-    NarrativeDefinition(
-        "ai",
-        "AI 人工智慧",
-        "ARTIFICIAL INTELLIGENCE",
-        "AI Agent、算力、模型與鏈上智能應用。",
-        ("artificial intelligence", "ai agent", "ai agents", "decentralized ai", "machine learning", "agentic"),
-        ("artificial intelligence", "ai", "ai agents", "machine learning"),
-        ("FET", "TAO", "RENDER", "WLD", "ARKM", "AIOZ", "VIRTUAL", "KAITO", "NEAR"),
-    ),
-    NarrativeDefinition(
-        "depin",
-        "DePIN 基礎設施",
-        "DECENTRALIZED INFRASTRUCTURE",
-        "去中心化算力、儲存、無線網路與實體基礎設施。",
-        ("depin", "decentralized physical infrastructure", "decentralized compute", "decentralized storage", "wireless network"),
-        ("depin", "decentralized infrastructure", "storage", "compute"),
-        ("RENDER", "FIL", "AR", "THETA", "AKT", "AIOZ", "HNT", "IO"),
-    ),
-    NarrativeDefinition(
-        "meme",
-        "Meme 迷因",
-        "MEME CULTURE",
-        "社群注意力快速聚集的迷因與文化型資產。",
-        ("meme coin", "memecoin", "meme token", "dogecoin", "shiba inu", "pepe"),
-        ("meme", "memecoin", "dog themed"),
-        ("DOGE", "SHIB", "PEPE", "BONK", "WIF", "FLOKI", "BRETT", "PENGU", "POPCAT"),
-    ),
-    NarrativeDefinition(
-        "layer2",
-        "Layer 2 擴容",
-        "LAYER 2 SCALING",
-        "Rollup、模組化擴容與以太坊二層生態。",
-        ("layer 2", "layer2", "rollup", "zk rollup", "optimistic rollup", "ethereum scaling"),
-        ("layer 2", "layer2", "rollup", "scaling"),
-        ("ARB", "OP", "STRK", "ZK", "MANTA", "METIS", "IMX", "MNT", "POL"),
-    ),
-    NarrativeDefinition(
-        "defi",
-        "DeFi 去中心化金融",
-        "DECENTRALIZED FINANCE",
-        "借貸、交易、收益與鏈上流動性協議。",
-        ("decentralized finance", "defi", "dex", "liquidity protocol", "lending protocol", "yield protocol"),
-        ("decentralized finance", "defi", "dex", "lending"),
-        ("AAVE", "UNI", "CRV", "LDO", "ENA", "MKR", "JUP", "RAY", "DYDX"),
-    ),
-    NarrativeDefinition(
-        "gaming",
-        "GameFi 鏈遊",
-        "ONCHAIN GAMING",
-        "鏈上遊戲、遊戲資產與玩家經濟。",
-        ("blockchain game", "web3 gaming", "gamefi", "onchain game", "gaming token"),
-        ("gaming", "gamefi", "metaverse"),
-        ("IMX", "GALA", "AXS", "SAND", "MANA", "RON", "PIXEL", "YGG", "BIGTIME"),
-    ),
-    NarrativeDefinition(
-        "restaking",
-        "再質押生態",
-        "RESTAKING",
-        "再質押、流動性質押與共享安全協議。",
-        ("restaking", "liquid restaking", "liquid staking", "shared security", "eigenlayer"),
-        ("restaking", "liquid staking", "staking"),
-        ("EIGEN", "ETHFI", "REZ", "PENDLE", "LDO", "SSV", "ANKR"),
-    ),
-    NarrativeDefinition(
-        "privacy",
-        "隱私運算",
-        "PRIVACY COMPUTING",
-        "隱私交易、零知識證明與資料保護基礎設施。",
-        ("privacy coin", "privacy protocol", "zero knowledge proof", "zero-knowledge", "zk proof", "confidential transaction"),
-        ("privacy", "zero knowledge", "zk"),
-        ("ZEC", "XMR", "ROSE", "SCRT", "MINA", "NYM", "AZERO"),
-    ),
-)
-
-_DEFINITION_BY_ID = {item.id: item for item in NARRATIVES}
-_TOKEN_TO_NARRATIVES: dict[str, list[str]] = {}
-for _definition in NARRATIVES:
-    for _token in _definition.tokens:
-        _TOKEN_TO_NARRATIVES.setdefault(_token, []).append(_definition.id)
 
 
 def _now() -> int:
@@ -320,6 +221,8 @@ def _build_narratives(
                 "name": definition.name,
                 "english_name": definition.english_name,
                 "summary": definition.summary,
+                "group": definition.group,
+                "parent_id": definition.parent_id,
                 "lifecycle": lifecycle,
                 "heat_score": heat,
                 "heat_change": heat_change,
