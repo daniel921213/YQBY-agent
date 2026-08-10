@@ -73,6 +73,14 @@ const OFFSETS: Array<[number, number]> = [
   [0.15, -0.48], [0.48, 0.1], [0.08, 0.48], [-0.44, 0.06]
 ];
 
+const MAP_CENTER: [number, number] = [50, 50];
+const NODE_SAFE_X: [number, number] = [4, 96];
+const NODE_SAFE_Y: [number, number] = [6, 94];
+
+function clamp(value: number, [minimum, maximum]: [number, number]): number {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
 const LIFECYCLE_COLOR: Record<YokaiLifecycle, string> = {
   潛伏: "#6685a6",
   顯形: "#4cc2ff",
@@ -105,11 +113,40 @@ function rootPositions(narratives: YokaiNarrative[]): PositionedNarrative[] {
       const ring = index >= OFFSETS.length ? 0.54 : 1;
       return {
         narrative,
-        x: meta.center[0] + offsetX * meta.radius[0] * ring,
-        y: meta.center[1] + offsetY * meta.radius[1] * ring,
+        x: clamp(meta.center[0] + offsetX * meta.radius[0] * ring, NODE_SAFE_X),
+        y: clamp(meta.center[1] + offsetY * meta.radius[1] * ring, NODE_SAFE_Y),
         child: false
       };
     });
+  });
+}
+
+function childPositions(
+  parentPosition: PositionedNarrative,
+  narratives: YokaiNarrative[]
+): PositionedNarrative[] {
+  if (!narratives.length) return [];
+
+  // Satellites fan toward the centre of the map.  A top/right/bottom edge
+  // parent therefore expands inward instead of sending its first child out of
+  // the clipped canvas.
+  const centreAngle = Math.atan2(
+    MAP_CENTER[1] - parentPosition.y,
+    MAP_CENTER[0] - parentPosition.x
+  );
+  const spread = narratives.length <= 1
+    ? 0
+    : Math.min(Math.PI * 0.72, (narratives.length - 1) * 0.52);
+
+  return narratives.map((narrative, index) => {
+    const progress = narratives.length <= 1 ? 0.5 : index / (narratives.length - 1);
+    const angle = centreAngle - spread / 2 + spread * progress;
+    return {
+      narrative,
+      x: clamp(parentPosition.x + Math.cos(angle) * 7.3, NODE_SAFE_X),
+      y: clamp(parentPosition.y + Math.sin(angle) * 9.2, NODE_SAFE_Y),
+      child: true
+    };
   });
 }
 
@@ -128,15 +165,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
     const parentPosition = rootById.get(focusRoot.id);
     if (!parentPosition) return [];
     const rows = narratives.filter((item) => item.parent_id === focusRoot.id);
-    return rows.map((narrative, index) => {
-      const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(rows.length, 1);
-      return {
-        narrative,
-        x: parentPosition.x + Math.cos(angle) * 7.3,
-        y: parentPosition.y + Math.sin(angle) * 9.2,
-        child: true
-      };
-    });
+    return childPositions(parentPosition, rows);
   }, [focusRoot, narratives, rootById]);
   const matchedChildren = useMemo(() => {
     if (!normalizedQuery) return children;
@@ -146,14 +175,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
         const parentPosition = rootById.get(narrative.parent_id ?? "");
         if (!parentPosition) return [];
         const siblings = narratives.filter((item) => item.parent_id === narrative.parent_id);
-        const index = siblings.findIndex((item) => item.id === narrative.id);
-        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / Math.max(siblings.length, 1);
-        return [{
-          narrative,
-          x: parentPosition.x + Math.cos(angle) * 7.3,
-          y: parentPosition.y + Math.sin(angle) * 9.2,
-          child: true
-        }];
+        return childPositions(parentPosition, siblings).filter((item) => item.narrative.id === narrative.id);
       });
   }, [children, narratives, normalizedQuery, rootById]);
 
@@ -261,6 +283,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
             const size = child ? 8 + narrative.heat_score * 0.085 : 10 + narrative.heat_score * 0.11;
             const childCount = narratives.filter((item) => item.parent_id === narrative.id).length;
             const emerging = narrative.heat_change >= 10 && ["顯形", "發酵"].includes(narrative.lifecycle);
+            const labelLeft = x >= 72;
             return (
               <button
                 key={narrative.id}
@@ -270,7 +293,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
                   setGroupFilter(narrative.group);
                 }}
                 aria-label={`${narrative.name}，妖氣 ${narrative.heat_score.toFixed(1)}，${narrative.lifecycle}`}
-                className={`narrative-star-node absolute z-20 text-left transition duration-300 ${selectedNode ? "is-selected z-30" : ""} ${child ? "is-child" : ""} ${emerging ? "is-emerging" : ""} ${muted ? "pointer-events-none opacity-[.12]" : "opacity-100"}`}
+                className={`narrative-star-node absolute z-20 text-left transition duration-300 ${selectedNode ? "is-selected z-30" : ""} ${child ? "is-child" : ""} ${labelLeft ? "is-label-left" : ""} ${emerging ? "is-emerging" : ""} ${muted ? "pointer-events-none opacity-[.12]" : "opacity-100"}`}
                 style={{
                   left: `${x}%`,
                   top: `${y}%`,
