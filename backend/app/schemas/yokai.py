@@ -33,6 +33,7 @@ class YokaiArticle(BaseModel):
 class YokaiHistoryPoint(BaseModel):
     time: int
     value: float
+    count: int = 0
 
 
 class YokaiNarrative(BaseModel):

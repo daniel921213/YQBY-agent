@@ -131,7 +131,9 @@ def _dedupe_articles(articles: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output[:500]
 
 
-def _history(articles: list[dict[str, Any]], narrative_id: str, now: int) -> list[dict[str, float | int]]:
+def _history_counts(
+    articles: list[dict[str, Any]], narrative_id: str, now: int
+) -> tuple[int, list[int]]:
     bucket_seconds = 6 * 3600
     start = (now // bucket_seconds) * bucket_seconds - 27 * bucket_seconds
     counts = [0] * 28
@@ -141,9 +143,47 @@ def _history(articles: list[dict[str, Any]], narrative_id: str, now: int) -> lis
         index = (int(article["published_at"]) - start) // bucket_seconds
         if 0 <= index < len(counts):
             counts[index] += 1
-    peak = max(counts, default=0)
+    return start, counts
+
+
+def _history(
+    articles: list[dict[str, Any]],
+    narrative_id: str,
+    now: int,
+    *,
+    heat_score: float,
+) -> list[dict[str, float | int]]:
+    """Build a fixed-scale narrative pulse without local peak normalization.
+
+    Each real six-hour event bucket is kept in ``count``.  ``value`` is a
+    causal energy envelope: the event affects its own bucket and then fades
+    over the following 18 hours.  A fixed four-events-per-bucket reference
+    keeps quiet and active narratives visually comparable, while heat_score
+    controls the final amplitude so one isolated article cannot fill a card.
+    """
+
+    bucket_seconds = 6 * 3600
+    start, counts = _history_counts(articles, narrative_id, now)
+    decay = (1.0, 0.58, 0.28, 0.12)
+    heat_scale = 0.22 + 0.78 * _clamp(heat_score / 100.0)
+    fixed_reference = math.log1p(4.0)
+
+    values: list[float] = []
+    for index in range(len(counts)):
+        energy = sum(
+            counts[index - lag] * weight
+            for lag, weight in enumerate(decay)
+            if index - lag >= 0
+        )
+        density = _clamp(math.log1p(energy) / fixed_reference)
+        values.append(round(100.0 * density * heat_scale, 1))
+
     return [
-        {"time": start + index * bucket_seconds, "value": round((count / peak * 100) if peak else 0.0, 1)}
+        {
+            "time": start + index * bucket_seconds,
+            "value": values[index],
+            "count": count,
+        }
         for index, count in enumerate(counts)
     ]
 
@@ -187,7 +227,8 @@ def _build_narratives(
         source_factor = _clamp(len(domains) / 6.0)
         recency_factor = math.exp(-max(now - latest, 0) / (12 * 3600)) if latest else 0.0
         trend_factor = _clamp(trend_hits / 2.5)
-        active_bins = sum(point["value"] > 0 for point in _history(articles, definition.id, now)[-8:])
+        _, history_counts = _history_counts(articles, definition.id, now)
+        active_bins = sum(count > 0 for count in history_counts[-8:])
         persistence = _clamp(active_bins / 5.0)
         breadth = _clamp(
             sum(str(coin.get("symbol", "")).upper() in definition.tokens for coin in trending_coins) / 4.0
@@ -234,7 +275,12 @@ def _build_narratives(
                 "related_token_count": 0,
                 "qualified_long_count": 0,
                 "keywords": list(definition.keywords[:5]),
-                "history": _history(articles, definition.id, now),
+                "history": _history(
+                    articles,
+                    definition.id,
+                    now,
+                    heat_score=heat,
+                ),
                 "articles": relevant[:10],
             }
         )

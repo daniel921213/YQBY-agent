@@ -285,6 +285,7 @@ export interface YokaiArticle {
 export interface YokaiHistoryPoint {
   time: number;
   value: number;
+  count: number;
 }
 
 export interface YokaiNarrative {

@@ -1,5 +1,5 @@
 from app.schemas.scoring import AnalysisMeta, MarketBreadth, ScanResponse, ScreenerRow
-from app.services.yokai_service import _classify_title, build_yokai_response
+from app.services.yokai_service import _classify_title, _history, build_yokai_response
 from app.services.yokai_taxonomy import DEFINITION_BY_ID, NARRATIVES, TOKEN_TO_NARRATIVES
 
 
@@ -140,6 +140,30 @@ def test_yokai_overheated_narrative_blocks_long_even_when_gate_passes() -> None:
     assert response.qualified_longs == []
     assert response.tokens[0].status == "RISK"
     assert any("題材已進入狂熱階段" in reason for reason in response.tokens[0].blocked_reasons)
+
+
+def test_yokai_history_uses_fixed_scale_and_causal_decay() -> None:
+    now = 1_800_000_000
+    bucket = 6 * 3600
+    event_time = (now // bucket) * bucket - 8 * bucket + 60
+    articles = [
+        {
+            "published_at": event_time,
+            "narrative_ids": ["rwa"],
+        }
+    ]
+
+    quiet = _history(articles, "rwa", now, heat_score=20.0)
+    hot = _history(articles, "rwa", now, heat_score=80.0)
+    event_index = next(index for index, point in enumerate(quiet) if point["count"] == 1)
+
+    assert sum(int(point["count"]) for point in quiet) == 1
+    assert 0 < float(quiet[event_index]["value"]) < 35
+    assert float(hot[event_index]["value"]) > float(quiet[event_index]["value"])
+    assert float(quiet[event_index]["value"]) > float(quiet[event_index + 1]["value"])
+    assert float(quiet[event_index + 1]["value"]) > float(quiet[event_index + 2]["value"])
+    assert float(quiet[event_index + 2]["value"]) > float(quiet[event_index + 3]["value"])
+    assert float(quiet[event_index + 4]["value"]) == 0
 
 
 def test_yokai_taxonomy_has_unique_roots_and_valid_children() -> None:

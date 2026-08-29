@@ -380,11 +380,11 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function smoothHeatPath(points: HeatPlotPoint[]): string {
+function smoothHeatPath(points: HeatPlotPoint[], includeMove = true): string {
   if (!points.length) return "";
-  if (points.length === 1) return `M${points[0].x},${points[0].y}`;
+  if (points.length === 1) return includeMove ? `M${points[0].x},${points[0].y}` : "";
 
-  const segments = [`M${points[0].x},${points[0].y}`];
+  const segments = includeMove ? [`M${points[0].x},${points[0].y}`] : [];
   for (let index = 0; index < points.length - 1; index += 1) {
     const p0 = points[Math.max(0, index - 1)];
     const p1 = points[index];
@@ -405,35 +405,66 @@ function HeatChart({ points }: { points: YokaiHistoryPoint[] }) {
   if (!points.length) return <div className="h-28 rounded-xl bg-black/15" />;
   const width = 640;
   const height = 118;
-  const baseline = height - 8;
-  const chartPoints = points.map((point, index) => ({
-    x: (index / Math.max(points.length - 1, 1)) * width,
-    y: baseline - (point.value / 100) * (height - 24),
+  const centerY = 56;
+  const maxHalfHeight = 38;
+  const xForIndex = (index: number) => (index / Math.max(points.length - 1, 1)) * width;
+  const upper = points.map((point, index) => ({
+    x: xForIndex(index),
+    y: centerY - 1.2 - (point.value / 100) * maxHalfHeight,
     value: point.value
   }));
-  const path = smoothHeatPath(chartPoints);
-  const first = chartPoints[0];
-  const last = chartPoints[chartPoints.length - 1];
-  const area = `${path} L${last.x},${baseline} L${first.x},${baseline} Z`;
+  const lower = points.map((point, index) => ({
+    x: xForIndex(index),
+    y: centerY + 1.2 + (point.value / 100) * maxHalfHeight,
+    value: point.value
+  }));
+  const upperPath = smoothHeatPath(upper);
+  const lowerPath = smoothHeatPath(lower);
+  const lastLower = lower[lower.length - 1];
+  const ribbon = `${upperPath} L${lastLower.x},${lastLower.y} ${smoothHeatPath([...lower].reverse(), false)} Z`;
+  const eventPoints = points
+    .map((point, index) => ({ ...point, x: xForIndex(index) }))
+    .filter((point) => point.count > 0);
+  const latestEvent = eventPoints[eventPoints.length - 1] ?? null;
   return (
-    <div className="relative h-28 overflow-hidden rounded-xl border border-white/5 bg-black/15">
-      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full" aria-label="近七天題材熱度曲線">
+    <div className="relative h-28 overflow-hidden rounded-xl border border-white/5 bg-[radial-gradient(circle_at_72%_50%,rgba(240,200,118,.045),transparent_30%),rgba(0,0,0,.15)]">
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full" aria-label="近七天題材敘事能量流">
         <defs>
-          <linearGradient id="yokaiHeat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(76,194,255,.24)" /><stop offset=".55" stopColor="rgba(76,194,255,.08)" /><stop offset="1" stopColor="rgba(76,194,255,0)" /></linearGradient>
-          <linearGradient id="yokaiLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#4cc2ff" /><stop offset="1" stopColor="#f0c876" /></linearGradient>
-          <filter id="yokaiHeatGlow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3.4" /></filter>
+          <linearGradient id="yokaiCurrent" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#4cc2ff" stopOpacity=".16" />
+            <stop offset=".48" stopColor="#79ddff" stopOpacity=".26" />
+            <stop offset=".78" stopColor="#b9d9d2" stopOpacity=".32" />
+            <stop offset="1" stopColor="#f0c876" stopOpacity=".4" />
+          </linearGradient>
+          <linearGradient id="yokaiCurrentEdge" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#4cc2ff" />
+            <stop offset=".58" stopColor="#8adfff" />
+            <stop offset="1" stopColor="#f0c876" />
+          </linearGradient>
+          <filter id="yokaiHeatGlow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="5.2" /></filter>
         </defs>
-        {[0.36, 0.68].map((y) => <line key={y} x1="0" x2={width} y1={height * y} y2={height * y} stroke="rgba(255,255,255,.035)" />)}
-        <line x1="0" x2={width} y1={baseline} y2={baseline} stroke="rgba(76,194,255,.08)" />
-        <path d={area} fill="url(#yokaiHeat)" />
-        <path d={path} fill="none" stroke="url(#yokaiLine)" strokeWidth="7" strokeOpacity=".15" filter="url(#yokaiHeatGlow)" vectorEffect="non-scaling-stroke" />
-        <path className="yokai-heat-line" pathLength="1" d={path} fill="none" stroke="url(#yokaiLine)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        {chartPoints.filter((point) => point.value > 0).map((point, index) => (
-          <circle key={`${point.x}:${index}`} cx={point.x} cy={point.y} r="1.8" fill="#d9f4ff" fillOpacity=".72" />
+        <line x1="0" x2={width} y1={centerY} y2={centerY} stroke="rgba(143,169,201,.08)" strokeDasharray="2 9" />
+        <path d={ribbon} fill="url(#yokaiCurrent)" opacity=".62" filter="url(#yokaiHeatGlow)" />
+        <path d={ribbon} fill="url(#yokaiCurrent)" />
+        <path className="yokai-heat-line" pathLength="1" d={upperPath} fill="none" stroke="url(#yokaiCurrentEdge)" strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path className="yokai-heat-line" pathLength="1" d={lowerPath} fill="none" stroke="url(#yokaiCurrentEdge)" strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        {eventPoints.map((point) => (
+          <g key={`${point.time}:${point.count}`}>
+            <line x1={point.x} x2={point.x} y1={centerY - 5} y2={centerY + 5} stroke="rgba(217,244,255,.18)" strokeWidth=".8" />
+            <circle cx={point.x} cy={centerY} r={1.7 + Math.min(point.count, 4) * .45} fill="#d9f4ff" fillOpacity=".88">
+              <title>{point.count} 個真實消息事件</title>
+            </circle>
+          </g>
         ))}
-        <circle className="yokai-heat-latest" cx={last.x} cy={last.y} r="2.4" fill="#f0c876" />
+        {latestEvent ? <circle className="yokai-heat-latest" cx={latestEvent.x} cy={centerY} r="3" fill="#f0c876" /> : null}
       </svg>
-      <span className="absolute bottom-2 left-3 font-kicker text-[8px] tracking-[0.2em] text-slate-700">7D NARRATIVE PULSE</span>
+      <div className="pointer-events-none absolute inset-x-3 top-2 flex items-center justify-between font-kicker text-[7px] tracking-[0.2em] text-slate-700">
+        <span>NARRATIVE CURRENT</span>
+        <span>{eventPoints.length ? `${eventPoints.reduce((sum, point) => sum + point.count, 0)} EVENTS` : "SIGNAL QUIET"}</span>
+      </div>
+      <div className="pointer-events-none absolute inset-x-3 bottom-1.5 flex items-center justify-between font-data text-[7px] tracking-[0.12em] text-slate-700">
+        <span>7D</span><span>3D</span><span>NOW</span>
+      </div>
     </div>
   );
 }
