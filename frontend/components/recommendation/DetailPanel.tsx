@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ExternalLink, LineChart, X } from "lucide-react";
 import { IndicatorEvidenceList } from "@/components/dashboard/IndicatorEvidenceList";
 import { SignalRadar } from "@/components/dashboard/SignalRadar";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
@@ -23,6 +23,23 @@ import {
 } from "@/lib/format";
 
 const PILLAR_ORDER = ["市場結構", "動能", "相對強弱", "資金費率", "多空比"];
+
+function buildTradingViewUrl(symbol: string): string | null {
+  const ticker = symbol
+    .trim()
+    .toUpperCase()
+    .replace(/\.P$/, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+  if (!ticker || !ticker.endsWith("USDT")) return null;
+
+  const tradingViewSymbol = `GATEIO:${ticker}.P`;
+  const params = new URLSearchParams({
+    symbol: tradingViewSymbol,
+    interval: "15"
+  });
+  return `https://www.tradingview.com/chart/?${params.toString()}`;
+}
 
 function derivePillars(evidence: EvidenceItem[]): PillarScore[] {
   return PILLAR_ORDER.map((pillar) => {
@@ -126,7 +143,7 @@ export function DetailPanel({
 
   if (!view) {
     return (
-      <ModalFrame title={symbol} onClose={onClose}>
+      <ModalFrame title={symbol} symbol={symbol} onClose={onClose}>
         <div className="flex h-64 items-center justify-center text-sm text-slate-300">
           {error ?? (loading ? "載入分析中" : "尚無分析資料")}
         </div>
@@ -142,7 +159,7 @@ export function DetailPanel({
       : null;
 
   return (
-    <ModalFrame title={view.symbol} onClose={onClose}>
+    <ModalFrame title={view.symbol} symbol={view.symbol} onClose={onClose}>
       <section className="grid max-h-[78vh] gap-5 overflow-y-auto pr-1">
         <div className="grid gap-4 surface rounded-lg p-4 md:grid-cols-[1fr_240px] md:items-center">
           <div>
@@ -249,13 +266,17 @@ export function DetailPanel({
 
 function ModalFrame({
   title,
+  symbol,
   onClose,
   children
 }: {
   title: string;
+  symbol: string;
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const tradingViewUrl = buildTradingViewUrl(symbol);
+
   return (
     <div className="detail-modal fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
       <div className="detail-modal-card glass-panel animate-signal-rise w-full max-w-4xl rounded-xl">
@@ -264,14 +285,40 @@ function ModalFrame({
             <div className="text-xs tracking-[0.18em] text-gold">訊號詳情</div>
             <div className="mt-1 text-xl font-semibold text-slate-50">{title}</div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-slate-300 transition hover:border-ember/60 hover:text-ember"
-            title="關閉"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {tradingViewUrl ? (
+              <a
+                href={tradingViewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-9 items-center justify-center gap-2 rounded-md border border-sky-400/35 bg-sky-400/[.07] px-3 text-xs font-medium text-sky-200 transition hover:border-sky-300/65 hover:bg-sky-400/[.13] hover:text-white"
+                title={`在 TradingView 開啟 Gate ${symbol} 永續合約 15m 圖表`}
+                aria-label={`在 TradingView 開啟 Gate ${symbol} 永續合約 15 分鐘圖表（新分頁）`}
+              >
+                <LineChart className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">TradingView</span>
+                <span className="sm:hidden">圖表</span>
+                <ExternalLink className="h-3 w-3 opacity-55 transition group-hover:opacity-100" />
+              </a>
+            ) : (
+              <span
+                className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-white/[.07] px-3 text-xs text-slate-600"
+                title="此代號目前無法建立 Gate TradingView 圖表連結"
+                aria-disabled="true"
+              >
+                <LineChart className="h-3.5 w-3.5" />
+                圖表不可用
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 text-slate-300 transition hover:border-ember/60 hover:text-ember"
+              title="關閉"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div className="p-5">{children}</div>
       </div>
