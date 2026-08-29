@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Crosshair, RotateCcw, ScanLine, Sparkles } from "lucide-react";
 import type { OiMover, OiMoverSide } from "@/lib/types";
 import { formatCompactNumber, formatPercent, formatPrice, percentTone } from "@/lib/format";
 
@@ -9,509 +10,628 @@ interface OiQuadrantChartProps {
   onSelect: (symbol: string) => void;
 }
 
-// Quadrant semantics: X = 1h OI change, Y = 1h price change. The backend's
-// `side` uses the same sign convention, so dot position and colour always agree.
-const SIDE_META: Record<OiMoverSide, { color: string; desc: string }> = {
-  多頭建倉: { color: "#23dd8d", desc: "價漲 · OI增" },
-  空頭建倉: { color: "#ff5166", desc: "價跌 · OI增" },
-  空頭回補: { color: "#3fb6f6", desc: "價漲 · OI減（退出）" },
-  多頭去槓桿: { color: "#f0b429", desc: "價跌 · OI減（退出）" },
-  "OI增倉／價格持平": { color: "#a78bfa", desc: "價平 · OI增" },
-  "OI減倉／價格持平": { color: "#94a3b8", desc: "價平 · OI減" },
-  "價格上漲／OI持平": { color: "#67e8f9", desc: "價漲 · OI平" },
-  "價格下跌／OI持平": { color: "#fb7185", desc: "價跌 · OI平" },
-  空頭平倉: { color: "#3fb6f6", desc: "價漲 · OI減（舊快取）" },
-  多頭平倉: { color: "#f0b429", desc: "價跌 · OI減（舊快取）" },
-  持平: { color: "#64748b", desc: "" }
-};
+type ReactorSide =
+  | "多頭建倉"
+  | "空頭建倉"
+  | "空頭回補"
+  | "多頭去槓桿"
+  | "OI增倉／價格持平"
+  | "OI減倉／價格持平"
+  | "價格上漲／OI持平"
+  | "價格下跌／OI持平"
+  | "持平";
 
-const SIDE_ORDER: OiMoverSide[] = [
-  "多頭建倉", "空頭建倉", "空頭回補", "多頭去槓桿",
-  "OI增倉／價格持平", "OI減倉／價格持平",
-  "價格上漲／OI持平", "價格下跌／OI持平", "持平"
-];
-
-// SVG geometry in viewBox units; the svg scales to its container.
-const VW = 760;
-const VH = 520;
-const M = { left: 56, right: 20, top: 18, bottom: 48 };
-const PW = VW - M.left - M.right;
-const PH = VH - M.top - M.bottom;
-
-const LABELED_DOTS = 12; // biggest movers carry a permanent symbol label
-const SIDEBAR_ROWS = 8;
-
-function tickStep(maxAbs: number): number {
-  // Aim for ~3-4 gridlines per side so the map reads like graph paper.
-  const steps = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5];
-  return steps.find((s) => maxAbs / s <= 4.2) ?? 1;
+interface ZoneMeta {
+  color: string;
+  desc: string;
+  angle: number;
+  start?: number;
+  end?: number;
+  kind: "chamber" | "corridor" | "core";
 }
 
-function pctLabel(v: number): string {
-  const pct = Math.round(v * 1000) / 10;
-  return `${pct > 0 ? "+" : ""}${pct}%`;
+interface ReactorNode {
+  mover: OiMover;
+  side: ReactorSide;
+  color: string;
+  x: number;
+  y: number;
+  previousX: number | null;
+  previousY: number | null;
+  radius: number;
+  intensity: number;
+  rank: number;
+}
+
+const ZONES: Record<ReactorSide, ZoneMeta> = {
+  多頭建倉: { color: "#23dd8d", desc: "價格↑ · OI↑", angle: 315, start: 276, end: 354, kind: "chamber" },
+  空頭建倉: { color: "#ff5166", desc: "價格↓ · OI↑", angle: 45, start: 6, end: 84, kind: "chamber" },
+  空頭回補: { color: "#4cc2ff", desc: "價格↑ · OI↓", angle: 225, start: 186, end: 264, kind: "chamber" },
+  多頭去槓桿: { color: "#f0b429", desc: "價格↓ · OI↓", angle: 135, start: 96, end: 174, kind: "chamber" },
+  "OI增倉／價格持平": { color: "#a78bfa", desc: "OI↑ · 價格持平", angle: 0, start: 354, end: 366, kind: "corridor" },
+  "OI減倉／價格持平": { color: "#94a3b8", desc: "OI↓ · 價格持平", angle: 180, start: 174, end: 186, kind: "corridor" },
+  "價格上漲／OI持平": { color: "#67e8f9", desc: "價格↑ · OI持平", angle: 270, start: 264, end: 276, kind: "corridor" },
+  "價格下跌／OI持平": { color: "#fb7185", desc: "價格↓ · OI持平", angle: 90, start: 84, end: 96, kind: "corridor" },
+  持平: { color: "#8fa9c9", desc: "價格與 OI 皆持平", angle: 0, kind: "core" }
+};
+
+const MAIN_SIDES: ReactorSide[] = ["空頭回補", "多頭建倉", "多頭去槓桿", "空頭建倉"];
+const CORRIDOR_SIDES: ReactorSide[] = [
+  "價格上漲／OI持平",
+  "OI增倉／價格持平",
+  "價格下跌／OI持平",
+  "OI減倉／價格持平"
+];
+
+const VW = 760;
+const VH = 700;
+const CX = 380;
+const CY = 350;
+const CORE_R = 88;
+const INNER_R = 112;
+const OUTER_R = 314;
+const SIGNAL_R_MIN = 140;
+const SIGNAL_R_MAX = 286;
+const LABELED_NODES = 10;
+
+function canonicalSide(side: OiMoverSide | null): ReactorSide | null {
+  if (!side) return null;
+  if (side === "空頭平倉") return "空頭回補";
+  if (side === "多頭平倉") return "多頭去槓桿";
+  return side;
 }
 
 function shortSymbol(symbol: string): string {
   return symbol.replace(/USDT$/, "");
 }
 
+function polar(radius: number, angle: number): { x: number; y: number } {
+  const radians = (angle * Math.PI) / 180;
+  return { x: CX + Math.cos(radians) * radius, y: CY + Math.sin(radians) * radius };
+}
+
+function annularSectorPath(inner: number, outer: number, start: number, end: number): string {
+  const outerStart = polar(outer, start);
+  const outerEnd = polar(outer, end);
+  const innerEnd = polar(inner, end);
+  const innerStart = polar(inner, start);
+  const largeArc = end - start > 180 ? 1 : 0;
+  return [
+    `M ${outerStart.x} ${outerStart.y}`,
+    `A ${outer} ${outer} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+    `L ${innerEnd.x} ${innerEnd.y}`,
+    `A ${inner} ${inner} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+    "Z"
+  ].join(" ");
+}
+
+function symbolNoise(symbol: string, salt: number): number {
+  let hash = salt * 131;
+  for (let index = 0; index < symbol.length; index += 1) {
+    hash = (hash * 33 + symbol.charCodeAt(index)) % 104729;
+  }
+  return (hash / 104729) * 2 - 1;
+}
+
+function zoneAnchor(side: ReactorSide, radius: number, angleOffset = 0): { x: number; y: number } {
+  if (side === "持平") {
+    return polar(Math.min(38, radius * 0.18), angleOffset * 36);
+  }
+  return polar(radius, ZONES[side].angle + angleOffset);
+}
+
+function zoneCountMap(movers: OiMover[]): Record<ReactorSide, number> {
+  const counts = Object.fromEntries(Object.keys(ZONES).map((side) => [side, 0])) as Record<ReactorSide, number>;
+  for (const mover of movers) {
+    const side = canonicalSide(mover.side);
+    if (side) counts[side] += 1;
+  }
+  return counts;
+}
+
 export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
-  // Thresholds are in percent units (3.5 => 3.5%), matching the slider labels.
   const [oiThreshold, setOiThreshold] = useState(0);
   const [priceThreshold, setPriceThreshold] = useState(0);
-  const [hiddenSides, setHiddenSides] = useState<ReadonlySet<OiMoverSide>>(new Set());
+  const [focusedSide, setFocusedSide] = useState<ReactorSide | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [hoveredSymbol, setHoveredSymbol] = useState<string | null>(null);
 
-  const passesThresholds = (m: OiMover) =>
-    Math.abs(m.oi_change_1h) * 100 >= oiThreshold &&
-    Math.abs(m.price_change_1h ?? 0) * 100 >= priceThreshold;
-
-  // Domain/counts come from threshold-filtered data (ignoring hidden sides) so
-  // toggling a quadrant chip doesn't rescale the whole map.
   const pool = useMemo(
-    () => movers.filter(passesThresholds),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => movers.filter((mover) =>
+      Math.abs(mover.oi_change_1h) * 100 >= oiThreshold
+      && Math.abs(mover.price_change_1h ?? 0) * 100 >= priceThreshold
+    ),
     [movers, oiThreshold, priceThreshold]
   );
-  const filtered = useMemo(
-    () => pool.filter((m) => !hiddenSides.has(m.side)),
-    [pool, hiddenSides]
-  );
 
-  const counts = useMemo(() => {
-    const tally: Record<OiMoverSide, number> = {
-      多頭建倉: 0,
-      空頭建倉: 0,
-      空頭回補: 0,
-      多頭去槓桿: 0,
-      "OI增倉／價格持平": 0,
-      "OI減倉／價格持平": 0,
-      "價格上漲／OI持平": 0,
-      "價格下跌／OI持平": 0,
-      空頭平倉: 0,
-      多頭平倉: 0,
-      持平: 0
-    };
-    for (const m of pool) tally[m.side] += 1;
-    return tally;
-  }, [pool]);
-
-  const { xMax, yMax } = useMemo(() => {
-    const xs = pool.map((m) => Math.abs(m.oi_change_1h));
-    const ys = pool.map((m) => Math.abs(m.price_change_1h ?? 0));
-    return {
-      xMax: Math.max(0.015, ...xs) * 1.18,
-      yMax: Math.max(0.008, ...ys) * 1.18
-    };
-  }, [pool]);
-
-  const x = (v: number) => M.left + ((v + xMax) / (2 * xMax)) * PW;
-  const y = (v: number) => M.top + PH - (((v ?? 0) + yMax) / (2 * yMax)) * PH;
-  const cx0 = x(0);
-  const cy0 = y(0);
-
-  // Big movers drawn first (rendered behind), small dots paint on top.
+  const counts = useMemo(() => zoneCountMap(pool), [pool]);
   const ranked = useMemo(
-    () => [...filtered].sort((a, b) => Math.abs(b.oi_delta) - Math.abs(a.oi_delta)),
-    [filtered]
-  );
-  const maxDelta = Math.max(1e-9, ...ranked.map((m) => Math.abs(m.oi_delta)));
-  const radius = (m: OiMover) => 5 + 11 * Math.sqrt(Math.abs(m.oi_delta) / maxDelta);
-  const labeled = useMemo(
-    () => new Set(ranked.slice(0, LABELED_DOTS).map((m) => m.symbol)),
-    [ranked]
+    () => [...pool].sort((a, b) => Math.abs(b.oi_delta) - Math.abs(a.oi_delta)),
+    [pool]
   );
 
-  const hovered = hoveredSymbol
-    ? ranked.find((m) => m.symbol === hoveredSymbol) ?? null
-    : null;
+  const nodes = useMemo<ReactorNode[]>(() => {
+    const maxOi = Math.max(1e-9, ...pool.map((mover) => Math.abs(mover.oi_change_1h)));
+    const maxPrice = Math.max(1e-9, ...pool.map((mover) => Math.abs(mover.price_change_1h ?? 0)));
+    const maxDelta = Math.max(1e-9, ...pool.map((mover) => Math.abs(mover.oi_delta)));
+    const rankBySymbol = new Map(ranked.map((mover, index) => [mover.symbol, index + 1]));
 
-  const xTicks = useMemo(() => {
-    const step = tickStep(xMax);
-    const ticks: number[] = [];
-    for (let v = step; v < xMax * 0.98; v += step) ticks.push(v, -v);
-    return ticks;
-  }, [xMax]);
-  const yTicks = useMemo(() => {
-    const step = tickStep(yMax);
-    const ticks: number[] = [];
-    for (let v = step; v < yMax * 0.98; v += step) ticks.push(v, -v);
-    return ticks;
-  }, [yMax]);
+    return ranked.map((mover) => {
+      const side = canonicalSide(mover.side) ?? "持平";
+      const oiStrength = Math.min(1, Math.abs(mover.oi_change_1h) / maxOi);
+      const priceStrength = Math.min(1, Math.abs(mover.price_change_1h ?? 0) / maxPrice);
+      const deltaStrength = Math.sqrt(Math.min(1, Math.abs(mover.oi_delta) / maxDelta));
+      const combined = 0.44 * oiStrength + 0.34 * priceStrength + 0.22 * deltaStrength;
+      const intensity = Math.round(combined * 100);
+      const radialNoise = symbolNoise(mover.symbol, 7) * 7;
+      const radial = side === "持平"
+        ? 22 + Math.max(0, combined) * 32
+        : SIGNAL_R_MIN + combined * (SIGNAL_R_MAX - SIGNAL_R_MIN) + radialNoise;
+      const balance = (oiStrength - priceStrength) / Math.max(oiStrength + priceStrength, 0.01);
+      const angleNoise = symbolNoise(mover.symbol, 19) * 4.5;
+      const angleOffset = ZONES[side].kind === "chamber" ? balance * 19 + angleNoise : angleNoise * 0.4;
+      const position = zoneAnchor(side, radial, angleOffset);
+      const previousSide = canonicalSide(mover.previous_side);
+      const previousPosition = previousSide && previousSide !== side
+        ? zoneAnchor(previousSide, Math.max(INNER_R + 20, radial - 54), angleNoise * 0.28)
+        : null;
 
-  const toggleSide = (side: OiMoverSide) => {
-    setHiddenSides((prev) => {
-      const next = new Set(prev);
-      if (next.has(side)) next.delete(side);
-      else next.add(side);
-      return next;
+      return {
+        mover,
+        side,
+        color: ZONES[side].color,
+        x: position.x,
+        y: position.y,
+        previousX: previousPosition?.x ?? null,
+        previousY: previousPosition?.y ?? null,
+        radius: 6 + deltaStrength * 10,
+        intensity,
+        rank: rankBySymbol.get(mover.symbol) ?? ranked.length
+      };
     });
+  }, [pool, ranked]);
+
+  const activeSymbol = hoveredSymbol ?? selectedSymbol ?? ranked[0]?.symbol ?? null;
+  const activeNode = activeSymbol ? nodes.find((node) => node.mover.symbol === activeSymbol) ?? null : null;
+  const activeMover = activeNode?.mover ?? null;
+  const activeMeta = activeNode ? ZONES[activeNode.side] : null;
+
+  const toggleFocus = (side: ReactorSide) => {
+    setFocusedSide((current) => current === side ? null : side);
     setHoveredSymbol(null);
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Quadrant chips (toggle) + threshold sliders */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SIDE_ORDER.map((side) => {
-            const meta = SIDE_META[side];
-            const active = !hiddenSides.has(side);
-            return (
-              <button
-                key={side}
-                type="button"
-                onClick={() => toggleSide(side)}
-                title={`${meta.desc}（點擊${active ? "隱藏" : "顯示"}）`}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                  active ? "" : "opacity-35 grayscale"
-                }`}
-                style={{
-                  borderColor: `${meta.color}55`,
-                  color: meta.color,
-                  background: active ? `${meta.color}14` : "transparent"
-                }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
-                {side}
-                <span className="tabular-nums opacity-80">{counts[side]}</span>
-              </button>
-            );
-          })}
-        </div>
+    <div className="oi-reactor-shell relative overflow-hidden rounded-2xl border border-white/[.09] bg-[#030711]/90 p-3 sm:p-4">
+      <div className="oi-reactor-ambient" aria-hidden />
 
-        <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label className="flex items-center gap-2 text-xs text-slate-400">
-            OI 門檻
-            <input
-              type="range"
-              min={0}
-              max={10}
-              step={0.25}
+      <div className="relative z-10 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 font-kicker text-[9px] tracking-[0.24em] text-ember">
+              <ScanLine className="h-3.5 w-3.5" />
+              OI FLUX REACTOR
+            </div>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              距離＝異動強度 · 節點大小＝OI 變化金額 · 拖尾＝狀態切換
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <ThresholdControl
+              label="OI 門檻"
               value={oiThreshold}
-              onChange={(e) => {
-                setOiThreshold(Number(e.target.value));
+              color="#4cc2ff"
+              onChange={(value) => {
+                setOiThreshold(value);
                 setHoveredSymbol(null);
               }}
-              className="h-1 w-24 accent-ember sm:w-28"
             />
-            <span className="w-12 tabular-nums text-ember">≥{oiThreshold}%</span>
-          </label>
-          <label className="flex items-center gap-2 text-xs text-slate-400">
-            漲跌門檻
-            <input
-              type="range"
-              min={0}
-              max={10}
-              step={0.25}
+            <ThresholdControl
+              label="漲跌門檻"
               value={priceThreshold}
-              onChange={(e) => {
-                setPriceThreshold(Number(e.target.value));
+              color="#23dd8d"
+              onChange={(value) => {
+                setPriceThreshold(value);
                 setHoveredSymbol(null);
               }}
-              className="h-1 w-24 accent-long sm:w-28"
             />
-            <span className="w-12 tabular-nums text-long">≥{priceThreshold}%</span>
-          </label>
-          <span className="text-xs text-slate-500">
-            符合 <span className="tabular-nums text-slate-200">{filtered.length}</span> 個
-          </span>
+            <span className="text-xs text-slate-500">
+              捕捉 <b className="font-data font-normal text-slate-200">{pool.length}</b> 個
+            </span>
+            {focusedSide ? (
+              <button
+                type="button"
+                onClick={() => setFocusedSide(null)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-400 transition hover:border-ember/35 hover:text-ember"
+              >
+                <RotateCcw className="h-3 w-3" />顯示全部
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-        {/* Quadrant map */}
-        <div className="surface-sunken relative overflow-hidden rounded-lg">
-          <svg
-            viewBox={`0 0 ${VW} ${VH}`}
-            className="block h-auto w-full select-none"
-            role="img"
-            aria-label="OI 與價格 3×3 狀態異動圖"
-            onMouseLeave={() => setHoveredSymbol(null)}
-          >
-            <defs>
-              {/* Each quadrant tints toward its outer corner. */}
-              <linearGradient id="oiq-q1" x1="0" y1="1" x2="1" y2="0">
-                <stop offset="0" stopColor={SIDE_META.多頭建倉.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.多頭建倉.color} stopOpacity="0.13" />
-              </linearGradient>
-              <linearGradient id="oiq-q2" x1="1" y1="1" x2="0" y2="0">
-                <stop offset="0" stopColor={SIDE_META.空頭回補.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.空頭回補.color} stopOpacity="0.13" />
-              </linearGradient>
-              <linearGradient id="oiq-q3" x1="1" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={SIDE_META.多頭去槓桿.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.多頭去槓桿.color} stopOpacity="0.13" />
-              </linearGradient>
-              <linearGradient id="oiq-q4" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor={SIDE_META.空頭建倉.color} stopOpacity="0" />
-                <stop offset="1" stopColor={SIDE_META.空頭建倉.color} stopOpacity="0.13" />
-              </linearGradient>
-            </defs>
-
-            {/* Quadrant tints */}
-            <rect x={cx0} y={M.top} width={M.left + PW - cx0} height={cy0 - M.top} fill="url(#oiq-q1)" />
-            <rect x={M.left} y={M.top} width={cx0 - M.left} height={cy0 - M.top} fill="url(#oiq-q2)" />
-            <rect x={M.left} y={cy0} width={cx0 - M.left} height={M.top + PH - cy0} fill="url(#oiq-q3)" />
-            <rect x={cx0} y={cy0} width={M.left + PW - cx0} height={M.top + PH - cy0} fill="url(#oiq-q4)" />
-
-            {/* Grid ticks */}
-            {xTicks.map((v) => (
-              <g key={`x${v}`}>
-                <line
-                  x1={x(v)}
-                  y1={M.top}
-                  x2={x(v)}
-                  y2={M.top + PH}
-                  stroke="var(--chart-grid)"
-                  strokeDasharray="3 5"
-                />
-                <text
-                  x={x(v)}
-                  y={M.top + PH + 16}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fill="#64748b"
-                  className="tabular-nums"
-                >
-                  {pctLabel(v)}
-                </text>
-              </g>
-            ))}
-            {yTicks.map((v) => (
-              <g key={`y${v}`}>
-                <line
-                  x1={M.left}
-                  y1={y(v)}
-                  x2={M.left + PW}
-                  y2={y(v)}
-                  stroke="var(--chart-grid)"
-                  strokeDasharray="3 5"
-                />
-                <text
-                  x={M.left - 8}
-                  y={y(v) + 3}
-                  textAnchor="end"
-                  fontSize={10}
-                  fill="#64748b"
-                  className="tabular-nums"
-                >
-                  {pctLabel(v)}
-                </text>
-              </g>
-            ))}
-
-            {/* Zero cross axes */}
-            <line x1={cx0} y1={M.top} x2={cx0} y2={M.top + PH} stroke="var(--chart-axis)" />
-            <line x1={M.left} y1={cy0} x2={M.left + PW} y2={cy0} stroke="var(--chart-axis)" />
-            <rect x={M.left} y={M.top} width={PW} height={PH} fill="none" stroke="var(--chart-frame)" />
-
-            {/* Quadrant corner labels */}
-            <g fontWeight={600} fontSize={12}>
-              <text x={M.left + PW - 10} y={M.top + 18} textAnchor="end" fill={SIDE_META.多頭建倉.color}>
-                多頭建倉
-              </text>
-              <text x={M.left + 10} y={M.top + 18} fill={SIDE_META.空頭回補.color}>
-                空頭回補
-              </text>
-              <text x={M.left + 10} y={M.top + PH - 22} fill={SIDE_META.多頭去槓桿.color}>
-                多頭去槓桿
-              </text>
-              <text x={M.left + PW - 10} y={M.top + PH - 22} textAnchor="end" fill={SIDE_META.空頭建倉.color}>
-                空頭建倉
-              </text>
-            </g>
-            <g fontSize={9.5}>
-              <text x={M.left + PW - 10} y={M.top + 31} textAnchor="end" fill={SIDE_META.多頭建倉.color} opacity={0.55}>
-                {SIDE_META.多頭建倉.desc}
-              </text>
-              <text x={M.left + 10} y={M.top + 31} fill={SIDE_META.空頭回補.color} opacity={0.55}>
-                {SIDE_META.空頭回補.desc}
-              </text>
-              <text x={M.left + 10} y={M.top + PH - 10} fill={SIDE_META.多頭去槓桿.color} opacity={0.55}>
-                {SIDE_META.多頭去槓桿.desc}
-              </text>
-              <text x={M.left + PW - 10} y={M.top + PH - 10} textAnchor="end" fill={SIDE_META.空頭建倉.color} opacity={0.55}>
-                {SIDE_META.空頭建倉.desc}
-              </text>
-            </g>
-
-            {/* Axis titles */}
-            <text x={M.left + PW / 2} y={VH - 10} textAnchor="middle" fontSize={11} fill="#64748b">
-              OI 數量變化 (1H)
-            </text>
-            <text
-              x={14}
-              y={M.top + PH / 2}
-              textAnchor="middle"
-              fontSize={11}
-              fill="#64748b"
-              transform={`rotate(-90 14 ${M.top + PH / 2})`}
+        <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,1fr)_270px] xl:grid-cols-[minmax(0,1fr)_290px]">
+          <div className="relative min-w-0 overflow-hidden rounded-xl border border-white/[.06] bg-black/15">
+            <svg
+              viewBox={`0 0 ${VW} ${VH}`}
+              className="oi-reactor-map block h-auto w-full select-none"
+              role="img"
+              aria-label="OI 資金流向反應爐，包含四個主要市場狀態、四個持平通道與穩態核心"
+              onMouseLeave={() => setHoveredSymbol(null)}
             >
-              價格變化 (1H)
-            </text>
+              <defs>
+                <radialGradient id="oi-reactor-backdrop" cx="50%" cy="48%" r="54%">
+                  <stop offset="0" stopColor="#17294a" stopOpacity=".34" />
+                  <stop offset=".64" stopColor="#07101f" stopOpacity=".16" />
+                  <stop offset="1" stopColor="#02050b" stopOpacity=".82" />
+                </radialGradient>
+                {MAIN_SIDES.map((side) => (
+                  <radialGradient key={`fill:${side}`} id={`reactor-fill-${side}`} cx="50%" cy="50%" r="72%">
+                    <stop offset="0" stopColor={ZONES[side].color} stopOpacity=".03" />
+                    <stop offset=".72" stopColor={ZONES[side].color} stopOpacity=".11" />
+                    <stop offset="1" stopColor={ZONES[side].color} stopOpacity=".22" />
+                  </radialGradient>
+                ))}
+                <filter id="reactor-soft-glow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="5" result="blur" />
+                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                <filter id="reactor-node-glow" x="-120%" y="-120%" width="340%" height="340%">
+                  <feGaussianBlur stdDeviation="3.4" result="blur" />
+                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                <pattern id="reactor-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+                  <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(76,194,255,.035)" strokeWidth="1" />
+                </pattern>
+              </defs>
 
-            {/* Dots */}
-            {ranked.map((m) => {
-              const meta = SIDE_META[m.side] ?? SIDE_META.持平;
-              const r = radius(m);
-              const dx = x(m.oi_change_1h);
-              const dy = y(m.price_change_1h ?? 0);
-              const isHovered = hoveredSymbol === m.symbol;
-              return (
-                <g
-                  key={m.symbol}
-                  className="cursor-pointer"
-                  onClick={() => onSelect(m.symbol)}
-                  onMouseEnter={() => setHoveredSymbol(m.symbol)}
-                >
-                  {/* generous invisible hit area */}
-                  <circle cx={dx} cy={dy} r={r + 7} fill="transparent" />
-                  <circle
-                    cx={dx}
-                    cy={dy}
-                    r={isHovered ? r + 2 : r}
-                    fill={meta.color}
-                    fillOpacity={isHovered ? 0.5 : 0.28}
-                    stroke={meta.color}
-                    strokeWidth={1.6}
-                    style={{
-                      filter: `drop-shadow(0 0 ${isHovered ? 10 : 5}px ${meta.color}55)`,
-                      transition: "r 0.2s ease, fill-opacity 0.2s ease"
+              <rect width={VW} height={VH} fill="url(#oi-reactor-backdrop)" />
+              <rect width={VW} height={VH} fill="url(#reactor-grid)" opacity=".48" />
+
+              {[20, 40, 60, 80, 100].map((value, index) => {
+                const radius = SIGNAL_R_MIN + (index / 4) * (SIGNAL_R_MAX - SIGNAL_R_MIN);
+                const label = polar(radius, 278);
+                return (
+                  <g key={value} opacity=".52">
+                    <circle cx={CX} cy={CY} r={radius} fill="none" stroke="rgba(143,169,201,.17)" strokeWidth=".8" strokeDasharray="3 8" />
+                    <text x={label.x + 3} y={label.y} fill="#64748b" fontSize="8" dominantBaseline="middle">{value}</text>
+                  </g>
+                );
+              })}
+
+              <circle className="oi-reactor-outer-ring" cx={CX} cy={CY} r={OUTER_R + 10} fill="none" stroke="rgba(76,194,255,.16)" strokeWidth="1" strokeDasharray="12 8 2 8" />
+              <circle cx={CX} cy={CY} r={OUTER_R + 3} fill="none" stroke="rgba(240,200,118,.1)" strokeWidth="7" />
+
+              {MAIN_SIDES.map((side) => {
+                const zone = ZONES[side];
+                const focused = !focusedSide || focusedSide === side;
+                return (
+                  <path
+                    key={side}
+                    d={annularSectorPath(INNER_R, OUTER_R, zone.start!, zone.end!)}
+                    fill={`url(#reactor-fill-${side})`}
+                    stroke={zone.color}
+                    strokeOpacity={focused ? .5 : .08}
+                    strokeWidth={focused ? 1.4 : .8}
+                    className="oi-reactor-zone cursor-pointer transition-opacity"
+                    opacity={focused ? 1 : .18}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${side}，${counts[side]} 個，點擊聚焦`}
+                    onClick={() => toggleFocus(side)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") toggleFocus(side);
                     }}
                   />
-                  {labeled.has(m.symbol) || isHovered ? (
+                );
+              })}
+
+              {CORRIDOR_SIDES.map((side) => {
+                const zone = ZONES[side];
+                const focused = !focusedSide || focusedSide === side;
+                return (
+                  <path
+                    key={side}
+                    d={annularSectorPath(INNER_R - 2, OUTER_R - 4, zone.start!, zone.end!)}
+                    fill={zone.color}
+                    fillOpacity={focused ? .09 : .015}
+                    stroke={zone.color}
+                    strokeOpacity={focused ? .34 : .06}
+                    strokeWidth="1"
+                    className="oi-reactor-zone cursor-pointer"
+                    opacity={focused ? 1 : .18}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${side}，${counts[side]} 個，點擊聚焦`}
+                    onClick={() => toggleFocus(side)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") toggleFocus(side);
+                    }}
+                  />
+                );
+              })}
+
+              {MAIN_SIDES.map((side) => {
+                const zone = ZONES[side];
+                const label = polar(221, zone.angle);
+                const focused = !focusedSide || focusedSide === side;
+                return (
+                  <g
+                    key={`label:${side}`}
+                    className="pointer-events-none"
+                    opacity={focused ? 1 : .18}
+                    textAnchor="middle"
+                  >
+                    <text x={label.x} y={label.y - 6} fill={zone.color} fontSize="15" fontWeight="700">{side}</text>
+                    <text x={label.x} y={label.y + 12} fill={zone.color} fillOpacity=".64" fontSize="9.5">{zone.desc} · {counts[side]}</text>
+                  </g>
+                );
+              })}
+
+              {CORRIDOR_SIDES.map((side) => {
+                const zone = ZONES[side];
+                const label = polar(173, zone.angle);
+                const vertical = zone.angle === 90 || zone.angle === 270;
+                const focused = !focusedSide || focusedSide === side;
+                return (
+                  <g key={`corridor-label:${side}`} className="pointer-events-none" opacity={focused ? .74 : .12}>
                     <text
-                      x={dx}
-                      y={dy - r - 6}
+                      x={label.x}
+                      y={label.y}
+                      fill={zone.color}
+                      fontSize="8.4"
                       textAnchor="middle"
-                      fontSize={10.5}
-                      fill="var(--chart-label-ink)"
-                      stroke="var(--chart-label-halo)"
-                      strokeWidth={3}
-                      style={{ paintOrder: "stroke" }}
+                      dominantBaseline="middle"
+                      transform={vertical ? `rotate(${zone.angle === 90 ? 90 : -90} ${label.x} ${label.y})` : undefined}
                     >
-                      {shortSymbol(m.symbol)}
+                      {zone.desc} · {counts[side]}
                     </text>
-                  ) : null}
-                </g>
-              );
-            })}
-          </svg>
+                  </g>
+                );
+              })}
 
-          {/* Hover tooltip */}
-          {hovered ? (
-            <div
-              className="pointer-events-none absolute z-10 w-[200px]"
-              style={{
-                left: `${(x(hovered.oi_change_1h) / VW) * 100}%`,
-                top: `${(y(hovered.price_change_1h ?? 0) / VH) * 100}%`,
-                transform:
-                  y(hovered.price_change_1h ?? 0) < 150
-                    ? "translate(-50%, 16px)"
-                    : "translate(-50%, calc(-100% - 14px))"
-              }}
-            >
-              <div
-                className="rounded-md border bg-[#060b16]/95 p-2.5 text-xs shadow-2xl backdrop-blur"
-                style={{ borderColor: `${(SIDE_META[hovered.side] ?? SIDE_META.持平).color}66` }}
+              <g
+                className="oi-reactor-core cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-label={`穩態核心，${counts.持平} 個，點擊聚焦`}
+                onClick={() => toggleFocus("持平")}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") toggleFocus("持平");
+                }}
+                opacity={!focusedSide || focusedSide === "持平" ? 1 : .26}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-50">{hovered.symbol}</span>
-                  <span style={{ color: (SIDE_META[hovered.side] ?? SIDE_META.持平).color }}>
-                    {hovered.side}
-                  </span>
-                </div>
-                <dl className="mt-1.5 space-y-1">
-                  <TooltipRow label="價格" value={formatPrice(hovered.price)} />
-                  <TooltipRow
-                    label="OI 1H"
-                    value={formatPercent(hovered.oi_change_1h)}
-                    tone={percentTone(hovered.oi_change_1h)}
-                  />
-                  <TooltipRow
-                    label="OI 增量"
-                    value={`${hovered.oi_delta >= 0 ? "+" : "-"}${formatCompactNumber(Math.abs(hovered.oi_delta))}`}
-                    tone={hovered.oi_delta >= 0 ? "text-long" : "text-short"}
-                  />
-                  <TooltipRow
-                    label="價格 1H"
-                    value={formatPercent(hovered.price_change_1h ?? 0)}
-                    tone={percentTone(hovered.price_change_1h ?? 0)}
-                  />
-                  <TooltipRow
-                    label="價格 24H"
-                    value={formatPercent(hovered.change_24h)}
-                    tone={percentTone(hovered.change_24h)}
-                  />
-                </dl>
-                <div className="mt-1.5 text-xs text-slate-500">點擊查看五支柱分析</div>
-              </div>
-            </div>
-          ) : null}
+                <polygon
+                  points={Array.from({ length: 8 }, (_, index) => {
+                    const point = polar(CORE_R, index * 45 + 22.5);
+                    return `${point.x},${point.y}`;
+                  }).join(" ")}
+                  fill="rgba(11,19,38,.94)"
+                  stroke={ZONES.持平.color}
+                  strokeOpacity=".55"
+                  strokeWidth="1.6"
+                  filter="url(#reactor-soft-glow)"
+                />
+                <circle cx={CX} cy={CY} r={CORE_R - 14} fill="none" stroke="rgba(167,139,250,.18)" strokeDasharray="3 6" />
+                <text x={CX} y={CY - 4} fill="#dbeafe" fontSize="16" fontWeight="700" textAnchor="middle">穩態核心</text>
+                <text x={CX} y={CY + 15} fill="#64748b" fontSize="9" textAnchor="middle">價格平 · OI平 · {counts.持平}</text>
+              </g>
 
-          {/* All filtered out */}
-          {!filtered.length ? (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-slate-500">
-              {movers.length
-                ? "沒有符合門檻的異動 — 調低門檻或重新顯示象限"
-                : "OI 資料尚未取得，等待下一輪市場掃描"}
-            </div>
-          ) : null}
+              {nodes.map((node) => {
+                if (node.previousX === null || node.previousY === null) return null;
+                const dimmed = focusedSide && focusedSide !== node.side;
+                const controlX = (node.previousX + node.x) / 2 + (CY - node.y) * .08;
+                const controlY = (node.previousY + node.y) / 2 + (node.x - CX) * .08;
+                return (
+                  <path
+                    key={`trail:${node.mover.symbol}`}
+                    d={`M ${node.previousX} ${node.previousY} Q ${controlX} ${controlY} ${node.x} ${node.y}`}
+                    fill="none"
+                    stroke={node.color}
+                    strokeWidth="1.6"
+                    strokeOpacity={dimmed ? .04 : .45}
+                    strokeDasharray="4 6"
+                    className="oi-reactor-trail"
+                    filter="url(#reactor-soft-glow)"
+                  />
+                );
+              })}
+
+              {nodes.map((node) => {
+                const dimmed = Boolean(focusedSide && focusedSide !== node.side);
+                const active = activeSymbol === node.mover.symbol;
+                const showLabel = node.rank <= LABELED_NODES || active;
+                return (
+                  <g
+                    key={node.mover.symbol}
+                    className="oi-reactor-signal cursor-pointer"
+                    opacity={dimmed ? .1 : 1}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${node.mover.symbol}，${node.side}，異動強度 ${node.intensity}`}
+                    onMouseEnter={() => setHoveredSymbol(node.mover.symbol)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedSymbol(node.mover.symbol);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") setSelectedSymbol(node.mover.symbol);
+                    }}
+                  >
+                    <circle cx={node.x} cy={node.y} r={node.radius + 9} fill="transparent" />
+                    {active ? (
+                      <circle className="oi-reactor-node-pulse" cx={node.x} cy={node.y} r={node.radius + 8} fill="none" stroke={node.color} strokeOpacity=".52" />
+                    ) : null}
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={active ? node.radius + 2 : node.radius}
+                      fill={node.color}
+                      fillOpacity={active ? .48 : .25}
+                      stroke={node.color}
+                      strokeWidth={active ? 2 : 1.35}
+                      filter="url(#reactor-node-glow)"
+                    />
+                    {node.rank <= 8 ? (
+                      <g transform={`translate(${node.x - node.radius - 7} ${node.y - node.radius - 7})`}>
+                        <circle r="7" fill="#050811" stroke={node.color} strokeOpacity=".65" />
+                        <text y=".5" fill={node.color} fontSize="7" textAnchor="middle" dominantBaseline="middle">{String(node.rank).padStart(2, "0")}</text>
+                      </g>
+                    ) : null}
+                    {showLabel ? (
+                      <text
+                        x={node.x}
+                        y={node.y - node.radius - 8}
+                        fill="var(--chart-label-ink)"
+                        stroke="var(--chart-label-halo)"
+                        strokeWidth="3"
+                        fontSize="10"
+                        fontWeight={active ? 700 : 500}
+                        textAnchor="middle"
+                        style={{ paintOrder: "stroke" }}
+                      >
+                        {shortSymbol(node.mover.symbol)}
+                      </text>
+                    ) : null}
+                  </g>
+                );
+              })}
+
+              {!pool.length ? (
+                <g className="pointer-events-none" textAnchor="middle">
+                  <text x={CX} y={CY - 6} fill="#94a3b8" fontSize="14">沒有符合門檻的異動</text>
+                  <text x={CX} y={CY + 16} fill="#475569" fontSize="10">請調低門檻，或等待下一輪市場掃描</text>
+                </g>
+              ) : null}
+            </svg>
+          </div>
+
+          <SignalLens
+            node={activeNode}
+            mover={activeMover}
+            meta={activeMeta}
+            onInspect={onSelect}
+          />
         </div>
 
-        {/* Intensity sidebar */}
-        <aside className="surface flex flex-col gap-1 rounded-lg p-3">
-          <div className="mb-1 text-xs text-slate-500">
-            異動強度 Top {Math.min(SIDEBAR_ROWS, ranked.length)} · 依 OI 變化金額
-          </div>
-          {ranked.slice(0, SIDEBAR_ROWS).map((m, i) => {
-            const meta = SIDE_META[m.side] ?? SIDE_META.持平;
-            return (
-              <button
-                key={m.symbol}
-                type="button"
-                onClick={() => onSelect(m.symbol)}
-                onMouseEnter={() => setHoveredSymbol(m.symbol)}
-                onMouseLeave={() => setHoveredSymbol(null)}
-                className="flex items-center gap-2 rounded-sm px-1.5 py-1.5 text-left transition hover:bg-steel/50"
-              >
-                <span className="w-4 shrink-0 text-xs tabular-nums text-slate-600">{i + 1}</span>
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: meta.color }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-slate-100">
-                    {shortSymbol(m.symbol)}
-                  </span>
-                  <span className="block text-xs" style={{ color: meta.color }}>
-                    {m.side}
-                  </span>
-                </span>
-                <span className="flex shrink-0 flex-col items-end">
-                  <span className={`text-xs tabular-nums ${percentTone(m.oi_change_1h)}`}>
-                    OI {formatPercent(m.oi_change_1h)}
-                  </span>
-                  <span className={`text-xs tabular-nums ${percentTone(m.price_change_1h ?? 0)}`}>
-                    價 {formatPercent(m.price_change_1h ?? 0)}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-          {!ranked.length ? (
-            <div className="py-6 text-center text-xs text-slate-600">無資料</div>
-          ) : null}
-        </aside>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[.06] pt-2 text-[9px] text-slate-600">
+          <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-gold" />點擊艙室聚焦狀態，點擊節點鎖定訊號</span>
+          <span className="font-data">1H PRICE × 1H OPEN INTEREST</span>
+        </div>
       </div>
     </div>
   );
 }
 
-function TooltipRow({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function ThresholdControl({
+  label,
+  value,
+  color,
+  onChange
+}: {
+  label: string;
+  value: number;
+  color: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[10px] text-slate-500">
+      {label}
+      <input
+        type="range"
+        min={0}
+        max={10}
+        step={0.25}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="h-1 w-20 sm:w-24"
+        style={{ accentColor: color }}
+      />
+      <span className="font-data w-10" style={{ color }}>≥{value}%</span>
+    </label>
+  );
+}
+
+function SignalLens({
+  node,
+  mover,
+  meta,
+  onInspect
+}: {
+  node: ReactorNode | null;
+  mover: OiMover | null;
+  meta: ZoneMeta | null;
+  onInspect: (symbol: string) => void;
+}) {
+  if (!node || !mover || !meta) {
+    return (
+      <aside className="oi-signal-lens flex min-h-52 flex-col items-center justify-center rounded-xl border border-white/[.07] bg-black/20 px-5 text-center text-xs leading-5 text-slate-600">
+        <Crosshair className="mb-3 h-5 w-5 text-slate-700" />
+        等待 OI 訊號
+      </aside>
+    );
+  }
+
+  const previous = canonicalSide(mover.previous_side);
+  return (
+    <aside
+      className="oi-signal-lens relative overflow-hidden rounded-xl border bg-[#050a15]/92 p-4 shadow-2xl backdrop-blur-xl sm:p-5"
+      style={{ borderColor: `${meta.color}58`, boxShadow: `0 22px 56px -30px ${meta.color}88` }}
+    >
+      <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-current to-transparent" style={{ color: meta.color }} />
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-kicker text-[8px] tracking-[0.22em] text-slate-600">SIGNAL LENS</span>
+        <span className="font-data rounded-full border px-2 py-0.5 text-[9px]" style={{ borderColor: `${meta.color}55`, color: meta.color }}>
+          強度 {node.intensity}
+        </span>
+      </div>
+
+      <div className="mt-5 flex items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border bg-black/25 font-data text-sm font-semibold" style={{ borderColor: `${meta.color}88`, color: meta.color, boxShadow: `0 0 24px -10px ${meta.color}` }}>
+          {shortSymbol(mover.symbol).slice(0, 2)}
+        </span>
+        <span className="min-w-0">
+          <strong className="font-data block truncate text-lg text-slate-50">{shortSymbol(mover.symbol)}</strong>
+          <span className="mt-0.5 block text-xs" style={{ color: meta.color }}>{node.side}</span>
+        </span>
+      </div>
+
+      <dl className="mt-5 space-y-2.5 border-y border-white/[.06] py-4 text-xs">
+        <LensRow label="現價" value={formatPrice(mover.price)} />
+        <LensRow label="OI 1H" value={formatPercent(mover.oi_change_1h)} tone={percentTone(mover.oi_change_1h)} />
+        <LensRow label="價格 1H" value={formatPercent(mover.price_change_1h ?? 0)} tone={percentTone(mover.price_change_1h ?? 0)} />
+        <LensRow
+          label="變化金額"
+          value={`${mover.oi_delta >= 0 ? "+" : "-"}$${formatCompactNumber(Math.abs(mover.oi_delta))}`}
+          tone={mover.oi_delta >= 0 ? "text-long" : "text-short"}
+        />
+        <LensRow label="價格 24H" value={formatPercent(mover.change_24h)} tone={percentTone(mover.change_24h)} />
+      </dl>
+
+      <div className="mt-3 min-h-8 text-[10px] leading-4 text-slate-500">
+        {previous && previous !== node.side ? (
+          <span>上一輪 <b className="font-normal text-slate-300">{previous}</b> → 現在 <b className="font-normal" style={{ color: meta.color }}>{node.side}</b></span>
+        ) : "本輪未偵測到狀態切換"}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onInspect(mover.symbol)}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-xs font-medium transition hover:bg-white/[.05]"
+        style={{ borderColor: `${meta.color}55`, color: meta.color }}
+      >
+        <Crosshair className="h-3.5 w-3.5" />查看五支柱分析
+      </button>
+    </aside>
+  );
+}
+
+function LensRow({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <dt className="text-slate-500">{label}</dt>
-      <dd className={`tabular-nums ${tone ?? "text-slate-200"}`}>{value}</dd>
+      <dd className={`font-data tabular-nums ${tone ?? "text-slate-200"}`}>{value}</dd>
     </div>
   );
 }

@@ -144,9 +144,9 @@ export function DataRankings({
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
-          <span className="text-sm font-semibold text-slate-100">OI 異動 · 3×3 狀態地圖</span>
+          <span className="text-sm font-semibold text-slate-100">OI 異動 · 資金流向反應爐</span>
           <span className="text-xs text-slate-500">
-            1H 持倉變化 × 價格變化 · 氣泡大小 = 變化金額 · 點擊幣種看分析
+            四個主要狀態 × 四條持平通道 × 穩態核心 · 點擊節點鎖定訊號
           </span>
         </div>
         <OiQuadrantChart movers={movers} onSelect={onSelect} />
