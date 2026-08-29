@@ -1747,7 +1747,7 @@ div.nova-copy-a {
   transform: translateX(80%);
 }
 
-/* OI 資金流向反應爐：九種 OI 狀態改為四艙室、四通道與穩態核心。 */
+/* OI 資金流向反應爐：九種 OI 狀態改為四艙室、四通道與低變動區。 */
 .oi-reactor-shell {
   isolation: isolate;
   box-shadow:
@@ -1772,6 +1772,7 @@ div.nova-copy-a {
 
 .oi-reactor-zone {
   transition: opacity 180ms ease, filter 180ms ease, stroke-opacity 180ms ease;
+  outline: none;
 }
 
 .oi-reactor-zone:hover,
@@ -1784,6 +1785,7 @@ div.nova-copy-a {
   transform-box: fill-box;
   transform-origin: center;
   transition: opacity 180ms ease, filter 180ms ease;
+  outline: none;
 }
 
 .oi-reactor-core:hover,
@@ -1798,12 +1800,19 @@ div.nova-copy-a {
   animation: oi-reactor-ring-spin 34s linear infinite;
 }
 
+.oi-reactor-core-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: oi-reactor-ring-spin 18s linear infinite reverse;
+}
+
 .oi-reactor-trail {
   animation: oi-reactor-flow 2.8s linear infinite;
 }
 
 .oi-reactor-signal {
   transition: opacity 180ms ease, filter 180ms ease;
+  outline: none;
 }
 
 .oi-reactor-signal:hover,
@@ -2465,10 +2474,11 @@ html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold
   .space-grid,
   .nova-dust,
   .nova-object-aura,
-  .nova-card-face::before,
-  .nova-card-face::after,
-  .oi-reactor-outer-ring,
-  .oi-reactor-trail,
+    .nova-card-face::before,
+    .nova-card-face::after,
+    .oi-reactor-outer-ring,
+    .oi-reactor-core-orbit,
+    .oi-reactor-trail,
   .oi-reactor-node-pulse {
     animation: none;
   }

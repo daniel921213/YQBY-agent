@@ -67,7 +67,7 @@ const VW = 760;
 const VH = 700;
 const CX = 380;
 const CY = 350;
-const CORE_R = 88;
+const CORE_R = 78;
 const INNER_R = 112;
 const OUTER_R = 314;
 const SIGNAL_R_MIN = 140;
@@ -115,7 +115,7 @@ function symbolNoise(symbol: string, salt: number): number {
 
 function zoneAnchor(side: ReactorSide, radius: number, angleOffset = 0): { x: number; y: number } {
   if (side === "持平") {
-    return polar(Math.min(38, radius * 0.18), angleOffset * 36);
+    return polar(Math.min(CORE_R - 16, 42 + radius * 0.08), angleOffset * 46);
   }
   return polar(radius, ZONES[side].angle + angleOffset);
 }
@@ -191,13 +191,29 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
     });
   }, [pool, ranked]);
 
-  const activeSymbol = hoveredSymbol ?? selectedSymbol ?? ranked[0]?.symbol ?? null;
-  const activeNode = activeSymbol ? nodes.find((node) => node.mover.symbol === activeSymbol) ?? null : null;
+  const focusedNodes = focusedSide
+    ? nodes.filter((node) => node.side === focusedSide)
+    : nodes;
+  const hoveredNode = hoveredSymbol
+    ? focusedNodes.find((node) => node.mover.symbol === hoveredSymbol) ?? null
+    : null;
+  const selectedNode = selectedSymbol
+    ? focusedNodes.find((node) => node.mover.symbol === selectedSymbol) ?? null
+    : null;
+  const activeNode = hoveredNode ?? selectedNode ?? focusedNodes[0] ?? null;
+  const activeSymbol = activeNode?.mover.symbol ?? null;
   const activeMover = activeNode?.mover ?? null;
   const activeMeta = activeNode ? ZONES[activeNode.side] : null;
 
   const toggleFocus = (side: ReactorSide) => {
     setFocusedSide((current) => current === side ? null : side);
+    setSelectedSymbol(null);
+    setHoveredSymbol(null);
+  };
+
+  const clearFocus = () => {
+    setFocusedSide(null);
+    setSelectedSymbol(null);
     setHoveredSymbol(null);
   };
 
@@ -224,6 +240,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               color="#4cc2ff"
               onChange={(value) => {
                 setOiThreshold(value);
+                setSelectedSymbol(null);
                 setHoveredSymbol(null);
               }}
             />
@@ -233,6 +250,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               color="#23dd8d"
               onChange={(value) => {
                 setPriceThreshold(value);
+                setSelectedSymbol(null);
                 setHoveredSymbol(null);
               }}
             />
@@ -242,7 +260,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             {focusedSide ? (
               <button
                 type="button"
-                onClick={() => setFocusedSide(null)}
+                onClick={clearFocus}
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-slate-400 transition hover:border-ember/35 hover:text-ember"
               >
                 <RotateCcw className="h-3 w-3" />顯示全部
@@ -257,7 +275,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
               viewBox={`0 0 ${VW} ${VH}`}
               className="oi-reactor-map block h-auto w-full select-none"
               role="img"
-              aria-label="OI 資金流向反應爐，包含四個主要市場狀態、四個持平通道與穩態核心"
+              aria-label="OI 資金流向反應爐，包含四個主要市場狀態、四個持平通道與低變動區"
               onMouseLeave={() => setHoveredSymbol(null)}
             >
               <defs>
@@ -395,27 +413,55 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                 className="oi-reactor-core cursor-pointer"
                 role="button"
                 tabIndex={0}
-                aria-label={`穩態核心，${counts.持平} 個，點擊聚焦`}
+                aria-label={`低變動區，${counts.持平} 個，價格與 OI 皆接近持平，點擊聚焦`}
                 onClick={() => toggleFocus("持平")}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") toggleFocus("持平");
                 }}
                 opacity={!focusedSide || focusedSide === "持平" ? 1 : .26}
               >
-                <polygon
-                  points={Array.from({ length: 8 }, (_, index) => {
-                    const point = polar(CORE_R, index * 45 + 22.5);
-                    return `${point.x},${point.y}`;
-                  }).join(" ")}
-                  fill="rgba(11,19,38,.94)"
+                <circle
+                  cx={CX}
+                  cy={CY}
+                  r={CORE_R}
+                  fill="rgba(8,16,31,.82)"
                   stroke={ZONES.持平.color}
-                  strokeOpacity=".55"
-                  strokeWidth="1.6"
+                  strokeOpacity=".42"
+                  strokeWidth="1.2"
                   filter="url(#reactor-soft-glow)"
                 />
-                <circle cx={CX} cy={CY} r={CORE_R - 14} fill="none" stroke="rgba(167,139,250,.18)" strokeDasharray="3 6" />
-                <text x={CX} y={CY - 4} fill="#dbeafe" fontSize="16" fontWeight="700" textAnchor="middle">穩態核心</text>
-                <text x={CX} y={CY + 15} fill="#64748b" fontSize="9" textAnchor="middle">價格平 · OI平 · {counts.持平}</text>
+                <circle
+                  className="oi-reactor-core-orbit"
+                  cx={CX}
+                  cy={CY}
+                  r={CORE_R - 9}
+                  fill="none"
+                  stroke={ZONES.持平.color}
+                  strokeOpacity=".24"
+                  strokeWidth=".8"
+                  strokeDasharray="2 7"
+                />
+                <circle cx={CX} cy={CY} r={CORE_R - 25} fill="rgba(4,10,21,.72)" stroke="rgba(143,169,201,.16)" strokeWidth=".8" />
+                {[0, 90, 180, 270].map((angle) => {
+                  const start = polar(CORE_R - 4, angle);
+                  const end = polar(CORE_R + 4, angle);
+                  return (
+                    <line
+                      key={`core-tick:${angle}`}
+                      x1={start.x}
+                      y1={start.y}
+                      x2={end.x}
+                      y2={end.y}
+                      stroke={ZONES.持平.color}
+                      strokeOpacity=".34"
+                      strokeWidth="1"
+                    />
+                  );
+                })}
+                <text x={CX} y={CY - 28} fill="#64748b" fontSize="6.8" letterSpacing="1.8" textAnchor="middle">LOW ACTIVITY</text>
+                <text x={CX} y={CY - 2} fill="#dbeafe" fontSize="22" fontWeight="700" textAnchor="middle" className="font-data">{counts.持平}</text>
+                <text x={CX} y={CY + 17} fill="#b7c7db" fontSize="11" fontWeight="600" textAnchor="middle">低變動區</text>
+                <text x={CX} y={CY + 33} fill="#64748b" fontSize="7.4" textAnchor="middle">價格近持平 × OI近持平</text>
               </g>
 
               {nodes.map((node) => {
@@ -447,8 +493,10 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                     key={node.mover.symbol}
                     className="oi-reactor-signal cursor-pointer"
                     opacity={dimmed ? .1 : 1}
+                    pointerEvents={dimmed ? "none" : "auto"}
                     role="button"
-                    tabIndex={0}
+                    tabIndex={dimmed ? -1 : 0}
+                    aria-hidden={dimmed || undefined}
                     aria-label={`${node.mover.symbol}，${node.side}，異動強度 ${node.intensity}`}
                     onMouseEnter={() => setHoveredSymbol(node.mover.symbol)}
                     onClick={(event) => {
@@ -511,6 +559,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             node={activeNode}
             mover={activeMover}
             meta={activeMeta}
+            focusedSide={focusedSide}
             onInspect={onSelect}
           />
         </div>
@@ -557,18 +606,38 @@ function SignalLens({
   node,
   mover,
   meta,
+  focusedSide,
   onInspect
 }: {
   node: ReactorNode | null;
   mover: OiMover | null;
   meta: ZoneMeta | null;
+  focusedSide: ReactorSide | null;
   onInspect: (symbol: string) => void;
 }) {
   if (!node || !mover || !meta) {
+    const focusedMeta = focusedSide ? ZONES[focusedSide] : null;
+    const focusedLabel = focusedSide === "持平" ? "低變動區" : focusedSide;
     return (
-      <aside className="oi-signal-lens flex min-h-52 flex-col items-center justify-center rounded-xl border border-white/[.07] bg-black/20 px-5 text-center text-xs leading-5 text-slate-600">
-        <Crosshair className="mb-3 h-5 w-5 text-slate-700" />
-        等待 OI 訊號
+      <aside
+        className="oi-signal-lens relative flex min-h-52 flex-col items-center justify-center overflow-hidden rounded-xl border bg-black/20 px-5 text-center"
+        style={focusedMeta ? { borderColor: `${focusedMeta.color}38` } : undefined}
+      >
+        <div
+          className="mb-4 grid h-12 w-12 place-items-center rounded-full border bg-black/20"
+          style={focusedMeta ? { borderColor: `${focusedMeta.color}45`, color: focusedMeta.color } : undefined}
+        >
+          <Crosshair className="h-5 w-5" />
+        </div>
+        <span className="font-kicker text-[8px] tracking-[0.22em] text-slate-600">
+          {focusedSide ? "FILTER ACTIVE" : "SIGNAL LENS"}
+        </span>
+        <strong className="mt-2 text-sm font-semibold text-slate-300">
+          {focusedLabel ? `目前沒有符合「${focusedLabel}」的幣種` : "等待 OI 訊號"}
+        </strong>
+        <span className="mt-1.5 max-w-48 text-[10px] leading-4 text-slate-600">
+          {focusedSide ? "可調整門檻，或等待下一輪資料更新。" : "符合目前門檻的幣種會顯示在這裡。"}
+        </span>
       </aside>
     );
   }

@@ -146,7 +146,7 @@ export function DataRankings({
         <div className="flex flex-wrap items-baseline gap-x-3 border-b border-white/10 pb-2">
           <span className="text-sm font-semibold text-slate-100">OI 異動 · 資金流向反應爐</span>
           <span className="text-xs text-slate-500">
-            四個主要狀態 × 四條持平通道 × 穩態核心 · 點擊節點鎖定訊號
+            四個主要狀態 × 四條持平通道 × 低變動區 · 點擊節點鎖定訊號
           </span>
         </div>
         <OiQuadrantChart movers={movers} onSelect={onSelect} />
