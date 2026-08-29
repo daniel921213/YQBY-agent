@@ -25,10 +25,10 @@ const PREVIEW_TOKENS = [
   ["STXUSDT", "潛伏", "+2.1%", "觀察中"]
 ] as const;
 
-function planLabel(plan: Entitlement["plan"]): string {
-  if (plan === "trial") return "7 天試用帳號";
-  if (plan === "member") return "30 天正式帳號";
-  if (plan === "unactivated") return "尚未啟用帳號";
+function planLabel(entitlement: Entitlement): string {
+  if (entitlement.plan === "trial") return "7 天試用帳號";
+  if (entitlement.plan === "member") return entitlement.active ? "30 天正式帳號" : "30 天正式帳號（已到期）";
+  if (entitlement.plan === "unactivated") return "尚未啟用帳號";
   return "永久帳號";
 }
 
@@ -50,7 +50,7 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden rounded-full border border-gold/20 bg-gold/[.06] px-3 py-1.5 text-[10px] text-gold sm:inline-flex">
-              INTERNAL PREVIEW
+              ACCESS PREVIEW
             </span>
             <ThemeToggle />
             <div className="hidden sm:block"><AccountMenu /></div>
@@ -115,26 +115,27 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
               <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent shadow-[0_0_18px_rgba(240,200,118,.7)]" />
               <span className="font-kicker mb-5 inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/[.07] px-3 py-1.5 text-[9px] tracking-[0.2em] text-gold">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                PERMANENT ACCESS ONLY
+                30D + LIFETIME ACCESS
               </span>
               <span className="relative grid h-16 w-16 place-items-center rounded-full border border-gold/35 bg-gold/10 text-gold shadow-[0_0_38px_rgba(202,138,4,.28)]">
                 <LockKeyhole className="h-7 w-7" />
                 <span className="absolute inset-0 animate-ping rounded-full border border-gold/15" />
               </span>
-              <h2 className="font-display mt-5 text-2xl font-black text-slate-50 sm:text-3xl">妖怪篩選器・內部測試中</h2>
+              <h2 className="font-display mt-5 text-2xl font-black text-slate-50 sm:text-3xl">解鎖妖怪篩選器</h2>
               <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
-                此功能目前只開放永久帳號。題材情報與 Gate 市場資料仍在調整，完成測試後會再評估正式開放範圍。
+                追蹤市場熱門賽道，結合 Gate 資金數據，找出值得關注的做多機會。<br />
+                目前開放有效 30 天與永久方案使用者。
               </p>
               <div className="mt-4 inline-flex items-center gap-2 text-xs text-slate-500">
                 <Sparkles className="h-3.5 w-3.5 text-ember" />
-                目前資格：{planLabel(entitlement.plan)}
+                目前資格：{planLabel(entitlement)}
               </div>
               <div className="mt-7 grid w-full gap-2 sm:grid-cols-2">
                 <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[.04] px-4 py-3 text-sm text-slate-300 transition hover:border-ember/35 hover:text-ember">
                   <ArrowLeft className="h-4 w-4" />返回主控台
                 </Link>
                 <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" className="btn-gold inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold">
-                  聯絡管理員<ExternalLink className="h-4 w-4" />
+                  洽詢小幫手・解鎖情報<ExternalLink className="h-4 w-4" />
                 </a>
               </div>
             </div>

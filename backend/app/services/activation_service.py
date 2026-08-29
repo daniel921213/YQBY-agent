@@ -24,15 +24,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import ActivationCode, User
-from app.services.auth_service import PLAN_LIFETIME, PLAN_TRIAL, _as_utc
+from app.services.auth_service import PLAN_LIFETIME, PLAN_MEMBER, PLAN_TRIAL, _as_utc
 
 TIER_7D = "7d"
 TIER_30D = "30d"
 TIER_LIFETIME = "lifetime"
 VALID_TIERS = {TIER_7D, TIER_30D, TIER_LIFETIME}
 TIER_DAYS = {TIER_7D: 7, TIER_30D: 30}
-PLAN_MEMBER = "member"
-
 # 排除易混淆字元（0/O、1/I/L）
 _ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 

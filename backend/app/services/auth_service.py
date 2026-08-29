@@ -24,6 +24,7 @@ _BCRYPT_MAX_BYTES = 72
 
 PLAN_UNACTIVATED = "unactivated"  # 註冊完、還沒輸入任何啟用碼
 PLAN_TRIAL = "trial"
+PLAN_MEMBER = "member"
 PLAN_LIFETIME = "lifetime"
 TRIAL_DAYS = 7
 

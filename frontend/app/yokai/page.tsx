@@ -89,7 +89,8 @@ function YokaiEntitlementGate() {
     );
   }
 
-  if (me.plan !== "lifetime") return <YokaiAccessWall entitlement={me} />;
+  const hasYokaiAccess = me.plan === "lifetime" || (me.plan === "member" && me.active);
+  if (!hasYokaiAccess) return <YokaiAccessWall entitlement={me} />;
   return <YokaiIntelligence />;
 }
 

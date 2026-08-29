@@ -5,23 +5,24 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def _register_headers(client: TestClient, tier: str = "7d") -> dict[str, str]:
+def _register_headers(client: TestClient, tier: str | None = "7d") -> dict[str, str]:
     """Register and redeem the requested activation tier."""
     uid = "t_" + uuid.uuid4().hex[:10]
     res = client.post("/api/v1/auth/register", json={"uid": uid, "password": "secret123"})
     assert res.status_code == 200
     headers = {"Authorization": f"Bearer {res.json()['token']}"}
 
-    mint = client.post(
-        "/api/v1/admin/codes",
-        json={"tier": tier, "count": 1},
-        headers={"X-Admin-Key": "test-admin-secret"},
-    )
-    assert mint.status_code == 200
-    redeem = client.post(
-        "/api/v1/auth/redeem", json={"code": mint.json()["codes"][0]}, headers=headers
-    )
-    assert redeem.status_code == 200
+    if tier is not None:
+        mint = client.post(
+            "/api/v1/admin/codes",
+            json={"tier": tier, "count": 1},
+            headers={"X-Admin-Key": "test-admin-secret"},
+        )
+        assert mint.status_code == 200
+        redeem = client.post(
+            "/api/v1/auth/redeem", json={"code": mint.json()["codes"][0]}, headers=headers
+        )
+        assert redeem.status_code == 200
     return headers
 
 
@@ -137,23 +138,39 @@ def test_anomaly_history_endpoint() -> None:
         assert isinstance(response.json()["items"], list)
 
 
-def test_yokai_endpoint_has_stable_empty_warmup_payload() -> None:
+def test_yokai_endpoint_allows_lifetime_and_active_30d_members() -> None:
     with TestClient(app) as client:
-        headers = _register_headers(client, tier="lifetime")
-        response = client.get("/api/v1/yokai", headers=headers)
-        assert response.status_code == 200
-        payload = response.json()
-        assert isinstance(payload["narratives"], list)
-        assert isinstance(payload["qualified_longs"], list)
-        assert "external_ready" in payload and "gate_ready" in payload
-
-
-def test_yokai_preview_rejects_active_non_lifetime_user() -> None:
-    with TestClient(app) as client:
-        for tier in ("7d", "30d"):
+        for tier in ("lifetime", "30d"):
             headers = _register_headers(client, tier=tier)
+            response = client.get("/api/v1/yokai", headers=headers)
+            assert response.status_code == 200
+            payload = response.json()
+            assert isinstance(payload["narratives"], list)
+            assert isinstance(payload["qualified_longs"], list)
+            assert "external_ready" in payload and "gate_ready" in payload
 
-            assert client.get("/api/v1/scan", headers=headers).status_code == 200
+
+def test_yokai_rejects_trial_unactivated_and_expired_30d_users() -> None:
+    with TestClient(app) as client:
+        for tier in ("7d", None):
+            headers = _register_headers(client, tier=tier)
             response = client.get("/api/v1/yokai", headers=headers)
             assert response.status_code == 403
-            assert response.json()["detail"] == "lifetime_required"
+            assert response.json()["detail"] == "yokai_plan_required"
+
+        headers = _register_headers(client, tier="30d")
+        uid = client.get("/api/v1/auth/me", headers=headers).json()["uid"]
+
+        from datetime import UTC, datetime, timedelta
+
+        from app.db import SessionLocal
+        from app.models import User
+
+        with SessionLocal() as db:
+            user = db.query(User).filter(User.uid_key == uid.lower()).one()
+            user.expires_at = datetime.now(UTC) - timedelta(hours=1)
+            db.commit()
+
+        response = client.get("/api/v1/yokai", headers=headers)
+        assert response.status_code == 403
+        assert response.json()["detail"] == "yokai_plan_required"
