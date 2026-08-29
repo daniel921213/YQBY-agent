@@ -289,15 +289,13 @@ function ModalFrame({
             {tradingViewUrl ? (
               <a
                 href={tradingViewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="group inline-flex h-9 items-center justify-center gap-2 rounded-md border border-sky-400/35 bg-sky-400/[.07] px-3 text-xs font-medium text-sky-200 transition hover:border-sky-300/65 hover:bg-sky-400/[.13] hover:text-white"
-                title={`在 TradingView 開啟 Gate ${symbol} 永續合約 15m 圖表`}
-                aria-label={`在 TradingView 開啟 Gate ${symbol} 永續合約 15 分鐘圖表（新分頁）`}
+                title={`交由 TradingView 開啟 Gate ${symbol} 永續合約 15m 圖表`}
+                aria-label={`交由 TradingView 開啟 Gate ${symbol} 永續合約 15 分鐘圖表；無法開啟 App 時使用網頁版`}
               >
                 <LineChart className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">TradingView</span>
-                <span className="sm:hidden">圖表</span>
+                <span className="hidden sm:inline">TradingView 開啟</span>
+                <span className="sm:hidden">TV 開啟</span>
                 <ExternalLink className="h-3 w-3 opacity-55 transition group-hover:opacity-100" />
               </a>
             ) : (
