@@ -72,7 +72,10 @@ def _scan(
         trade_eligible=trade_eligible,
         trade_reasons=["15m 趨勢啟動", "OI 多頭建倉"],
         yokai_long_eligible=yokai_long_eligible,
-        yokai_long_reasons=[f"15m {stage}", "OI 多頭建倉", "5m 狀態切換已確認"],
+        yokai_long_reasons=[
+            f"資金結構 2/2：15m {stage}、OI 多頭建倉",
+            "進場時機 3/4：5m 多方時機、主動流／CVD 偏多、動能偏多",
+        ],
         yokai_long_failed_reasons=yokai_long_failed_reasons or [],
         flow_quality="REAL",
         oi_side="多頭建倉",
@@ -113,7 +116,7 @@ def test_yokai_can_confirm_an_early_long_without_changing_dashboard_eligibility(
 
     assert len(response.qualified_longs) == 1
     assert response.qualified_longs[0].formal_stage == "早期異動"
-    assert "5m 狀態切換已確認" in response.qualified_longs[0].reasons
+    assert any(reason.startswith("進場時機 3/4") for reason in response.qualified_longs[0].reasons)
 
 
 def test_unconfirmed_early_long_stays_in_yokai_watchlist() -> None:
@@ -123,20 +126,20 @@ def test_unconfirmed_early_long_stays_in_yokai_watchlist() -> None:
             stage="早期異動",
             trade_eligible=False,
             yokai_long_eligible=False,
-            yokai_long_failed_reasons=["早期異動缺少 5m 狀態切換確認"],
+            yokai_long_failed_reasons=["進場時機 1/4：至少需要 2 票"],
         ),
     )
 
     assert response.qualified_longs == []
     assert response.tokens[0].status == "WATCH"
-    assert "早期異動缺少 5m 狀態切換確認" in response.tokens[0].blocked_reasons
+    assert "進場時機 1/4：至少需要 2 票" in response.tokens[0].blocked_reasons
 
 
 def test_yokai_overheated_narrative_blocks_long_even_when_gate_passes() -> None:
     response = build_yokai_response(_external("狂熱"), _scan())
     assert response.qualified_longs == []
     assert response.tokens[0].status == "RISK"
-    assert "題材已進入狂熱階段" in response.tokens[0].blocked_reasons[0]
+    assert any("題材已進入狂熱階段" in reason for reason in response.tokens[0].blocked_reasons)
 
 
 def test_yokai_taxonomy_has_unique_roots_and_valid_children() -> None:

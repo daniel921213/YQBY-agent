@@ -43,9 +43,9 @@ _YOKAI_LONG_STAGES: frozenset[Stage] = frozenset(
     {"早期異動", "趨勢啟動", "趨勢延續"}
 )
 _DASHBOARD_TRANSITION_STAGES: frozenset[Stage] = frozenset({"趨勢延續"})
-_YOKAI_TRANSITION_STAGES: frozenset[Stage] = frozenset(
-    {"早期異動", "趨勢延續"}
-)
+_YOKAI_LONG_OI_SIDES = {"多頭建倉", "OI增倉／價格持平"}
+_YOKAI_MOMENTUM_KEYS = {"momentum", "volume_surge"}
+_YOKAI_TIMING_REQUIRED = 2
 
 
 @dataclass(frozen=True)
@@ -110,29 +110,137 @@ def evaluate_yokai_long_confirmation(
 ) -> TradeRecommendationDecision:
     """Return whether a Gate setup confirms a Yokai LONG candidate.
 
-    Unlike the dashboard lanes, Yokai may confirm a 15m early anomaly, but
-    only after a newly closed 5m state has switched into the same long setup.
-    Yokai never turns a SHORT reading into an actionable recommendation.
+    Yokai is deliberately earlier than the dashboard lanes.  It requires a
+    valid 15m/OI capital structure, then uses a two-of-four vote for timing
+    instead of demanding every formal pillar.  Missing real data, crowding,
+    liquidation pressure, or a strong opposite short-term read remain hard
+    vetoes.  Yokai never turns a SHORT reading into a recommendation.
     """
 
     if direction != "LONG":
         return TradeRecommendationDecision(
             eligible=False,
-            failed_reasons=("妖怪篩選器只提供做多確認",),
+            failed_reasons=("資金結構 0/2：Gate 正式方向尚未偏多",),
         )
 
-    return _evaluate_trade_recommendation(
-        direction=direction,
-        stage=stage,
-        evidence=evidence,
-        metrics=metrics,
-        oi_side=oi_side,
-        oi_change_1h=oi_change_1h,
-        five_minute=five_minute,
-        allowed_stages=_YOKAI_LONG_STAGES,
-        transition_stages=_YOKAI_TRANSITION_STAGES,
-        stage_priorities={"早期異動": 3, "趨勢啟動": 2, "趨勢延續": 1},
-        stage_failure="15m 尚未進入早期異動／趨勢啟動／延續",
+    stage_ok = stage in _YOKAI_LONG_STAGES
+    oi_ok = oi_side in _YOKAI_LONG_OI_SIDES and oi_change_1h > 0
+    capital_passed = int(stage_ok) + int(oi_ok)
+
+    flow_strength = _evidence_strength(
+        evidence,
+        "LONG",
+        lambda item: item.key == "cvd_thrust" or item.key.startswith("cvd_bullish_"),
+    )
+    opposite_flow_strength = _evidence_strength(
+        evidence,
+        "SHORT",
+        lambda item: item.key == "cvd_thrust" or item.key.startswith("cvd_bearish_"),
+    )
+    momentum_strength = _evidence_strength(
+        evidence, "LONG", lambda item: item.key in _YOKAI_MOMENTUM_KEYS
+    )
+    relative_strength = _evidence_strength(
+        evidence, "LONG", lambda item: item.key in _RELATIVE_KEYS
+    )
+    transition_confirmed = bool(
+        five_minute
+        and any(flag.startswith(_TRANSITION_FLAG_PREFIX) for flag in five_minute.flags)
+    )
+    five_minute_ready = bool(
+        five_minute is not None and five_minute.data_quality == "REAL"
+    )
+    five_minute_vote = bool(
+        five_minute_ready
+        and five_minute is not None
+        and five_minute.direction == "LONG"
+        and not five_minute.conflicts_official
+        and (
+            five_minute.state in _ALLOWED_5M_STATES["LONG"]
+            or transition_confirmed
+        )
+    )
+
+    timing_votes: list[tuple[str, bool, float]] = [
+        ("5m 多方時機", five_minute_vote, 1.0 if five_minute_vote else 0.0),
+        ("主動流／CVD 偏多", flow_strength >= _CORE_MIN_STRENGTH, flow_strength),
+        ("動能偏多", momentum_strength >= _CORE_MIN_STRENGTH, momentum_strength),
+        ("相對強弱偏多", relative_strength >= _CORE_MIN_STRENGTH, relative_strength),
+    ]
+    passed_votes = [label for label, passed, _ in timing_votes if passed]
+    timing_count = len(passed_votes)
+    fast_confirmation = five_minute_vote or flow_strength >= _CORE_MIN_STRENGTH
+    timing_ok = timing_count >= _YOKAI_TIMING_REQUIRED and fast_confirmation
+
+    passed: list[str] = []
+    failed: list[str] = []
+    if capital_passed == 2:
+        passed.append(f"資金結構 2/2：15m {stage}、OI {oi_side}")
+    else:
+        missing: list[str] = []
+        if not stage_ok:
+            missing.append("15m 尚未進入早期異動／趨勢啟動／延續")
+        if not oi_ok:
+            missing.append("OI 尚未增倉或不在多方蓄勢區")
+        failed.append(f"資金結構 {capital_passed}/2：{'；'.join(missing)}")
+
+    vote_detail = "、".join(passed_votes) if passed_votes else "尚無支持票"
+    if timing_ok:
+        passed.append(f"進場時機 {timing_count}/4：{vote_detail}")
+    elif timing_count >= _YOKAI_TIMING_REQUIRED:
+        failed.append(
+            f"進場時機 {timing_count}/4：仍需 5m 或主動流其中一票"
+        )
+    else:
+        failed.append(
+            f"進場時機 {timing_count}/4：至少需要 {_YOKAI_TIMING_REQUIRED} 票，目前為{vote_detail}"
+        )
+
+    data_ready = True
+    if metrics is None or metrics.flow_quality != "REAL":
+        data_ready = False
+        failed.append("資料未就緒：主動流不是 REAL")
+    if not five_minute_ready:
+        data_ready = False
+        failed.append("資料未就緒：5m REAL 資料不足")
+
+    vetoes: list[str] = []
+    if stage in {"過熱風險", "反轉警訊"}:
+        vetoes.append(f"風險否決：15m 已進入{stage}")
+    if metrics is not None and metrics.funding_rate >= _LONG_FUNDING_CROWDED:
+        vetoes.append("風險否決：資金費率偏高")
+    if metrics is not None and metrics.account_ratio >= _LONG_ACCOUNT_CROWDED:
+        vetoes.append("風險否決：全體帳戶多空比過度偏多")
+    if five_minute is not None and _LIQUIDATION_FLAG in five_minute.flags:
+        vetoes.append("風險否決：爆倉強度異常")
+    if five_minute_ready and five_minute is not None and (
+        five_minute.direction == "SHORT" or five_minute.conflicts_official
+    ):
+        vetoes.append("風險否決：5m 與 15m 多方方向衝突")
+    if (
+        opposite_flow_strength >= _CORE_MIN_STRENGTH
+        and opposite_flow_strength > flow_strength
+    ):
+        vetoes.append("風險否決：主動流／CVD 明顯偏空")
+    failed.extend(vetoes)
+
+    passed_strengths = [strength for _, vote, strength in timing_votes if vote]
+    support_floor = min(passed_strengths, default=0.0)
+    five_minute_strength = (
+        max(abs(five_minute.flow_zscore), abs(five_minute.oi_change_zscore))
+        if five_minute is not None
+        else 0.0
+    )
+
+    return TradeRecommendationDecision(
+        eligible=(capital_passed == 2 and timing_ok and data_ready and not vetoes),
+        stage_priority={"早期異動": 3, "趨勢啟動": 2, "趨勢延續": 1}.get(stage, 0),
+        weakest_core_strength=support_floor,
+        flow_strength=flow_strength,
+        five_minute_strength=five_minute_strength,
+        oi_change_strength=abs(oi_change_1h),
+        passed_reasons=tuple(passed),
+        failed_reasons=tuple(failed),
     )
 
 

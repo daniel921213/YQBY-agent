@@ -88,17 +88,21 @@ def _yokai_decision(
     *,
     stage: str = "早期異動",
     risk: RiskRadarReading | None = None,
+    evidence: list[EvidenceItem] | None = None,
+    metrics: MarketSnapshot | None = None,
+    oi_side: str | None = None,
 ):
     return evaluate_yokai_long_confirmation(
         direction=direction,  # type: ignore[arg-type]
         stage=stage,  # type: ignore[arg-type]
-        evidence=_evidence(direction),
-        metrics=MarketSnapshot(
+        evidence=evidence if evidence is not None else _evidence(direction),
+        metrics=metrics
+        or MarketSnapshot(
             funding_rate=0.0,
             account_ratio=1.0,
             flow_quality="REAL",
         ),
-        oi_side="多頭建倉" if direction == "LONG" else "空頭建倉",
+        oi_side=oi_side or ("多頭建倉" if direction == "LONG" else "空頭建倉"),
         oi_change_1h=0.025,
         five_minute=risk or _risk(direction),
     )
@@ -117,18 +121,35 @@ def test_non_executable_lifecycle_stages_never_recommend(stage: str) -> None:
     assert _decision(stage=stage).eligible is False
 
 
-def test_yokai_early_long_requires_a_confirmed_five_minute_transition() -> None:
-    assert _yokai_decision().eligible is False
-
-    confirmed = replace(
-        _risk("LONG"),
-        flags=["5m狀態確認切換：持平 → 多頭建倉"],
-    )
-    decision = _yokai_decision(risk=confirmed)
-
+def test_yokai_early_long_uses_a_two_of_four_timing_vote() -> None:
+    decision = _yokai_decision()
     assert decision.eligible is True
     assert decision.stage_priority == 3
-    assert "5m 狀態切換已確認" in decision.passed_reasons
+    assert any(reason.startswith("進場時機 4/4") for reason in decision.passed_reasons)
+
+
+def test_yokai_two_votes_must_include_five_minute_or_active_flow() -> None:
+    neutral_five = replace(_risk("LONG"), direction="NEUTRAL", state="持平", flags=[])
+    fast_evidence = [
+        _item("cvd_thrust", "LONG", 0.81),
+        _item("relative_strength", "LONG", 0.69),
+    ]
+    slow_evidence = [
+        _item("momentum", "LONG", 0.72),
+        _item("relative_strength", "LONG", 0.69),
+    ]
+
+    assert _yokai_decision(risk=neutral_five, evidence=fast_evidence).eligible is True
+    slow = _yokai_decision(risk=neutral_five, evidence=slow_evidence)
+    assert slow.eligible is False
+    assert any("仍需 5m 或主動流" in reason for reason in slow.failed_reasons)
+
+
+def test_yokai_accepts_oi_buildup_before_price_moves() -> None:
+    decision = _yokai_decision(oi_side="OI增倉／價格持平")
+
+    assert decision.eligible is True
+    assert any("OI OI增倉／價格持平" in reason for reason in decision.passed_reasons)
 
 
 def test_yokai_never_confirms_a_short_setup() -> None:
@@ -139,7 +160,25 @@ def test_yokai_never_confirms_a_short_setup() -> None:
     decision = _yokai_decision(direction="SHORT", risk=confirmed)
 
     assert decision.eligible is False
-    assert decision.failed_reasons == ("妖怪篩選器只提供做多確認",)
+    assert decision.failed_reasons == ("資金結構 0/2：Gate 正式方向尚未偏多",)
+
+
+def test_yokai_keeps_crowding_and_liquidation_as_hard_vetoes() -> None:
+    crowded = _yokai_decision(
+        metrics=MarketSnapshot(
+            funding_rate=0.0005,
+            account_ratio=1.0,
+            flow_quality="REAL",
+        )
+    )
+    liquidation = _yokai_decision(
+        risk=replace(_risk("LONG"), flags=["爆倉強度異常"])
+    )
+
+    assert crowded.eligible is False
+    assert liquidation.eligible is False
+    assert any("風險否決" in reason for reason in crowded.failed_reasons)
+    assert any("爆倉強度異常" in reason for reason in liquidation.failed_reasons)
 
 
 def test_oi_exit_or_wrong_buildup_side_never_recommends() -> None:

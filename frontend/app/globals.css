@@ -1846,6 +1846,27 @@ div.nova-copy-a {
   72%, 100% { opacity: 0; transform: scale(1.62); }
 }
 
+.yokai-heat-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: yokai-heat-trace 1.35s cubic-bezier(.2, .75, .25, 1) forwards;
+}
+
+.yokai-heat-latest {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: yokai-heat-pulse 2.4s ease-out infinite;
+}
+
+@keyframes yokai-heat-trace {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes yokai-heat-pulse {
+  0%, 38% { opacity: 0.9; transform: scale(0.82); }
+  76%, 100% { opacity: 0.22; transform: scale(2.1); }
+}
+
 html[data-theme="light"] .oi-reactor-shell {
   border-color: rgba(2, 132, 199, 0.16);
   background: rgba(239, 246, 255, 0.94);
@@ -2479,9 +2500,11 @@ html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold
     .oi-reactor-outer-ring,
     .oi-reactor-core-orbit,
     .oi-reactor-trail,
-  .oi-reactor-node-pulse {
-    animation: none;
-  }
+    .oi-reactor-node-pulse,
+    .yokai-heat-line,
+    .yokai-heat-latest {
+      animation: none;
+    }
   .lift {
     transition: none;
   }

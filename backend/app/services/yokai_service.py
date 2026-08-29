@@ -446,23 +446,29 @@ def _row_to_token(
 
     reasons: list[str] = []
     blocked: list[str] = []
+    lifecycle = primary.get("lifecycle")
+    source_count = int(primary.get("source_count", 0))
+    lifecycle_pass = lifecycle in {"顯形", "發酵"}
+    source_pass = source_count >= 2
+    narrative_passed = int(lifecycle_pass) + int(source_pass)
     if external_pass:
-        reasons.append(f"{primary['name']}處於{primary['lifecycle']}階段")
-        reasons.append(f"{primary['source_count']} 個獨立來源共同確認")
+        reasons.append(
+            f"題材確認 2/2：{primary['name']}進入{lifecycle}、{source_count} 個獨立來源"
+        )
     else:
-        if primary.get("lifecycle") == "狂熱":
-            blocked.append("題材已進入狂熱階段，追價風險偏高")
-        elif primary.get("lifecycle") == "退散":
-            blocked.append("題材熱度正在退散")
-        else:
-            blocked.append("題材尚未進入顯形／發酵階段")
-        if int(primary.get("source_count", 0)) < 2:
-            blocked.append("獨立消息來源不足 2 個")
+        missing: list[str] = []
+        if not lifecycle_pass:
+            missing.append("尚未進入顯形／發酵")
+        if not source_pass:
+            missing.append(f"獨立來源僅 {source_count} 個")
+        blocked.append(f"題材確認 {narrative_passed}/2：{'；'.join(missing)}")
+        if lifecycle == "狂熱":
+            blocked.append("風險否決：題材已進入狂熱階段，追價風險偏高")
+        elif lifecycle == "退散":
+            blocked.append("風險否決：題材熱度正在退散")
 
-    if row.direction != "LONG":
-        blocked.append("Gate 正式方向尚未偏多")
-    reasons.extend(row.yokai_long_reasons if gate_pass else [])
-    blocked.extend(row.yokai_long_failed_reasons if not gate_pass else [])
+    reasons.extend(row.yokai_long_reasons)
+    blocked.extend(row.yokai_long_failed_reasons)
     # Preserve order but remove repeated explanations.
     reasons = list(dict.fromkeys(reasons))
     blocked = list(dict.fromkeys(blocked))

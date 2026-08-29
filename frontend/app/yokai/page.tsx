@@ -370,24 +370,70 @@ function NarrativeRoom({ narrative }: { narrative: YokaiNarrative }) {
   );
 }
 
+interface HeatPlotPoint {
+  x: number;
+  y: number;
+  value: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function smoothHeatPath(points: HeatPlotPoint[]): string {
+  if (!points.length) return "";
+  if (points.length === 1) return `M${points[0].x},${points[0].y}`;
+
+  const segments = [`M${points[0].x},${points[0].y}`];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[Math.max(0, index - 1)];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[Math.min(points.length - 1, index + 2)];
+    const minY = Math.min(p1.y, p2.y);
+    const maxY = Math.max(p1.y, p2.y);
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = clamp(p1.y + (p2.y - p0.y) / 6, minY, maxY);
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = clamp(p2.y - (p3.y - p1.y) / 6, minY, maxY);
+    segments.push(`C${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`);
+  }
+  return segments.join(" ");
+}
+
 function HeatChart({ points }: { points: YokaiHistoryPoint[] }) {
   if (!points.length) return <div className="h-28 rounded-xl bg-black/15" />;
   const width = 640;
   const height = 118;
-  const path = points.map((point, index) => `${index ? "L" : "M"}${(index / Math.max(points.length - 1, 1)) * width},${height - 8 - (point.value / 100) * (height - 22)}`).join(" ");
-  const area = `${path} L${width},${height} L0,${height} Z`;
+  const baseline = height - 8;
+  const chartPoints = points.map((point, index) => ({
+    x: (index / Math.max(points.length - 1, 1)) * width,
+    y: baseline - (point.value / 100) * (height - 24),
+    value: point.value
+  }));
+  const path = smoothHeatPath(chartPoints);
+  const first = chartPoints[0];
+  const last = chartPoints[chartPoints.length - 1];
+  const area = `${path} L${last.x},${baseline} L${first.x},${baseline} Z`;
   return (
     <div className="relative h-28 overflow-hidden rounded-xl border border-white/5 bg-black/15">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full" aria-label="近七天題材熱度曲線">
         <defs>
-          <linearGradient id="yokaiHeat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(76,194,255,.35)" /><stop offset="1" stopColor="rgba(76,194,255,0)" /></linearGradient>
+          <linearGradient id="yokaiHeat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(76,194,255,.24)" /><stop offset=".55" stopColor="rgba(76,194,255,.08)" /><stop offset="1" stopColor="rgba(76,194,255,0)" /></linearGradient>
           <linearGradient id="yokaiLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#4cc2ff" /><stop offset="1" stopColor="#f0c876" /></linearGradient>
+          <filter id="yokaiHeatGlow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3.4" /></filter>
         </defs>
-        {[0.25, 0.5, 0.75].map((y) => <line key={y} x1="0" x2={width} y1={height * y} y2={height * y} stroke="rgba(255,255,255,.05)" />)}
+        {[0.36, 0.68].map((y) => <line key={y} x1="0" x2={width} y1={height * y} y2={height * y} stroke="rgba(255,255,255,.035)" />)}
+        <line x1="0" x2={width} y1={baseline} y2={baseline} stroke="rgba(76,194,255,.08)" />
         <path d={area} fill="url(#yokaiHeat)" />
-        <path d={path} fill="none" stroke="url(#yokaiLine)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <path d={path} fill="none" stroke="url(#yokaiLine)" strokeWidth="7" strokeOpacity=".15" filter="url(#yokaiHeatGlow)" vectorEffect="non-scaling-stroke" />
+        <path className="yokai-heat-line" pathLength="1" d={path} fill="none" stroke="url(#yokaiLine)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {chartPoints.filter((point) => point.value > 0).map((point, index) => (
+          <circle key={`${point.x}:${index}`} cx={point.x} cy={point.y} r="1.8" fill="#d9f4ff" fillOpacity=".72" />
+        ))}
+        <circle className="yokai-heat-latest" cx={last.x} cy={last.y} r="2.4" fill="#f0c876" />
       </svg>
-      <span className="absolute bottom-2 left-3 font-kicker text-[8px] tracking-[0.2em] text-slate-700">7D SIGNAL VELOCITY</span>
+      <span className="absolute bottom-2 left-3 font-kicker text-[8px] tracking-[0.2em] text-slate-700">7D NARRATIVE PULSE</span>
     </div>
   );
 }
@@ -501,15 +547,12 @@ function TokenDetail({ token, onClose }: { token: YokaiToken; onClose: () => voi
         <SmallDetail label="主動流品質" value={token.flow_quality} tone={token.flow_quality === "REAL" ? "text-long" : "text-short"} />
         <SmallDetail label="主動流方向" value={`${directionLabel(token.active_flow_direction)} ${(token.active_flow_strength * 100).toFixed(0)}%`} tone={directionTone(token.active_flow_direction)} />
         <SmallDetail label="CVD 訊號" value={token.cvd_signal ?? "目前沒有明顯背離"} />
-        <SmallDetail label="正式條件" value={token.qualified_long ? "全部通過" : "尚未通過"} tone={token.qualified_long ? "text-long" : "text-short"} />
+        <SmallDetail label="確認狀態" value={token.qualified_long ? "做多確認" : "觀察中"} tone={token.qualified_long ? "text-long" : "text-slate-400"} />
       </div>
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <ReasonPanel title="已確認條件" icon={<CheckCircle2 className="text-long" />} reasons={token.reasons} empty="尚無完整確認條件" tone="long" />
-        <ReasonPanel title="未通過／風險" icon={<ShieldAlert className="text-short" />} reasons={token.blocked_reasons} empty="沒有阻擋條件" tone="short" />
-      </div>
+      <ConfirmationProgress token={token} />
       <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-xs leading-5 text-slate-400">
         <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-        妖氣值是題材熱度，不是上漲機率；只有「做多確認」代表外部題材與 Gate 正式條件同時成立。
+        妖氣值是題材熱度，不是上漲機率；「做多確認」代表題材、資金結構與時機投票成立且沒有紅色否決，不代表可忽略進場位置與風控。
       </div>
     </ModalShell>
   );
@@ -523,8 +566,71 @@ function SmallDetail({ label, value, tone = "text-slate-200" }: { label: string;
   return <div className="rounded-lg border border-white/5 bg-black/15 px-3 py-3"><div className="text-[10px] text-slate-600">{label}</div><div className={`font-data mt-1 text-sm ${tone}`}>{value}</div></div>;
 }
 
-function ReasonPanel({ title, icon, reasons, empty, tone }: { title: string; icon: React.ReactNode; reasons: string[]; empty: string; tone: "long" | "short" }) {
-  return <div className={`rounded-xl border p-4 ${tone === "long" ? "border-long/15 bg-long/[.035]" : "border-short/15 bg-short/[.035]"}`}><h3 className="flex items-center gap-2 text-sm font-semibold text-slate-100"><span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>{title}</h3><div className="mt-3 space-y-2">{reasons.length ? reasons.map((reason) => <div key={reason} className="flex items-start gap-2 text-xs leading-5 text-slate-400"><span className={`mt-2 h-1 w-1 shrink-0 rounded-full ${tone === "long" ? "bg-long" : "bg-short"}`} />{reason}</div>) : <p className="text-xs text-slate-600">{empty}</p>}</div></div>;
+const CONFIRMATION_STEPS = [
+  { prefix: "題材確認", label: "題材確認", fallback: "0/2" },
+  { prefix: "資金結構", label: "資金結構", fallback: "0/2" },
+  { prefix: "進場時機", label: "進場時機", fallback: "0/4" }
+] as const;
+
+function ConfirmationProgress({ token }: { token: YokaiToken }) {
+  const progressPrefixes = CONFIRMATION_STEPS.map((step) => step.prefix);
+  const riskReasons = token.blocked_reasons.filter(
+    (reason) => !progressPrefixes.some((prefix) => reason.startsWith(prefix))
+  );
+
+  return (
+    <div className="mt-5 space-y-4">
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-slate-100">做多確認進度</h3>
+          <span className={`rounded-full border px-2.5 py-1 text-[10px] ${token.qualified_long ? "border-long/30 bg-long/10 text-long" : "border-white/10 bg-white/5 text-slate-500"}`}>
+            {token.qualified_long ? "條件成立" : "持續觀察"}
+          </span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {CONFIRMATION_STEPS.map((step) => {
+            const passedReason = token.reasons.find((reason) => reason.startsWith(step.prefix));
+            const blockedReason = token.blocked_reasons.find((reason) => reason.startsWith(step.prefix));
+            const reason = passedReason ?? blockedReason;
+            const score = reason?.match(/(\d+)\/(\d+)/)?.[0] ?? step.fallback;
+            const detail = reason?.replace(`${step.prefix} ${score}：`, "") ?? "等待進入評估";
+            const [current, total] = score.split("/").map(Number);
+            const progress = total ? Math.min(100, (current / total) * 100) : 0;
+            const complete = Boolean(passedReason);
+            return (
+              <div key={step.prefix} className={`rounded-xl border p-4 ${complete ? "border-long/20 bg-long/[.045]" : "border-white/[.07] bg-black/15"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                    {complete ? <CheckCircle2 className="h-4 w-4 text-long" /> : <CircleAlert className="h-4 w-4 text-gold" />}
+                    {step.label}
+                  </span>
+                  <span className={`font-data text-sm ${complete ? "text-long" : "text-goldhi"}`}>{score}</span>
+                </div>
+                <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[.06]">
+                  <div className={`h-full rounded-full ${complete ? "bg-long" : "bg-gold"}`} style={{ width: `${progress}%` }} />
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-slate-500">{detail}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={`rounded-xl border px-4 py-3 ${riskReasons.length ? "border-short/20 bg-short/[.04]" : "border-long/15 bg-long/[.03]"}`}>
+        <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+          {riskReasons.length ? <ShieldAlert className="h-4 w-4 text-short" /> : <CheckCircle2 className="h-4 w-4 text-long" />}
+          紅色否決／資料狀態
+        </h3>
+        {riskReasons.length ? (
+          <div className="mt-2 space-y-1.5">
+            {riskReasons.map((reason) => <p key={reason} className="text-xs leading-5 text-slate-400">• {reason}</p>)}
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-slate-500">目前沒有紅色否決；尚未確認時，只需等待上方進度補足。</p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function EmptyCard({ text }: { text: string }) {
