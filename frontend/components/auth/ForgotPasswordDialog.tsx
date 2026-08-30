@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, KeyRound, X } from "lucide-react";
 import { Field, FormMessage, SubmitButton } from "@/components/auth/AuthFields";
 import { resetPassword } from "@/lib/auth";
@@ -28,6 +29,12 @@ export function ForgotPasswordDialog({
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +57,7 @@ export function ForgotPasswordDialog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   async function handleReset(event: React.FormEvent) {
     event.preventDefault();
@@ -71,7 +78,7 @@ export function ForgotPasswordDialog({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#03050a]/80 px-4 py-8 backdrop-blur-md"
       role="dialog"
@@ -185,6 +192,7 @@ export function ForgotPasswordDialog({
           </div>
         ) : null}
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
