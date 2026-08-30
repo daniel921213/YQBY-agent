@@ -23,3 +23,13 @@ class MeResponse(BaseModel):
 
 class RedeemRequest(BaseModel):
     code: str = Field(..., min_length=4, max_length=32)
+
+
+class PasswordResetRequest(BaseModel):
+    uid: str = Field(..., min_length=1, max_length=64)
+    code: str = Field(..., min_length=4, max_length=64)
+    new_password: str = Field(..., min_length=6, max_length=200)
+
+
+class PasswordResetResponse(BaseModel):
+    message: str

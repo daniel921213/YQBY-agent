@@ -18,6 +18,9 @@ class User(Base):
     # expires (expires_at stays NULL). Accounts are never deleted — access is gated.
     plan: Mapped[str] = mapped_column(String(16), nullable=False, server_default="trial")
     expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Included in JWTs. Password reset increments it so every older login token
+    # becomes invalid without touching the user's entitlement.
+    auth_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
 
 class ActivationCode(Base):
@@ -30,6 +33,26 @@ class ActivationCode(Base):
     tier: Mapped[str] = mapped_column(String(16), nullable=False)  # "30d" | "lifetime"
     created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
     used_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    used_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PasswordResetCode(Base):
+    """Pre-generated reset-code inventory.
+
+    The raw code is derived from ``nonce`` with a server-side secret and is
+    never stored. A stock row cannot reset an account until an administrator
+    binds it to one UID, at which point it expires after a short window.
+    """
+
+    __tablename__ = "password_reset_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nonce: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    assigned_uid_key: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    issued_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
     used_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
 
 

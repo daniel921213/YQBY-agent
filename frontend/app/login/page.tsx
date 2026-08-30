@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Field, FormMessage, SubmitButton } from "@/components/auth/AuthFields";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import { loginUser } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -56,9 +58,23 @@ export default function LoginPage() {
           placeholder="你的密碼"
           autoComplete="current-password"
         />
+        <div className="-mt-1 text-right">
+          <button
+            type="button"
+            onClick={() => setForgotPasswordOpen(true)}
+            className="auth-link text-sm"
+          >
+            忘記密碼？
+          </button>
+        </div>
         <FormMessage error={error} />
         <SubmitButton loading={loading}>登入</SubmitButton>
       </form>
+      <ForgotPasswordDialog
+        open={forgotPasswordOpen}
+        initialUid={uid}
+        onClose={() => setForgotPasswordOpen(false)}
+      />
     </AuthShell>
   );
 }

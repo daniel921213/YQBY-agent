@@ -55,6 +55,40 @@ export async function loginUser(uid: string, password: string): Promise<void> {
   }
 }
 
+export async function resetPassword(
+  uid: string,
+  code: string,
+  newPassword: string
+): Promise<string> {
+  const url = new URL("/api/v1/auth/password-reset", API_BASE_URL);
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        uid: normalizeUid(uid),
+        code: code.trim(),
+        new_password: newPassword
+      })
+    });
+  } catch {
+    throw new Error("目前無法連線，請稍後再試");
+  }
+
+  const data = (await response.json().catch(() => ({}))) as {
+    detail?: unknown;
+    message?: string;
+  };
+  if (!response.ok) {
+    const message =
+      typeof data.detail === "string" ? data.detail : "重設失敗，請確認資料後再試";
+    throw new Error(message);
+  }
+  logout();
+  return data.message ?? "密碼已重設，請使用新密碼登入";
+}
+
 export function getCurrentUser(): string | null {
   if (!isBrowser()) return null;
   return window.localStorage.getItem(UID_KEY);

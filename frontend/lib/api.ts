@@ -1,5 +1,5 @@
 import type { AnalysisResponse, AnomalyHistoryResponse, ScanResponse, YokaiResponse } from "@/lib/types";
-import { getToken } from "@/lib/auth";
+import { getToken, logout } from "@/lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -29,6 +29,13 @@ async function request<T>(path: string, label: string, init?: RequestInit): Prom
     },
     cache: "no-store"
   });
+
+  if (response.status === 401) {
+    logout();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.replace("/login");
+    }
+  }
 
   if (!response.ok) {
     let detail: unknown = null;
