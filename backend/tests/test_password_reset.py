@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 
 from app.db import Base, SessionLocal
@@ -24,6 +24,47 @@ def test_fresh_database_is_seeded_once_with_exactly_100_codes() -> None:
     with Session(engine) as db:
         assert ensure_inventory(db) == 100
         assert ensure_inventory(db) == 100
+        rows = db.query(PasswordResetCode).all()
+        assert len(rows) == 100
+        assert all(row.code and row.code.startswith("RESET-") for row in rows)
+        assert len({row.code for row in rows}) == 100
+
+
+def test_legacy_inventory_migration_adds_and_backfills_readable_code() -> None:
+    from app.services.auth_security_migration import run_auth_security_migration
+    from app.services.password_reset_service import ensure_inventory
+
+    engine = create_engine("sqlite:///:memory:")
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE users ("
+                "id INTEGER PRIMARY KEY, auth_version INTEGER NOT NULL DEFAULT 0)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE TABLE password_reset_codes ("
+                "id INTEGER PRIMARY KEY, nonce VARCHAR(64) NOT NULL UNIQUE, "
+                "code_hash VARCHAR(64) NOT NULL UNIQUE, assigned_uid_key VARCHAR(64), "
+                "created_at DATETIME, issued_at DATETIME, expires_at DATETIME, used_at DATETIME)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO password_reset_codes (nonce, code_hash) "
+                "VALUES ('legacy-nonce', 'legacy-hash')"
+            )
+        )
+
+    run_auth_security_migration(engine)
+    assert "code" in {
+        column["name"] for column in inspect(engine).get_columns("password_reset_codes")
+    }
+    with Session(engine) as db:
+        assert ensure_inventory(db, target=1) == 1
+        row = db.query(PasswordResetCode).one()
+        assert row.code and row.code.startswith("RESET-")
 
 
 def _register(client: TestClient) -> tuple[str, str]:
@@ -43,6 +84,21 @@ def _issue(client: TestClient, uid: str) -> dict:
     )
     assert response.status_code == 200
     return response.json()
+
+
+def _available_database_code() -> str:
+    with SessionLocal() as db:
+        row = (
+            db.query(PasswordResetCode)
+            .filter(
+                PasswordResetCode.assigned_uid_key.is_(None),
+                PasswordResetCode.used_at.is_(None),
+            )
+            .order_by(PasswordResetCode.id)
+            .first()
+        )
+        assert row is not None and row.code
+        return row.code
 
 
 @pytest.mark.parametrize(
@@ -67,13 +123,11 @@ def test_reset_preserves_entitlement_and_revokes_old_token(plan, expires_delta) 
         before = client.get("/api/v1/auth/me", headers=old_headers)
         assert before.status_code == 200
 
-        issued = _issue(client, uid)
-        assert issued["code"].startswith("RESET-")
-        assert issued["stock_remaining"] >= 100
+        code = _available_database_code()
 
         reset = client.post(
             "/api/v1/auth/password-reset",
-            json={"uid": uid, "code": issued["code"], "new_password": NEW_PASSWORD},
+            json={"uid": uid, "code": code, "new_password": NEW_PASSWORD},
         )
         assert reset.status_code == 200
 
@@ -100,7 +154,7 @@ def test_reset_preserves_entitlement_and_revokes_old_token(plan, expires_delta) 
         # The reset code is one-time only.
         reused = client.post(
             "/api/v1/auth/password-reset",
-            json={"uid": uid, "code": issued["code"], "new_password": "third-password"},
+            json={"uid": uid, "code": code, "new_password": "third-password"},
         )
         assert reused.status_code == 400
 
@@ -117,7 +171,8 @@ def test_inventory_is_hidden_preseeded_and_replenished() -> None:
         assert status.json()["stock"] >= 100
 
         uid, _ = _register(client)
-        _issue(client, uid)
+        issued = _issue(client, uid)
+        assert issued["expires_at"] is None
         replenished = client.get(
             "/api/v1/admin/password-resets/status", headers=ADMIN_HEADERS
         )
@@ -125,17 +180,17 @@ def test_inventory_is_hidden_preseeded_and_replenished() -> None:
         assert replenished.json()["active"] >= 1
 
 
-def test_code_is_uid_bound_and_expires_after_15_minutes() -> None:
+def test_database_code_is_unbound_until_use_then_cannot_be_reused() -> None:
     with TestClient(app) as client:
         uid_a, _ = _register(client)
         uid_b, _ = _register(client)
-        issued = _issue(client, uid_a)
+        code = _available_database_code()
 
-        wrong_user = client.post(
+        first_use = client.post(
             "/api/v1/auth/password-reset",
-            json={"uid": uid_b, "code": issued["code"], "new_password": NEW_PASSWORD},
+            json={"uid": uid_a, "code": code, "new_password": NEW_PASSWORD},
         )
-        assert wrong_user.status_code == 400
+        assert first_use.status_code == 200
 
         with SessionLocal() as db:
             row = (
@@ -145,14 +200,25 @@ def test_code_is_uid_bound_and_expires_after_15_minutes() -> None:
                 .first()
             )
             assert row is not None
-            row.expires_at = datetime.now(UTC) - timedelta(seconds=1)
-            db.commit()
+            assert row.used_at is not None
+            assert row.expires_at is None
 
-        expired = client.post(
+        reused_for_another_uid = client.post(
             "/api/v1/auth/password-reset",
-            json={"uid": uid_a, "code": issued["code"], "new_password": NEW_PASSWORD},
+            json={"uid": uid_b, "code": code, "new_password": NEW_PASSWORD},
         )
-        assert expired.status_code == 400
+        assert reused_for_another_uid.status_code == 400
+
+        with SessionLocal() as db:
+            remaining = (
+                db.query(PasswordResetCode)
+                .filter(
+                    PasswordResetCode.assigned_uid_key.is_(None),
+                    PasswordResetCode.used_at.is_(None),
+                )
+                .count()
+            )
+            assert remaining >= 100
 
 
 def test_public_reset_is_rate_limited() -> None:

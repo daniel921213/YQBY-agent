@@ -1,4 +1,4 @@
-"""Issue a 15-minute password-reset code for one UID through the hidden API.
+"""Optionally reserve one database reset code for a UID through the hidden API.
 
 PowerShell example:
     $env:NOVA_API_URL = "https://<your-backend>.up.railway.app"
@@ -38,7 +38,7 @@ def main() -> int:
     result = response.json()
     print(f"UID：{result['uid']}")
     print(f"重設碼：{result['code']}")
-    print(f"有效期限：{result['expires_at']}（15 分鐘）")
+    print("有效期限：不會自動過期（使用後立即作廢）")
     print(f"Railway 預備庫存：{result['stock_remaining']}")
     return 0
 

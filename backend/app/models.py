@@ -37,16 +37,14 @@ class ActivationCode(Base):
 
 
 class PasswordResetCode(Base):
-    """Pre-generated reset-code inventory.
-
-    The raw code is derived from ``nonce`` with a server-side secret and is
-    never stored. A stock row cannot reset an account until an administrator
-    binds it to one UID, at which point it expires after a short window.
-    """
+    """Activation-code-style, single-use password-reset inventory."""
 
     __tablename__ = "password_reset_codes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # Deliberately readable in Railway, matching the activation-code workflow.
+    # Nullable only so the startup migration can backfill already-deployed rows.
+    code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
     nonce: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     code_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     assigned_uid_key: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)

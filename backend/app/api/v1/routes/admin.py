@@ -41,7 +41,7 @@ class IssuePasswordResetRequest(BaseModel):
 class IssuePasswordResetResponse(BaseModel):
     uid: str
     code: str
-    expires_at: datetime
+    expires_at: datetime | None
     stock_remaining: int
 
 
