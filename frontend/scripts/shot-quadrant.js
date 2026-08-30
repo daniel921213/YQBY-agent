@@ -34,8 +34,8 @@ const { chromium } = require("playwright");
   await page.waitForTimeout(800);
   await page.screenshot({ path: "scripts/dash-anomaly.png", fullPage: false });
 
-  // 數據榜單 tab with the OI quadrant map.
-  await page.getByRole("button", { name: /數據榜單/ }).click();
+  // 資金異動雷達 tab with the OI quadrant map.
+  await page.getByRole("button", { name: /資金異動雷達/ }).click();
   await page.waitForTimeout(1200);
   await page.screenshot({ path: "scripts/quadrant-tab.png", fullPage: true });
 

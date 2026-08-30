@@ -61,7 +61,7 @@ function Dashboard() {
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
     { key: "anomaly", label: "異常警報", icon: <AlertTriangle className="h-4 w-4" />, count: items.length },
     { key: "screener", label: "選幣 · 全市場", icon: <ListFilter className="h-4 w-4" />, count: universe.length },
-    { key: "data", label: "數據榜單", icon: <BarChart3 className="h-4 w-4" /> }
+    { key: "data", label: "資金異動雷達", icon: <BarChart3 className="h-4 w-4" /> }
   ];
 
   // 到期判斷雙保險：/me 說到期，或資料請求吃到 403 expired（session 中途過期）。
