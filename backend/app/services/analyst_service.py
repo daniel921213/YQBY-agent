@@ -9,6 +9,7 @@ degrades gracefully so the app still runs.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -25,6 +26,8 @@ from app.core.constants import (
 from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
 from app.services.scan_cache import scan_cache
+
+logger = logging.getLogger(__name__)
 
 # ── Gate public API skills (read-only) ───────────────────────────────
 # Bundled SKILL.md docs are injected into the system prompt; the agent calls the
@@ -236,6 +239,24 @@ def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return {"error": f"{type(exc).__name__}: {exc}"}
 
 
+def _friendly_anthropic_error(exc: Exception) -> str:
+    """Translate provider failures into useful, non-sensitive user messages."""
+    detail = str(exc).lower()
+    error_name = type(exc).__name__
+
+    if "credit balance is too low" in detail or "billing" in detail:
+        return "（分析師暫時無法回覆：AI 服務額度不足，請管理員補充 API Credits 後再試。）"
+    if error_name == "AuthenticationError" or "invalid x-api-key" in detail:
+        return "（分析師暫時無法回覆：AI 服務驗證失敗，請管理員檢查 API Key。）"
+    if error_name == "RateLimitError" or "rate limit" in detail:
+        return "（目前詢問人數較多，分析師暫時忙碌，請稍後再試。）"
+    if error_name in {"APIConnectionError", "APITimeoutError"}:
+        return "（分析師目前無法連線至 AI 服務，請稍後再試。）"
+    if error_name == "BadRequestError":
+        return "（分析師收到無法處理的請求，請稍後再試；若持續發生請通知管理員。）"
+    return "（分析師服務暫時異常，請稍後再試。）"
+
+
 def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
     """Run one analyst turn. messages: [{role: 'user'|'assistant', content: str}]."""
     settings = get_settings()
@@ -290,4 +311,7 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
             return {"reply": text, "tools_used": tools_used}
         return {"reply": "（分析步驟過多，已中止。）", "tools_used": tools_used}
     except Exception as exc:
-        return {"reply": f"（分析師錯誤：{type(exc).__name__}）", "tools_used": tools_used}
+        # Keep the full provider response in Railway logs for diagnosis, but do
+        # not expose request IDs or upstream internals in the chat UI.
+        logger.exception("Anthropic analyst request failed")
+        return {"reply": _friendly_anthropic_error(exc), "tools_used": tools_used}
