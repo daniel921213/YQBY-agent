@@ -76,6 +76,7 @@ export function RichJournal({ document, journalId, editable = false, onChange, o
       Placeholder.configure({ placeholder: "直接輸入交易想法，或按 Ctrl+V 貼上截圖…" }),
       FileHandler.configure({
         allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+        consumePasteEvent: true,
         onPaste: (editor, files) => { files.forEach((file) => void insertImage(file, editor)); },
         onDrop: (editor, files, pos) => { files.forEach((file) => void insertImage(file, editor, pos)); }
       })
