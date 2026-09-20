@@ -16,7 +16,8 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(typeof body.detail === "string" ? body.detail : `請求失敗 (${response.status})`);
+    const detail = body.detail === "member_plan_required" ? "此功能僅開放有效的 30 天與永久會員" : body.detail;
+    throw new Error(typeof detail === "string" ? detail : `請求失敗 (${response.status})`);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;

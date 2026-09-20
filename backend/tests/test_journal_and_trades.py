@@ -43,15 +43,14 @@ def test_journal_private_publish_snapshot_name_and_events():
         teacher_uid, teacher = account(client, "lifetime")
         _, member = account(client, "lifetime")
         ordinary_uid, ordinary = account(client, "trial")
-        # A trial account can write privately but cannot publish.
+        # Trial accounts do not get access to either private or public journals.
         from datetime import UTC, datetime, timedelta
         with SessionLocal() as db:
             user = db.query(User).filter(User.uid_key == ordinary_uid.lower()).one()
             user.expires_at = datetime.now(UTC) + timedelta(days=2)
             db.commit()
-        own_draft = client.post("/api/v1/journals/mine", json={"title": "私人日誌", "blocks": [{"type": "paragraph", "text": "只給自己看"}]}, headers=ordinary)
-        assert own_draft.status_code == 201
-        assert client.post(f"/api/v1/journals/mine/{own_draft.json()['id']}/publish", headers=ordinary).status_code == 403
+        assert client.get("/api/v1/journals/mine", headers=ordinary).status_code == 403
+        assert client.post("/api/v1/journals/mine", json={"title": "私人日誌"}, headers=ordinary).status_code == 403
         name = client.put(f"/api/v1/admin/users/{teacher_uid}/display-name", json={"display_name": "吉吉"}, headers={"X-Admin-Key": "test-admin-secret"})
         assert name.status_code == 200
         assert name.json()["display_name"] == "吉吉"
@@ -132,3 +131,46 @@ def test_rich_journal_paste_image_and_published_snapshot():
         assert client.post(f"/api/v1/journals/mine/{journal_id}/publish", headers=teacher).status_code == 200
         assert client.get(f"/api/v1/journals/published/{journal_id}", headers=reader).json()["document"] == second
         assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).status_code == 404
+
+
+def test_trades_and_journals_require_active_30d_or_lifetime():
+    from datetime import UTC, datetime, timedelta
+
+    with TestClient(app) as client:
+        member_uid, member = account(client, "member")
+        trial_uid, trial = account(client, "trial")
+        _, unactivated = account(client, "unactivated")
+        with SessionLocal() as db:
+            for uid in (member_uid, trial_uid):
+                user = db.query(User).filter(User.uid_key == uid.lower()).one()
+                user.expires_at = datetime.now(UTC) + timedelta(days=10)
+            db.commit()
+
+        assert client.get("/api/v1/trades", headers=member).status_code == 200
+        assert client.get("/api/v1/journals/mine", headers=member).status_code == 200
+        assert client.post("/api/v1/journals/mine", json={"title": "30 天日誌"}, headers=member).status_code == 201
+        assert client.get("/api/v1/journals/published", headers=member).status_code == 200
+        assert client.get("/api/v1/journals/events", headers=member).status_code == 200
+
+        blocked = [
+            ("GET", "/api/v1/trades", None),
+            ("POST", "/api/v1/trades", {}),
+            ("GET", "/api/v1/journals/mine", None),
+            ("POST", "/api/v1/journals/mine", {"title": "blocked"}),
+            ("GET", "/api/v1/journals/published", None),
+            ("GET", "/api/v1/journals/events", None),
+            ("GET", "/api/v1/journals/images/1", None),
+        ]
+        for headers in (trial, unactivated):
+            for method, path, body in blocked:
+                response = client.request(method, path, json=body, headers=headers)
+                assert response.status_code == 403, (method, path, response.text)
+                assert response.json()["detail"] == "member_plan_required"
+
+        with SessionLocal() as db:
+            user = db.query(User).filter(User.uid_key == member_uid.lower()).one()
+            user.expires_at = datetime.now(UTC) - timedelta(hours=1)
+            db.commit()
+        for method, path, body in blocked:
+            response = client.request(method, path, json=body, headers=member)
+            assert response.status_code == 403, (method, path, response.text)

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download, Pencil, Plus, Trash2, TrendingUp } from "lucide-react";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { MemberFeatureGate } from "@/components/auth/MemberFeatureGate";
 import { PageHeader } from "@/components/nav/PageHeader";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { deleteTrade, listTrades, saveTrade, type Trade, type TradeInput } from "@/lib/journal-api";
@@ -76,7 +77,7 @@ function EquityChart({ values }: { values: number[] }) {
   );
 }
 
-export default function BacktestPage() { return <AuthGuard><Backtest /></AuthGuard>; }
+export default function BacktestPage() { return <AuthGuard><MemberFeatureGate title="回測系統"><Backtest /></MemberFeatureGate></AuthGuard>; }
 
 function Backtest() {
   const [trades, setTrades] = useState<Trade[]>([]);

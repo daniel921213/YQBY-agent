@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { BookOpen, CheckCircle2, Plus, Send, Trash2, XCircle } from "lucide-react";
 import type { JSONContent } from "@tiptap/core";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { MemberFeatureGate } from "@/components/auth/MemberFeatureGate";
 import { RichJournal, documentExcerpt, legacyDocument } from "@/components/journal/RichJournal";
 import { PageHeader } from "@/components/nav/PageHeader";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { fetchMe, type Entitlement } from "@/lib/api";
 import { deleteJournal, myJournals, newJournal, publicJournal, publicJournals, publishJournal, saveJournal, teachers, unpublishJournal, type Journal, type Teacher } from "@/lib/journal-api";
 
-export default function JournalPage() { return <AuthGuard><JournalWorkspace /></AuthGuard>; }
+export default function JournalPage() { return <AuthGuard><MemberFeatureGate title="交易日誌"><JournalWorkspace /></MemberFeatureGate></AuthGuard>; }
 
 type Notice = { message: string; kind: "success" | "error" };
 

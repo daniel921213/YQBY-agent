@@ -13,8 +13,8 @@ const NAV_ITEMS = [
   { href: "/beginner", label: "新手專區", description: "開戶・看盤・SMC 入門", icon: GraduationCap },
   { href: "/mentors", label: "團隊專區", description: "認識 CT_Trader 團隊", icon: Users },
   { href: "/yokai", label: "妖怪篩選器", description: "題材熱度 × Gate 數據確認", icon: Radar },
-  { href: "/backtest", label: "回測系統", description: "私人交易紀錄與績效分析", icon: LineChart },
-  { href: "/journal", label: "交易日誌", description: "私人筆記與老師日誌", icon: BookOpen }
+  { href: "/backtest", label: "回測系統", description: "30 天／永久 · 私人績效", icon: LineChart },
+  { href: "/journal", label: "交易日誌", description: "30 天／永久 · 私人與老師日誌", icon: BookOpen }
 ] as const;
 
 /** 左上角 CT 字紋按鈕 + 左側滑出導覽抽屜。桌機/手機共用一套。 */

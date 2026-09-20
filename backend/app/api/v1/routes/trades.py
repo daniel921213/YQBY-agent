@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.v1.routes.auth import require_active_user
+from app.api.v1.routes.auth import require_member_user
 from app.db import get_db
 from app.models import Trade
 
@@ -85,13 +85,13 @@ def own_trade(db: Session, trade_id: int, user_id: int) -> Trade:
 
 
 @router.get("")
-def list_trades(user=Depends(require_active_user), db: Session = Depends(get_db)) -> list[dict]:
+def list_trades(user=Depends(require_member_user), db: Session = Depends(get_db)) -> list[dict]:
     rows = db.scalars(select(Trade).where(Trade.owner_id == user.id).order_by(Trade.exit_at.desc(), Trade.id.desc())).all()
     return [serialize(row) for row in rows]
 
 
 @router.post("", status_code=201)
-def create_trade(data: TradeInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def create_trade(data: TradeInput, user=Depends(require_member_user), db: Session = Depends(get_db)) -> dict:
     row = Trade(owner_id=user.id)
     apply_input(row, data)
     db.add(row)
@@ -101,7 +101,7 @@ def create_trade(data: TradeInput, user=Depends(require_active_user), db: Sessio
 
 
 @router.put("/{trade_id}")
-def update_trade(trade_id: int, data: TradeInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def update_trade(trade_id: int, data: TradeInput, user=Depends(require_member_user), db: Session = Depends(get_db)) -> dict:
     row = own_trade(db, trade_id, user.id)
     apply_input(row, data)
     db.commit()
@@ -109,7 +109,7 @@ def update_trade(trade_id: int, data: TradeInput, user=Depends(require_active_us
 
 
 @router.delete("/{trade_id}", status_code=204)
-def delete_trade(trade_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> None:
+def delete_trade(trade_id: int, user=Depends(require_member_user), db: Session = Depends(get_db)) -> None:
     row = own_trade(db, trade_id, user.id)
     db.delete(row)
     db.commit()

@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.v1.routes.auth import require_active_user
+from app.api.v1.routes.auth import require_active_user, require_member_user
 from app.db import get_db
 from app.models import Journal, JournalEvent, JournalImage, JournalRead, User
 from app.services.auth_service import PLAN_LIFETIME
 
-router = APIRouter(prefix="/journals", tags=["journals"])
+router = APIRouter(prefix="/journals", tags=["journals"], dependencies=[Depends(require_member_user)])
 
 
 class Block(BaseModel):

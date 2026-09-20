@@ -127,12 +127,22 @@ def require_lifetime_user(user=Depends(current_session)):
     return user
 
 
-def require_yokai_user(user=Depends(current_session)):
-    """Allow Yokai Intelligence for lifetime or active 30-day members."""
-    has_access = user.plan == auth_service.PLAN_LIFETIME or (
+def has_member_access(user) -> bool:
+    """Features available to permanent accounts or unexpired 30-day members."""
+    return user.plan == auth_service.PLAN_LIFETIME or (
         user.plan == auth_service.PLAN_MEMBER and auth_service.is_active(user)
     )
-    if not has_access:
+
+
+def require_member_user(user=Depends(current_session)):
+    if not has_member_access(user):
+        raise HTTPException(status_code=403, detail="member_plan_required")
+    return user
+
+
+def require_yokai_user(user=Depends(current_session)):
+    """Allow Yokai Intelligence for lifetime or active 30-day members."""
+    if not has_member_access(user):
         raise HTTPException(status_code=403, detail="yokai_plan_required")
     return user
 

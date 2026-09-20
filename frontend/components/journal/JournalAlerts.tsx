@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { journalEvents, markJournalEventsRead, type JournalEvent } from "@/lib/journal-api";
 
 export function JournalAlerts() {
   const [events, setEvents] = useState<JournalEvent[]>([]);
+  const { me } = useEntitlement();
+  const allowed = me?.plan === "lifetime" || (me?.plan === "member" && me.active);
 
   useEffect(() => {
+    if (!allowed) { setEvents([]); return; }
     let alive = true;
     const check = async () => {
       try {
@@ -24,9 +28,9 @@ export function JournalAlerts() {
     const onFocus = () => void check();
     window.addEventListener("focus", onFocus);
     return () => { alive = false; window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
-  }, []);
+  }, [allowed]);
 
-  if (!events.length) return null;
+  if (!allowed || !events.length) return null;
   return (
     <div className="fixed bottom-4 right-4 z-[70] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2" aria-live="polite">
       {events.map((event) => (
