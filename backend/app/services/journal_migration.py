@@ -15,6 +15,8 @@ def run_journal_migration(engine) -> None:
             "tags_json": "TEXT DEFAULT '[]'",
             "published_date": "DATE",
             "published_tags_json": "TEXT",
+            "document_json": "TEXT",
+            "published_document_json": "TEXT",
         }
         with engine.begin() as connection:
             for name, definition in additions.items():

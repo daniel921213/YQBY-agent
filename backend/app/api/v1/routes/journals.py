@@ -28,6 +28,7 @@ class JournalInput(BaseModel):
     journal_date: date = Field(default_factory=lambda: datetime.now(UTC).date())
     tags: list[str] = Field(default_factory=list, max_length=10)
     blocks: list[Block] = Field(default_factory=list, max_length=200)
+    document: dict | None = None
 
 
 class ReadEventsInput(BaseModel):
@@ -65,14 +66,55 @@ def row_json(row: Journal, author: User, published: bool = False) -> dict:
         "journal_date": (row.published_date if published else row.journal_date) or row.created_at.date(),
         "tags": json.loads((row.published_tags_json if published else row.tags_json) or "[]"),
         "blocks": json.loads(row.published_blocks_json or "[]") if published else json.loads(row.blocks_json),
+        "document": json.loads(row.published_document_json if published else row.document_json) if (row.published_document_json if published else row.document_json) else None,
         "is_published": row.is_published,
         "created_at": utc(row.created_at),
         "updated_at": utc(row.published_at if published else row.updated_at),
     }
 
 
-def validate_images(db: Session, journal_id: int, blocks: list[Block]) -> None:
+def document_image_ids(document: dict | None) -> set[int]:
+    if document is None:
+        return set()
+    if document.get("type") != "doc" or not isinstance(document.get("content", []), list):
+        raise HTTPException(status_code=422, detail="invalid_journal_document")
+    ids: set[int] = set()
+    count = 0
+
+    def walk(node: dict, depth: int = 0) -> None:
+        nonlocal count
+        count += 1
+        if count > 2000 or depth > 30 or not isinstance(node, dict):
+            raise HTTPException(status_code=422, detail="invalid_journal_document")
+        if node.get("type") == "journalImage":
+            attrs = node.get("attrs")
+            image_id = attrs.get("imageId") if isinstance(attrs, dict) else None
+            if not isinstance(image_id, int) or image_id <= 0:
+                raise HTTPException(status_code=422, detail="invalid_journal_image")
+            ids.add(image_id)
+        children = node.get("content", [])
+        if not isinstance(children, list):
+            raise HTTPException(status_code=422, detail="invalid_journal_document")
+        for child in children:
+            walk(child, depth + 1)
+
+    walk(document)
+    if len(json.dumps(document, ensure_ascii=False)) > 500_000:
+        raise HTTPException(status_code=422, detail="journal_document_too_large")
+    return ids
+
+
+def document_has_content(document: dict | None) -> bool:
+    if not document:
+        return False
+    def has_content(node: dict) -> bool:
+        return node.get("type") == "journalImage" or bool(str(node.get("text", "")).strip()) or any(has_content(child) for child in node.get("content", []) if isinstance(child, dict))
+    return has_content(document)
+
+
+def validate_images(db: Session, journal_id: int, blocks: list[Block], document: dict | None = None) -> None:
     image_ids = {block.image_id for block in blocks if block.type == "image" and block.image_id is not None}
+    image_ids.update(document_image_ids(document))
     if not image_ids:
         return
     rows = db.scalars(select(JournalImage).where(JournalImage.id.in_(image_ids), JournalImage.journal_id == journal_id)).all()
@@ -88,9 +130,9 @@ def list_mine(user=Depends(require_active_user), db: Session = Depends(get_db)) 
 
 @router.post("/mine", status_code=201)
 def create_journal(data: JournalInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
-    if any(block.type == "image" for block in data.blocks):
+    if any(block.type == "image" for block in data.blocks) or document_image_ids(data.document):
         raise HTTPException(status_code=422, detail="create_before_adding_images")
-    row = Journal(owner_id=user.id, title=data.title.strip() or "未命名日誌", journal_date=data.journal_date, tags_json=json.dumps([tag.strip()[:30] for tag in data.tags if tag.strip()], ensure_ascii=False), blocks_json=json.dumps([block.model_dump() for block in data.blocks], ensure_ascii=False))
+    row = Journal(owner_id=user.id, title=data.title.strip() or "未命名日誌", journal_date=data.journal_date, tags_json=json.dumps([tag.strip()[:30] for tag in data.tags if tag.strip()], ensure_ascii=False), blocks_json=json.dumps([block.model_dump() for block in data.blocks], ensure_ascii=False), document_json=json.dumps(data.document, ensure_ascii=False) if data.document else None)
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -105,11 +147,12 @@ def get_mine(journal_id: int, user=Depends(require_active_user), db: Session = D
 @router.put("/mine/{journal_id}")
 def update_journal(journal_id: int, data: JournalInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
     row = mine(db, journal_id, user.id)
-    validate_images(db, row.id, data.blocks)
+    validate_images(db, row.id, data.blocks, data.document)
     row.title = data.title.strip() or "未命名日誌"
     row.journal_date = data.journal_date
     row.tags_json = json.dumps([tag.strip()[:30] for tag in data.tags if tag.strip()], ensure_ascii=False)
     row.blocks_json = json.dumps([block.model_dump() for block in data.blocks], ensure_ascii=False)
+    row.document_json = json.dumps(data.document, ensure_ascii=False) if data.document else None
     row.updated_at = datetime.now(UTC)
     db.commit()
     return row_json(row, user)
@@ -129,12 +172,13 @@ def publish_journal(journal_id: int, user=Depends(require_active_user), db: Sess
     if user.plan != PLAN_LIFETIME:
         raise HTTPException(status_code=403, detail="lifetime_required")
     row = mine(db, journal_id, user.id)
-    if not row.title.strip() or not json.loads(row.blocks_json):
+    if not row.title.strip() or not (document_has_content(json.loads(row.document_json)) if row.document_json else bool(json.loads(row.blocks_json))):
         raise HTTPException(status_code=422, detail="journal_content_required")
     row.published_title = row.title
     row.published_date = row.journal_date
     row.published_tags_json = row.tags_json
     row.published_blocks_json = row.blocks_json
+    row.published_document_json = row.document_json
     row.is_published = True
     row.published_at = datetime.now(UTC)
     db.add(JournalEvent(journal_id=row.id, author_id=user.id))
@@ -150,6 +194,7 @@ def unpublish_journal(journal_id: int, user=Depends(require_active_user), db: Se
     row.published_date = None
     row.published_tags_json = None
     row.published_blocks_json = None
+    row.published_document_json = None
     row.published_at = None
     db.commit()
     return row_json(row, user)
@@ -205,7 +250,8 @@ def get_image(image_id: int, user=Depends(require_active_user), db: Session = De
     if journal is None:
         raise HTTPException(status_code=404, detail="image_not_found")
     if journal.owner_id != user.id:
-        if not journal.is_published or not any(block.get("image_id") == image_id for block in json.loads(journal.published_blocks_json or "[]")):
+        published_images = document_image_ids(json.loads(journal.published_document_json)) if journal.published_document_json else set()
+        if not journal.is_published or (image_id not in published_images and not any(block.get("image_id") == image_id for block in json.loads(journal.published_blocks_json or "[]"))):
             raise HTTPException(status_code=404, detail="image_not_found")
     return Response(content=image.data, media_type=image.content_type, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 

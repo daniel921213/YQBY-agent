@@ -106,3 +106,29 @@ def test_private_image_requires_published_reference():
         assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).content == png
         assert client.post(f"/api/v1/journals/mine/{journal_id}/unpublish", headers=teacher).status_code == 200
         assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).status_code == 404
+
+
+def test_rich_journal_paste_image_and_published_snapshot():
+    png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+XqaoAAAAASUVORK5CYII=")
+    with TestClient(app) as client:
+        _, teacher = account(client, "lifetime")
+        _, reader = account(client, "lifetime")
+        journal_id = client.post("/api/v1/journals/mine", json={"title": "SP500"}, headers=teacher).json()["id"]
+        image_id = client.post(f"/api/v1/journals/mine/{journal_id}/images", content=png, headers={**teacher, "Content-Type": "image/png"}).json()["id"]
+        first = {"type": "doc", "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": "第一版分析"}]},
+            {"type": "journalImage", "attrs": {"imageId": image_id, "alt": "圖表"}},
+        ]}
+        saved = client.put(f"/api/v1/journals/mine/{journal_id}", json={"title": "SP500", "document": first}, headers=teacher)
+        assert saved.status_code == 200
+        assert saved.json()["document"] == first
+        assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).status_code == 404
+        assert client.post(f"/api/v1/journals/mine/{journal_id}/publish", headers=teacher).status_code == 200
+        assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).content == png
+        second = {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "未發布修訂"}]}]}
+        assert client.put(f"/api/v1/journals/mine/{journal_id}", json={"title": "SP500", "document": second}, headers=teacher).status_code == 200
+        assert client.get(f"/api/v1/journals/published/{journal_id}", headers=reader).json()["document"] == first
+        assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).content == png
+        assert client.post(f"/api/v1/journals/mine/{journal_id}/publish", headers=teacher).status_code == 200
+        assert client.get(f"/api/v1/journals/published/{journal_id}", headers=reader).json()["document"] == second
+        assert client.get(f"/api/v1/journals/images/{image_id}", headers=reader).status_code == 404

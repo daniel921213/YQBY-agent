@@ -2476,6 +2476,14 @@ html[data-theme="light"] .auth-scene .auth-input:focus {
 html[data-theme="light"] .auth-scene .auth-link { color: rgb(var(--au-gold)); }
 html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold-deep)); }
 
+.journal-rich-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: rgb(var(--c-slate-500));
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;

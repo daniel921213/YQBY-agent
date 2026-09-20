@@ -1,4 +1,5 @@
 import { getToken, logout } from "@/lib/auth";
+import type { JSONContent } from "@tiptap/core";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -33,7 +34,7 @@ export const saveTrade = (data: TradeInput, id?: number) => call<Trade>(id ? `/t
 export const deleteTrade = (id: number) => call<void>(`/trades/${id}`, { method: "DELETE" });
 
 export type Block = { type: "paragraph" | "heading" | "bullet" | "image"; text: string; image_id?: number | null };
-export type Journal = { id: number; author_id: number; author_name: string; title: string; journal_date: string; tags: string[]; blocks: Block[]; is_published: boolean; created_at: string; updated_at: string | null };
+export type Journal = { id: number; author_id: number; author_name: string; title: string; journal_date: string; tags: string[]; blocks: Block[]; document: JSONContent | null; is_published: boolean; created_at: string; updated_at: string | null };
 export type Teacher = { id: number; name: string; count: number };
 export type JournalEvent = { id: number; journal_id: number; teacher_name: string; title: string };
 export const myJournals = () => call<Journal[]>("/journals/mine");
@@ -42,7 +43,7 @@ export const newJournal = () => {
   const journal_date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return call<Journal>("/journals/mine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "未命名日誌", journal_date, blocks: [] }) });
 };
-export const saveJournal = (id: number, title: string, journal_date: string, tags: string[], blocks: Block[]) => call<Journal>(`/journals/mine/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, journal_date, tags, blocks }) });
+export const saveJournal = (id: number, title: string, journal_date: string, tags: string[], document: JSONContent) => call<Journal>(`/journals/mine/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, journal_date, tags, blocks: [], document }) });
 export const deleteJournal = (id: number) => call<void>(`/journals/mine/${id}`, { method: "DELETE" });
 export const publishJournal = (id: number) => call<Journal>(`/journals/mine/${id}/publish`, { method: "POST" });
 export const unpublishJournal = (id: number) => call<Journal>(`/journals/mine/${id}/unpublish`, { method: "POST" });
