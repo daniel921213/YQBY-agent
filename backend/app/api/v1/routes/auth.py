@@ -140,6 +140,7 @@ def require_yokai_user(user=Depends(current_session)):
 def _me_response(user) -> MeResponse:
     return MeResponse(
         uid=user.uid,
+        display_name=user.display_name,
         plan=user.plan,
         expires_at=user.expires_at,
         days_left=auth_service.days_left(user),

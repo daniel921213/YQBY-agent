@@ -8,10 +8,13 @@ from app.api.v1.routes.analysis import router as analysis_router
 from app.api.v1.routes.analyst import router as analyst_router
 from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.yokai import router as yokai_router
+from app.api.v1.routes.trades import router as trades_router
+from app.api.v1.routes.journals import router as journals_router
 from app.core.config import get_settings
 from app.db import SessionLocal, engine, init_db
 from app.services.auth_security_migration import run_auth_security_migration
 from app.services.entitlement_migration import run_entitlement_migration
+from app.services.journal_migration import run_journal_migration
 from app.services.password_reset_service import ensure_inventory
 from app.services.scan_cache import scan_cache
 from app.services.yokai_service import yokai_cache
@@ -26,6 +29,7 @@ async def lifespan(app: FastAPI):
     # the (public) dashboard from starting — only auth would be affected.
     try:
         init_db()
+        run_journal_migration(engine)
         run_auth_security_migration(engine)
         # 冪等的資格遷移：補欄位 + 幫「還沒有資格設定」的舊帳號 backfill
         # （永久名單 → lifetime、其他 → 試用 +7 天）。套用過就是 no-op。
@@ -61,6 +65,8 @@ app.include_router(analyst_router, prefix=settings.api_v1_prefix)
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(admin_router, prefix=settings.api_v1_prefix)
 app.include_router(yokai_router, prefix=settings.api_v1_prefix)
+app.include_router(trades_router, prefix=settings.api_v1_prefix)
+app.include_router(journals_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

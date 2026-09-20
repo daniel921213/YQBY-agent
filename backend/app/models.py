@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, LargeBinary, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -21,6 +21,73 @@ class User(Base):
     # Included in JWTs. Password reset increments it so every older login token
     # becomes invalid without touching the user's entitlement.
     auth_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    display_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class Trade(Base):
+    __tablename__ = "trades"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    symbol: Mapped[str] = mapped_column(String(64), nullable=False)
+    market: Mapped[str] = mapped_column(String(16), nullable=False)
+    currency: Mapped[str] = mapped_column(String(12), nullable=False)
+    side: Mapped[str] = mapped_column(String(5), nullable=False)
+    entry_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=False)
+    exit_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=False)
+    entry_price: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    exit_price: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    quantity: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    point_value: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    fees: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    net_pnl: Mapped[object] = mapped_column(Numeric(24, 8), nullable=False)
+    strategy: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Journal(Base):
+    __tablename__ = "journals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    journal_date: Mapped[object] = mapped_column(Date, nullable=True)
+    tags_json: Mapped[str] = mapped_column(Text, nullable=False, server_default="[]")
+    blocks_json: Mapped[str] = mapped_column(Text, nullable=False, server_default="[]")
+    published_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    published_date: Mapped[object] = mapped_column(Date, nullable=True)
+    published_tags_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    published_blocks_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="0")
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    published_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class JournalImage(Base):
+    __tablename__ = "journal_images"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    journal_id: Mapped[int] = mapped_column(ForeignKey("journals.id"), index=True, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+
+class JournalEvent(Base):
+    __tablename__ = "journal_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    journal_id: Mapped[int] = mapped_column(ForeignKey("journals.id"), index=True, nullable=False)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class JournalRead(Base):
+    __tablename__ = "journal_reads"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    last_event_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
 
 class ActivationCode(Base):

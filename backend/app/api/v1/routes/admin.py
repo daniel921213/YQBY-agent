@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db import get_db
+from app.models import User
 from app.services import activation_service, password_reset_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -49,6 +50,25 @@ class PasswordResetInventoryResponse(BaseModel):
     stock: int
     active: int
     used_or_cancelled: int
+
+
+class DisplayNameRequest(BaseModel):
+    display_name: str | None = Field(default=None, max_length=64)
+
+
+@router.put("/users/{uid}/display-name", dependencies=[Depends(require_admin)])
+def set_display_name(uid: str, req: DisplayNameRequest, db: Session = Depends(get_db)) -> dict[str, str | None]:
+    from sqlalchemy import select
+
+    user = db.scalar(select(User).where(User.uid_key == uid.strip().lower()))
+    if user is None:
+        raise HTTPException(status_code=404, detail="user_not_found")
+    name = req.display_name.strip() if req.display_name else None
+    if name is not None and not name:
+        name = None
+    user.display_name = name
+    db.commit()
+    return {"uid": user.uid, "display_name": user.display_name}
 
 
 @router.post("/codes", response_model=CreateCodesResponse, dependencies=[Depends(require_admin)])

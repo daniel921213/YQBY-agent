@@ -15,7 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import User
+from app.models import JournalEvent, JournalRead, User
+from sqlalchemy import func
 
 MIN_UID_LEN = 3
 MIN_PASSWORD_LEN = 6
@@ -97,6 +98,10 @@ def register(db: Session, uid: str, password: str) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    # A new account should only be notified about publications after signup.
+    latest_event = db.scalar(select(func.max(JournalEvent.id))) or 0
+    db.add(JournalRead(user_id=user.id, last_event_id=latest_event))
+    db.commit()
     return user
 
 

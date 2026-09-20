@@ -15,6 +15,7 @@ class AuthResponse(BaseModel):
 
 class MeResponse(BaseModel):
     uid: str
+    display_name: str | None = None
     plan: str  # "unactivated" | "trial" | "member" | "lifetime"
     expires_at: datetime | None
     days_left: int | None  # None = 永久；0 = 已到期

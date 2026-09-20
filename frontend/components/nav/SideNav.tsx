@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GraduationCap, LayoutDashboard, LineChart, Radar, Users, X } from "lucide-react";
+import { JournalAlerts } from "@/components/journal/JournalAlerts";
+import { BookOpen, GraduationCap, LayoutDashboard, LineChart, Radar, Users, X } from "lucide-react";
 
 const NAV_ITEMS = [
+  { href: "/backtest", label: "回測系統", description: "私人交易紀錄與績效分析", icon: LineChart },
+  { href: "/journal", label: "交易日誌", description: "私人筆記與老師日誌", icon: BookOpen },
   { href: "/", label: "主控台", description: "早期異動雷達", icon: LayoutDashboard },
   { href: "/indicators", label: "指標專區", description: "CT_NOVA 指標介紹", icon: LineChart },
   { href: "/beginner", label: "新手專區", description: "開戶・看盤・SMC 入門", icon: GraduationCap },
@@ -43,6 +46,7 @@ export function SideNav() {
 
   return (
     <>
+      <JournalAlerts />
       {/* CT 字紋選單鈕：香檳金漸層字 = 品牌記號，不是漢堡圖示 */}
       <button
         type="button"
