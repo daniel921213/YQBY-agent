@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bold, Heading2, Heading3, ImagePlus, Italic, List, ListOrdered, Quote, Redo2, Undo2 } from "lucide-react";
+import { Bold, Heading2, Heading3, ImagePlus, Italic, List, ListOrdered, Palette, Quote, Redo2, Undo2 } from "lucide-react";
 import { Node, type JSONContent } from "@tiptap/core";
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { FileHandler } from "@tiptap/extension-file-handler";
 import { Placeholder } from "@tiptap/extensions";
+import { Color, TextStyle } from "@tiptap/extension-text-style";
 import { journalImageUrl, uploadJournalImage, type Block } from "@/lib/journal-api";
 
 export const emptyDocument: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
+const textColors = [
+  { label: "白色", value: "#F3F4F6" },
+  { label: "金色", value: "#F0C876" },
+  { label: "綠色", value: "#83D89B" },
+  { label: "紅色", value: "#E87979" },
+  { label: "藍色", value: "#72B9F8" },
+  { label: "紫色", value: "#C6A7F7" }
+];
 
 export function legacyDocument(blocks: Block[]): JSONContent {
   if (!blocks.length) return emptyDocument;
@@ -68,10 +77,13 @@ type Props = {
 export function RichJournal({ document, journalId, editable = false, onChange, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const [, setSelection] = useState(0);
   const editor = useEditor({
     extensions: [
       StarterKit,
+      TextStyle,
+      Color,
       JournalImage,
       Placeholder.configure({ placeholder: "直接輸入交易想法，或按 Ctrl+V 貼上截圖…" }),
       FileHandler.configure({
@@ -102,6 +114,7 @@ export function RichJournal({ document, journalId, editable = false, onChange, o
   }
 
   const tool = (label: string, Icon: typeof Bold, action: () => void, active = false, disabled = false) => <button key={label} type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action} className={`rounded-md p-2 transition hover:bg-white/10 disabled:opacity-40 ${active ? "bg-gold/15 text-gold" : "text-slate-300"}`}><Icon className="h-4 w-4" /></button>;
+  const currentColor = editor?.getAttributes("textStyle").color as string | undefined;
 
   return <div className="journal-rich-editor">
     {editable && <div className="mb-4 flex flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1.5" role="toolbar" aria-label="日誌文字格式">
@@ -110,6 +123,15 @@ export function RichJournal({ document, journalId, editable = false, onChange, o
       <span className="mx-1 h-5 w-px bg-white/10" />
       {tool("粗體", Bold, () => editor?.chain().focus().toggleBold().run(), editor?.isActive("bold"))}
       {tool("斜體", Italic, () => editor?.chain().focus().toggleItalic().run(), editor?.isActive("italic"))}
+      <div className="relative">
+        <button type="button" title="文字顏色" aria-label="文字顏色" aria-expanded={colorOpen} onClick={() => setColorOpen((value) => !value)} className={`rounded-md p-2 transition hover:bg-white/10 ${colorOpen || currentColor ? "bg-gold/15 text-gold" : "text-slate-300"}`}><Palette className="h-4 w-4" /></button>
+        {colorOpen && <div className="absolute left-0 top-full z-20 mt-2 w-52 rounded-lg border border-white/15 bg-[#1c2535] p-3 shadow-2xl" role="group" aria-label="選擇文字顏色">
+          <p className="mb-2 text-xs text-slate-400">文字顏色</p>
+          <div className="grid grid-cols-6 gap-2">{textColors.map(({ label, value }) => <button key={value} type="button" aria-label={label} title={label} aria-pressed={currentColor?.toLowerCase() === value.toLowerCase()} onMouseDown={(event) => event.preventDefault()} onClick={() => { editor?.chain().focus().setColor(value).run(); setColorOpen(false); }} className={`h-6 w-6 rounded-full border-2 ${currentColor?.toLowerCase() === value.toLowerCase() ? "border-white" : "border-transparent"}`} style={{ backgroundColor: value }} />)}</div>
+          <label className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-300">自訂顏色<input type="color" aria-label="自訂文字顏色" value={currentColor && /^#[0-9a-f]{6}$/i.test(currentColor) ? currentColor : "#F0C876"} onChange={(event) => editor?.chain().focus().setColor(event.target.value).run()} className="h-8 w-12 cursor-pointer rounded border border-white/10 bg-transparent" /></label>
+          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { editor?.chain().focus().unsetColor().run(); setColorOpen(false); }} className="mt-3 w-full rounded-md border border-white/10 px-2 py-1.5 text-left text-xs text-slate-300 hover:bg-white/5">清除文字顏色</button>
+        </div>}
+      </div>
       <span className="mx-1 h-5 w-px bg-white/10" />
       {tool("項目清單", List, () => editor?.chain().focus().toggleBulletList().run(), editor?.isActive("bulletList"))}
       {tool("編號清單", ListOrdered, () => editor?.chain().focus().toggleOrderedList().run(), editor?.isActive("orderedList"))}
