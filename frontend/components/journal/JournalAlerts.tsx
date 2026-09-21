@@ -37,7 +37,7 @@ export function JournalAlerts() {
         <div key={event.id} className="glass-panel flex items-start gap-3 rounded-xl border border-gold/30 p-4 shadow-2xl">
           <Bell className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
           <a href={`/journal?view=teachers&entry=${event.journal_id}`} className="min-w-0 flex-1 text-sm text-slate-100 hover:text-gold">
-            <strong>{event.teacher_name}老師已更新日誌</strong>
+            <strong>{event.teacher_name}已更新日誌</strong>
             <span className="mt-1 block truncate text-xs text-slate-400">{event.title}</span>
           </a>
           <button aria-label="關閉通知" onClick={() => setEvents((current) => current.filter((item) => item.id !== event.id))} className="text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>
