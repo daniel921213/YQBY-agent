@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Bold, Heading2, Heading3, ImagePlus, Italic, List, ListOrdered, Palette, Quote, Redo2, Undo2 } from "lucide-react";
 import { Node, type JSONContent } from "@tiptap/core";
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps } from "@tiptap/react";
@@ -8,7 +8,9 @@ import StarterKit from "@tiptap/starter-kit";
 import { FileHandler } from "@tiptap/extension-file-handler";
 import { Placeholder } from "@tiptap/extensions";
 import { Color, TextStyle } from "@tiptap/extension-text-style";
-import { journalImageUrl, uploadJournalImage, type Block } from "@/lib/journal-api";
+import { uploadJournalImage, type Block } from "@/lib/journal-api";
+import { ProtectedImage } from "./ProtectedImage";
+import { JournalReader } from "./JournalReader";
 
 export const emptyDocument: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
 const textColors = [
@@ -39,20 +41,8 @@ export function documentExcerpt(document: JSONContent | null, blocks: Block[]): 
   return words.join(" ").trim() || "點擊閱讀交易日誌";
 }
 
-function ProtectedImage({ imageId, alt }: { imageId: number; alt: string }) {
-  const [url, setUrl] = useState("");
-  useEffect(() => {
-    let active = true;
-    let objectUrl = "";
-    journalImageUrl(imageId).then((value) => { objectUrl = value; if (active) setUrl(value); else URL.revokeObjectURL(value); }).catch(() => {});
-    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [imageId]);
-  // eslint-disable-next-line @next/next/no-img-element
-  return url ? <img src={url} alt={alt} className="my-4 max-h-[700px] w-full rounded-lg border border-white/10 object-contain" /> : <div className="my-4 flex h-28 items-center justify-center rounded-lg border border-white/10 text-sm text-slate-500">圖片載入中…</div>;
-}
-
 function JournalImageView({ node }: NodeViewProps) {
-  return <NodeViewWrapper className="journal-image"><ProtectedImage imageId={Number(node.attrs.imageId)} alt={String(node.attrs.alt || "日誌圖片")} /></NodeViewWrapper>;
+  return <NodeViewWrapper className="journal-image"><ProtectedImage key={node.attrs.imageId} imageId={Number(node.attrs.imageId)} alt={String(node.attrs.alt || "日誌圖片")} /></NodeViewWrapper>;
 }
 
 const JournalImage = Node.create({
@@ -74,7 +64,11 @@ type Props = {
   onError?: (message: string) => void;
 };
 
-export function RichJournal({ document, journalId, editable = false, onChange, onError }: Props) {
+export function RichJournal(props: Props) {
+  return props.editable ? <JournalEditor {...props} /> : <JournalReader document={props.document} />;
+}
+
+function JournalEditor({ document, journalId, editable = false, onChange, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);

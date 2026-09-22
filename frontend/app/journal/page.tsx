@@ -111,7 +111,7 @@ function JournalWorkspace() {
   const switchView = async (next: "mine" | "teachers") => { try { if (next === "teachers") await flush(); setView(next); setError(""); } catch (err) { reportError(err, "切換失敗"); } };
   const visible = published.filter((item) => teacherId === null || item.author_id === teacherId);
 
-  return <main className="relative min-h-screen px-4 py-5 sm:px-6 lg:px-8"><SpaceParticleField /><div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5"><PageHeader title="交易日誌" kicker="TRADING JOURNAL" />
+  return <main className="journal-shell relative min-h-screen px-4 py-5 sm:px-6 lg:px-8"><SpaceParticleField /><div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-5"><PageHeader title="交易日誌" kicker="TRADING JOURNAL" />
     <div><h2 className="text-2xl font-bold text-white">交易日誌</h2><p className="mt-1 text-sm text-slate-400">記下每次交易的想法，也可閱讀老師公開的日誌。</p></div>
     {error && <p role="alert" className="rounded-lg border border-short/30 bg-short/10 p-3 text-sm text-short">{error}</p>}
     {notice && <div role={notice.kind === "error" ? "alert" : "status"} aria-live={notice.kind === "error" ? "assertive" : "polite"} className={`fixed bottom-5 right-5 z-[70] flex max-w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-2xl ${notice.kind === "success" ? "border-long/40 bg-[#173429] text-long" : "border-short/40 bg-[#402329] text-short"}`}>{notice.kind === "success" ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /> : <XCircle className="mt-0.5 h-5 w-5 shrink-0" />}<span>{notice.message}</span><button type="button" aria-label="關閉提示" onClick={() => setNotice(null)} className="ml-1 opacity-70 hover:opacity-100">×</button></div>}

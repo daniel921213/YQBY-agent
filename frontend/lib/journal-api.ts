@@ -59,9 +59,9 @@ export async function uploadJournalImage(journalId: number, file: File): Promise
   return result.id;
 }
 
-export async function journalImageUrl(imageId: number): Promise<string> {
+export async function journalImageUrl(imageId: number, signal?: AbortSignal): Promise<string> {
   const token = getToken();
-  const response = await fetch(new URL(`/api/v1/journals/images/${imageId}`, BASE), { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" });
+  const response = await fetch(new URL(`/api/v1/journals/images/${imageId}`, BASE), { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store", signal });
   if (!response.ok) throw new Error("圖片無法載入");
   return URL.createObjectURL(await response.blob());
 }

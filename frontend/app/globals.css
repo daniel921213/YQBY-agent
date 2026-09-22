@@ -2476,6 +2476,30 @@ html[data-theme="light"] .auth-scene .auth-input:focus {
 html[data-theme="light"] .auth-scene .auth-link { color: rgb(var(--au-gold)); }
 html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold-deep)); }
 
+/* A long article must not become a full-height blurred compositing surface
+   when iOS magnifies it. Keep native pinch zoom and the theme's panel color. */
+.journal-shell article.glass-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.journal-reader {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px), (pointer: coarse) {
+  .journal-shell .glass-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  /* Keep the static background gradient, without animated filter layers. */
+  .journal-shell .space-particle-field::before,
+  .journal-shell .space-particle-field > * {
+    display: none;
+  }
+}
+
 .journal-rich-editor .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: rgb(var(--c-slate-500));
