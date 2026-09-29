@@ -24,6 +24,8 @@ import {
 import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ScheduledMembership } from "@/components/auth/ScheduledMembership";
+import { PageHeader } from "@/components/nav/PageHeader";
 import { ModalShell } from "@/components/dashboard/ModalShell";
 import { SideNav } from "@/components/nav/SideNav";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
@@ -90,6 +92,7 @@ function YokaiEntitlementGate() {
   }
 
   const hasYokaiAccess = me.plan === "lifetime" || (me.plan === "member" && me.active);
+  if (me.scheduled) return <main className="relative min-h-screen px-4 py-5"><SpaceParticleField /><div className="relative z-10"><PageHeader title="妖怪篩選器" kicker="MEMBER ACCESS" /><ScheduledMembership me={me} /></div></main>;
   if (!hasYokaiAccess) return <YokaiAccessWall entitlement={me} />;
   return <YokaiIntelligence />;
 }

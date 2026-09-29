@@ -46,6 +46,10 @@ def run_entitlement_migration(engine, session_factory) -> None:
             column_type = "TIMESTAMPTZ" if engine.dialect.name == "postgresql" else "DATETIME"
             conn.execute(text(f"ALTER TABLE users ADD COLUMN expires_at {column_type} NULL"))
             print("[entitlement] added users.expires_at")
+        if "starts_at" not in existing:
+            column_type = "TIMESTAMPTZ" if engine.dialect.name == "postgresql" else "DATETIME"
+            conn.execute(text(f"ALTER TABLE users ADD COLUMN starts_at {column_type} NULL"))
+            print("[entitlement] added users.starts_at")
 
     lifetime_keys = {uid.lower() for uid in LIFETIME_UIDS}
     trial_expiry = datetime.now(UTC) + timedelta(days=TRIAL_DAYS)

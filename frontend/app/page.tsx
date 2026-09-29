@@ -14,6 +14,7 @@ import { AnalystChat } from "@/components/analyst/AnalystChat";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { ExpiredWall } from "@/components/dashboard/ExpiredWall";
+import { ScheduledMembership } from "@/components/auth/ScheduledMembership";
 import { SideNav } from "@/components/nav/SideNav";
 import { SpaceParticleField } from "@/components/visual/SpaceParticleField";
 import { useEntitlement } from "@/hooks/useEntitlement";
@@ -85,9 +86,9 @@ function Dashboard() {
               <AccountMenu />
             </div>
           </header>
-          <ExpiredWall
+          {me?.scheduled ? <ScheduledMembership me={me} /> : <ExpiredWall
             variant={me !== null && me.plan === "unactivated" ? "new" : "expired"}
-          />
+          />}
         </div>
       </main>
     );

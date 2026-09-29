@@ -29,5 +29,12 @@ export function useEntitlement() {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!me?.scheduled) return;
+    // A page left open before the start date will unlock after server validation.
+    const timer = window.setInterval(() => void refresh(), 30_000);
+    return () => window.clearInterval(timer);
+  }, [me?.scheduled, refresh]);
+
   return { me, loading, error, refresh };
 }

@@ -115,8 +115,15 @@ def _as_utc(value: datetime | None) -> datetime | None:
 def is_active(user: User) -> bool:
     if user.plan == PLAN_LIFETIME:
         return True
+    starts = _as_utc(user.starts_at)
     expires = _as_utc(user.expires_at)
-    return expires is not None and expires > datetime.now(UTC)
+    now = datetime.now(UTC)
+    return (starts is None or starts <= now) and expires is not None and expires > now
+
+
+def is_scheduled(user: User) -> bool:
+    starts = _as_utc(user.starts_at)
+    return user.plan != PLAN_LIFETIME and starts is not None and starts > datetime.now(UTC)
 
 
 def days_left(user: User) -> int | None:
@@ -126,7 +133,9 @@ def days_left(user: User) -> int | None:
     expires = _as_utc(user.expires_at)
     if expires is None:
         return 0
-    remaining = (expires - datetime.now(UTC)).total_seconds()
+    starts = _as_utc(user.starts_at)
+    now = datetime.now(UTC)
+    remaining = (expires - max(now, starts or now)).total_seconds()
     return max(0, -(-int(remaining) // 86400))
 
 

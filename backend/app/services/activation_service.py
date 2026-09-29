@@ -102,6 +102,7 @@ def redeem(db: Session, user: User, raw_code: str) -> ActivationCode:
     now = datetime.now(UTC)
     if row.tier == TIER_LIFETIME:
         user.plan = PLAN_LIFETIME
+        user.starts_at = None
         user.expires_at = None
     else:
         current = _as_utc(user.expires_at)

@@ -17,6 +17,7 @@ class User(Base):
     # Entitlement: `trial`/`member` expire at `expires_at`; `lifetime` never
     # expires (expires_at stays NULL). Accounts are never deleted — access is gated.
     plan: Mapped[str] = mapped_column(String(16), nullable=False, server_default="trial")
+    starts_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
     # Included in JWTs. Password reset increments it so every older login token
     # becomes invalid without touching the user's entitlement.

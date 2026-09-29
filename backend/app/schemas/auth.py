@@ -17,6 +17,8 @@ class MeResponse(BaseModel):
     uid: str
     display_name: str | None = None
     plan: str  # "unactivated" | "trial" | "member" | "lifetime"
+    starts_at: datetime | None = None
+    scheduled: bool = False
     expires_at: datetime | None
     days_left: int | None  # None = 永久；0 = 已到期
     active: bool
