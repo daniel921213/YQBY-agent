@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.core.config import get_settings
@@ -17,8 +18,11 @@ Base = declarative_base()
 
 
 def _make_engine():
-    url = get_settings().resolved_database_url
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    url = make_url(get_settings().resolved_database_url)
+    # Use the installed psycopg2 driver regardless of SQLAlchemy's default.
+    if url.drivername == "postgresql":
+        url = url.set(drivername="postgresql+psycopg2")
+    connect_args = {"check_same_thread": False} if url.get_backend_name() == "sqlite" else {}
     return create_engine(url, pool_pre_ping=True, connect_args=connect_args, future=True)
 
 
