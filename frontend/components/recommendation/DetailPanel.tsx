@@ -33,7 +33,7 @@ function buildTradingViewUrl(symbol: string): string | null {
 
   if (!ticker || !ticker.endsWith("USDT")) return null;
 
-  const tradingViewSymbol = `GATEIO:${ticker}.P`;
+  const tradingViewSymbol = `BITGET:${ticker}.P`;
   const params = new URLSearchParams({
     symbol: tradingViewSymbol,
     interval: "15"
@@ -290,8 +290,8 @@ function ModalFrame({
               <a
                 href={tradingViewUrl}
                 className="group inline-flex h-9 items-center justify-center gap-2 rounded-md border border-sky-400/35 bg-sky-400/[.07] px-3 text-xs font-medium text-sky-200 transition hover:border-sky-300/65 hover:bg-sky-400/[.13] hover:text-white"
-                title={`交由 TradingView 開啟 Gate ${symbol} 永續合約 15m 圖表`}
-                aria-label={`交由 TradingView 開啟 Gate ${symbol} 永續合約 15 分鐘圖表；無法開啟 App 時使用網頁版`}
+                title={`交由 TradingView 開啟 Bitget ${symbol} 永續合約 15m 圖表`}
+                aria-label={`交由 TradingView 開啟 Bitget ${symbol} 永續合約 15 分鐘圖表；無法開啟 App 時使用網頁版`}
               >
                 <LineChart className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">TradingView 開啟</span>
@@ -301,7 +301,7 @@ function ModalFrame({
             ) : (
               <span
                 className="inline-flex h-9 cursor-not-allowed items-center gap-2 rounded-md border border-white/[.07] px-3 text-xs text-slate-600"
-                title="此代號目前無法建立 Gate TradingView 圖表連結"
+                title="此代號目前無法建立 Bitget TradingView 圖表連結"
                 aria-disabled="true"
               >
                 <LineChart className="h-3.5 w-3.5" />
