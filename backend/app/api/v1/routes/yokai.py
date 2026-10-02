@@ -4,6 +4,7 @@ from app.api.v1.routes.auth import require_yokai_user
 from app.schemas.yokai import YokaiResponse
 from app.services.scan_cache import scan_cache
 from app.services.yokai_service import yokai_cache
+from app.services.symbol_universe import UniverseUnavailable
 
 
 router = APIRouter(tags=["yokai"], dependencies=[Depends(require_yokai_user)])
@@ -13,4 +14,9 @@ router = APIRouter(tags=["yokai"], dependencies=[Depends(require_yokai_user)])
 def yokai_overview() -> YokaiResponse:
     """Narrative intelligence overlaid with the latest authoritative Gate scan."""
 
-    return yokai_cache.response(scan_cache.latest)
+    try:
+        scan = scan_cache.latest
+    except UniverseUnavailable:
+        # News remains available when the independent market catalog is down.
+        scan = None
+    return yokai_cache.response(scan)

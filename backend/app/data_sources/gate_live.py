@@ -210,6 +210,11 @@ class GateLiveMarketDataSource(MarketDataSource):
         self._settings = get_settings()
 
     def list_symbols(self) -> list[str]:
+        from app.services.symbol_universe import symbol_universe
+        return symbol_universe.symbols(self._list_gate_symbols)
+
+    def _list_gate_symbols(self) -> list[str]:
+        """Original Gate eligibility/ranking, before any universe size cap."""
         tickers = self._client.get_json("/futures/usdt/tickers")
         # Gate returns the complete contract list from this endpoint and does
         # not accept a ``limit`` query parameter. Sending one produces HTTP
@@ -236,9 +241,6 @@ class GateLiveMarketDataSource(MarketDataSource):
                 reverse=True,
             )
         ]
-        size = self._settings.scan_universe_size
-        if size and size > 0:
-            ranked = ranked[:size]
         return [_to_display(contract) for contract in ranked]
 
     def get_klines(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:

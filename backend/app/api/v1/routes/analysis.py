@@ -18,6 +18,7 @@ from app.schemas.scoring import (
 from app.services.analysis_service import AnalysisService
 from app.services.anomaly_tracker import anomaly_tracker
 from app.services.scan_cache import scan_cache
+from app.services.symbol_universe import allowed_symbols
 
 
 # 全部資料端點都要「登入且未到期」；到期回 403 "expired"，前端切打馬擋板。
@@ -102,4 +103,8 @@ def scan_market(
 
 @router.get("/anomaly-history", response_model=AnomalyHistoryResponse)
 def anomaly_history() -> AnomalyHistoryResponse:
-    return AnomalyHistoryResponse(items=anomaly_tracker.history)
+    allowed = allowed_symbols()
+    items = anomaly_tracker.history
+    if allowed is not None:
+        items = [item for item in items if item.symbol in allowed]
+    return AnomalyHistoryResponse(items=items)

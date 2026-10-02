@@ -290,7 +290,7 @@ def test_gate_symbol_universe_excludes_tradfi_and_delisting_contracts() -> None:
 
     source._client = Client()
 
-    assert source.list_symbols() == ["BTCUSDT", "ETHUSDT"]
+    assert source._list_gate_symbols() == ["BTCUSDT", "ETHUSDT"]
     assert calls == [
         ("/futures/usdt/tickers", None),
         ("/futures/usdt/contracts", None),

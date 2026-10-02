@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.routes.admin import router as admin_router
 from app.api.v1.routes.analysis import router as analysis_router
@@ -18,6 +19,7 @@ from app.services.journal_migration import run_journal_migration
 from app.services.password_reset_service import ensure_inventory
 from app.services.scan_cache import scan_cache
 from app.services.yokai_service import yokai_cache
+from app.services.symbol_universe import UniverseUnavailable, UnsupportedSymbol
 
 
 settings = get_settings()
@@ -51,6 +53,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+
+@app.exception_handler(UniverseUnavailable)
+async def universe_unavailable_handler(request, exc):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(UnsupportedSymbol)
+async def unsupported_symbol_handler(request, exc):
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
 
 app.add_middleware(
     CORSMiddleware,

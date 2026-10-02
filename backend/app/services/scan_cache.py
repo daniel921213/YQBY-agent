@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 
 from app.core.config import get_settings
 from app.core.constants import (
@@ -12,9 +13,10 @@ from app.core.constants import (
 )
 from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
+from app.services.symbol_universe import allowed_symbols
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error.scan_cache")
 
 
 class ScanCache:
@@ -35,9 +37,15 @@ class ScanCache:
     @property
     def latest(self) -> ScanResponse | None:
         with self._lock:
-            return self._latest
+            latest = self._latest
+        if latest is not None:
+            allowed = allowed_symbols()
+            if allowed is not None and not set(latest.scanned_symbols).issubset(allowed):
+                return None
+        return latest
 
     def refresh_once(self, cap: int | None = None) -> None:
+        started = time.monotonic()
         service = AnalysisService()
         symbols = service.market_data.list_symbols()
         if cap:
@@ -59,6 +67,8 @@ class ScanCache:
             )
         with self._lock:
             self._latest = result
+        logger.info("Market scan completed: requested=%d analyzed=%d elapsed=%.1fs warmup=%s",
+                    len(symbols), result.breadth.total, time.monotonic() - started, cap is not None)
 
     def _run(self, interval: float, warmup_cap: int) -> None:
         try:

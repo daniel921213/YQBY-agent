@@ -74,6 +74,7 @@ def _pillar_breakdown(evidence: list) -> list[PillarScore]:
 from app.scoring.engine import ScoringEngine
 from app.services.anomaly_tracker import anomaly_tracker
 from app.services.market_data_service import MarketDataService
+from app.services.symbol_universe import require_supported_symbols
 
 
 def _bars_for(seconds: int, primary_timeframe: str) -> int:
@@ -253,6 +254,7 @@ class AnalysisService:
         trend_timeframe: str,
         lookback: int,
     ) -> AnalysisResponse:
+        require_supported_symbols([symbol])
         # The 5-pillar model derives 1h/4h/24h momentum and relative strength from
         # the single primary frame, so trigger/trend frames are no longer fetched.
         # BTC is the relative-strength benchmark (cached => ~free across a scan).
@@ -345,7 +347,8 @@ class AnalysisService:
         track: bool = False,
     ) -> ScanResponse:
         # No explicit symbols => scan the entire tradable universe.
-        scanned_symbols = symbols if symbols else self.market_data.list_symbols()
+        scanned_symbols = symbols if symbols is not None else self.market_data.list_symbols()
+        require_supported_symbols(scanned_symbols)
 
         def run(symbol: str) -> AnalysisResponse | None:
             try:

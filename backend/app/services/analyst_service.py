@@ -12,7 +12,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -26,6 +26,7 @@ from app.core.constants import (
 from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
 from app.services.scan_cache import scan_cache
+from app.services.symbol_universe import allowed_symbols, UnsupportedSymbol, UniverseUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,43 @@ _ALLOWED_GATE_HOSTS = {"api.gateio.ws"}
 _GATE_HEADERS = {"Accept": "application/json"}
 _GATE_LIST_CAP = 10      # keep at most N items from a list payload
 _GATE_MAX_CHARS = 12000  # final guard on serialized tool output
+
+
+def _gate_query_scope(parsed, method: str) -> set[str] | None:
+    allowed = allowed_symbols()
+    if allowed is None:
+        return None
+    # Apply eligibility to both individual requests and broad ticker lists.
+    endpoints = {
+        "/api/v4/futures/usdt/tickers": ("contract", False),
+        "/api/v4/futures/usdt/contracts": ("contract", False),
+        "/api/v4/futures/usdt/candlesticks": ("contract", True),
+        "/api/v4/futures/usdt/contract_stats": ("contract", True),
+        "/api/v4/futures/usdt/funding_rate": ("contract", True),
+        "/api/v4/spot/tickers": ("currency_pair", False),
+        "/api/v4/spot/candlesticks": ("currency_pair", True),
+    }
+    spec = endpoints.get(parsed.path)
+    if method != "GET" or spec is None:
+        raise UnsupportedSymbol("此查詢不在支援的共同幣種行情接口範圍內。")
+    key, required = spec
+    values = parse_qs(parsed.query, keep_blank_values=True).get(key, [])
+    contracts = {s[:-4] + "_USDT" for s in allowed}
+    if (required and not values) or any(v not in contracts for v in values):
+        raise UnsupportedSymbol("請指定 Bitget / Gate 共同名單內的 USDT 交易對。")
+    return contracts
+
+
+def _filter_gate_payload(payload: Any, parsed, contracts: set[str] | None) -> Any:
+    if contracts is None:
+        return payload
+    key = {"tickers": "currency_pair" if "/spot/" in parsed.path else "contract",
+           "contracts": "name"}.get(parsed.path.rsplit("/", 1)[-1])
+    if key:
+        if not isinstance(payload, list):
+            raise ValueError("Unexpected Gate instrument response")
+        return [row for row in payload if isinstance(row, dict) and row.get(key) in contracts]
+    return payload
 
 
 def _load_skill_reference() -> str:
@@ -83,14 +121,17 @@ def _tool_gate_query(url: str, method: str = "GET", body: Any = None) -> dict[st
     if method not in ("GET", "POST"):
         return {"error": f"method not allowed: {method}（僅 GET/POST，且永不帶金鑰）"}
     try:
+        contracts = _gate_query_scope(parsed, method)
         if method == "POST":
             resp = httpx.post(url, headers=_GATE_HEADERS, json=body or {}, timeout=20.0)
         else:
             resp = httpx.get(url, headers=_GATE_HEADERS, timeout=20.0)
         resp.raise_for_status()
         try:
-            payload = _trim_list(resp.json())
+            payload = _trim_list(_filter_gate_payload(resp.json(), parsed, contracts))
         except ValueError:
+            if contracts is not None:
+                return {"error": "行情回應格式異常，請稍後再試。"}
             return {"text": resp.text[:_GATE_MAX_CHARS]}
         serialized = json.dumps(payload, ensure_ascii=False)
         if len(serialized) > _GATE_MAX_CHARS:
@@ -175,13 +216,10 @@ def _get_scan() -> ScanResponse:
     if cached is not None:
         return cached
     service = AnalysisService()
-    symbols = (
-        None
-        if service.settings.data_provider.lower() == "mock"
-        else service.market_data.list_symbols()[:30]
-    )
+    if service.settings.is_live_provider and service.settings.scan_background:
+        raise UniverseUnavailable("全市場掃描準備中，請稍後再試。")
     return service.scan_market(
-        symbols, PRIMARY_TIMEFRAME, TRIGGER_TIMEFRAME, TREND_TIMEFRAME, DEFAULT_LOOKBACK_CANDLES
+        None, PRIMARY_TIMEFRAME, TRIGGER_TIMEFRAME, TREND_TIMEFRAME, DEFAULT_LOOKBACK_CANDLES
     )
 
 
