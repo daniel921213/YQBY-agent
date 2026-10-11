@@ -41,7 +41,7 @@
 .input { width: 100%; border: 1px solid #ffffff19; border-radius: 10px; background: #08121f; color: #e4eaf3; padding: 12px 14px; font-size: 14px; outline: none; }
 .input:focus { border-color: #d9b36a88; }
 .footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding-top: 22px; margin-top: 22px; border-top: 1px solid #ffffff12; }
-.detailGrid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(340px,1fr); gap: 22px; align-items: start; }
+.detailGrid { display: grid; grid-template-columns: minmax(240px,1fr) minmax(0,2fr); gap: 22px; align-items: start; }
 .paper { min-width: 0; padding: 28px; }
 .paperHeader { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid #ffffff12; }
 .question { margin: 20px 0; padding: 14px 18px; border-left: 2px solid #c7a360; background: #c7a36007; color: #becbdd; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
