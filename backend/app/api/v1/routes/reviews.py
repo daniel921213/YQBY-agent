@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.v1.routes.auth import require_prime_user
@@ -36,8 +36,13 @@ class FeedbackInput(BaseModel):
     comments: list[CommentInput] = Field(default_factory=list, max_length=200)
 
 
+def teacher_criteria():
+    # display_name is the existing administrator-managed teacher marker.
+    return User.ct_prime.is_(True), func.length(func.trim(User.display_name)) > 0
+
+
 def is_teacher(db, user_id):
-    return db.scalar(select(Journal.id).where(Journal.owner_id == user_id, Journal.is_published.is_(True)).limit(1)) is not None
+    return db.scalar(select(User.id).where(User.id == user_id, *teacher_criteria())) is not None
 
 
 def accessible(db, review_id, user, *, edit=False):
@@ -97,7 +102,7 @@ def snapshot_document(journal):
 
 @router.get("/meta")
 def meta(user=Depends(require_prime_user), db: Session = Depends(get_db)):
-    users = db.scalars(select(User).where(User.ct_prime.is_(True), User.id.in_(select(Journal.owner_id).where(Journal.is_published.is_(True)))).order_by(User.display_name, User.uid)).all()
+    users = db.scalars(select(User).where(*teacher_criteria()).order_by(User.display_name, User.uid)).all()
     return {"user_id": user.id, "can_review": is_teacher(db, user.id),
             "teachers": [{"id": u.id, "name": display_name(u)} for u in users if u.id != user.id]}
 

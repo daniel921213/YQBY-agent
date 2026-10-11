@@ -29,12 +29,10 @@ def account(client, plan="unactivated", prime=True, teacher=False, expired=False
     with SessionLocal() as db:
         user = db.query(User).filter_by(uid_key=uid).one()
         user.plan, user.ct_prime = plan, prime
+        user.display_name = "Mentor " + uid if teacher else None
         user.expires_at = None if plan in {"unactivated", "lifetime"} else datetime.now(UTC) + timedelta(days=-1 if expired else 5)
         user_id = user.id
         db.commit()
-    if teacher:
-        journal = create_journal(client, headers)
-        assert client.post(f"{JOURNALS}/mine/{journal['id']}/publish", headers=headers).status_code == 200
     return user_id, headers
 
 
@@ -171,6 +169,38 @@ def test_teacher_selection_and_empty_submission():
         assert submit(client, student, journal["id"], unpublished_id).status_code == 422
         assert submit(client, student, journal["id"], nonprime_id).status_code == 422
         assert submit(client, teacher, journal["id"], teacher_id).status_code == 404
+
+
+def test_named_teacher_without_published_journal_and_marker_revocation():
+    with TestClient(app) as client:
+        _, student = account(client)
+        teacher_id, teacher = account(client, teacher=True)
+        unnamed_id, unnamed = account(client, "lifetime")
+        public = create_journal(client, unnamed)
+        assert client.post(f"{JOURNALS}/mine/{public['id']}/publish", headers=unnamed).status_code == 200
+        assert client.get(JOURNALS + "/mine", headers=teacher).json() == []
+        meta = client.get(ROOT + "/meta", headers=student).json()
+        ids = {t["id"] for t in meta["teachers"]}
+        assert teacher_id in ids and unnamed_id not in ids
+        own_meta = client.get(ROOT + "/meta", headers=teacher).json()
+        assert own_meta["can_review"] is True
+        assert teacher_id not in {t["id"] for t in own_meta["teachers"]}
+        journal = create_journal(client, student)
+        response = submit(client, student, journal["id"], teacher_id)
+        assert response.status_code == 201
+        row = response.json()
+        assert client.get(ROOT + "?inbox=true", headers=teacher).status_code == 200
+        assert client.post(f"{ROOT}/{row['id']}/start", headers=teacher).status_code == 200
+        # A blank marker removes teacher access without changing CT_Prime.
+        for name in (None, "", "   "):
+            with SessionLocal() as db:
+                db.get(User, teacher_id).display_name = name
+                db.commit()
+            assert client.get(ROOT + "/meta", headers=teacher).json()["can_review"] is False
+            assert teacher_id not in {t["id"] for t in client.get(ROOT + "/meta", headers=student).json()["teachers"]}
+            assert client.get(ROOT + "?inbox=true", headers=teacher).status_code == 404
+            assert client.get(f"{ROOT}/{row['id']}", headers=teacher).status_code == 404
+            assert client.get(f"{ROOT}/{row['id']}", headers=student).status_code == 200
 
 
 def test_migration_is_idempotent_and_never_grants_prime(tmp_path):

@@ -89,6 +89,7 @@ function JournalWorkspace() {
   useEffect(() => {
     const check = () => { void fetchMe().then(account => {
       setMe(account);
+      if (account.ct_prime) void reviewMeta().then(setReviewInfo).catch(() => {});
       if (!account.ct_prime) { setReviewInfo(null); setSubmitOpen(false); setView(current => current === "reviews" || current === "inbox" ? "mine" : current); }
     }).catch(() => {}); };
     window.addEventListener("focus", check);
