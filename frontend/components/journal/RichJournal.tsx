@@ -65,17 +65,19 @@ type Props = {
   onError?: (message: string) => void;
   onUploading?: (uploading: boolean) => void;
   disabled?: boolean;
+  appendContent?: { id: number; content: JSONContent[] };
 };
 
 export function RichJournal(props: Props) {
   return props.editable ? <JournalEditor {...props} /> : <JournalReader document={props.document} />;
 }
 
-function JournalEditor({ document, journalId, editable = false, onChange, onError, onUploading, disabled = false }: Props) {
+function JournalEditor({ document, journalId, editable = false, onChange, onError, onUploading, disabled = false, appendContent }: Props) {
   const media = useContext(JournalMediaContext);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const uploadCount = useRef(0);
+  const lastAppend = useRef<number>();
   const [colorOpen, setColorOpen] = useState(false);
   const [, setSelection] = useState(0);
   const editor = useEditor({
@@ -99,6 +101,11 @@ function JournalEditor({ document, journalId, editable = false, onChange, onErro
     onSelectionUpdate: () => setSelection((value) => value + 1)
   });
   useEffect(() => { editor?.setEditable(editable && !disabled, false); }, [editor, editable, disabled]);
+  useEffect(() => {
+    if (!editor || !appendContent || lastAppend.current === appendContent.id) return;
+    lastAppend.current = appendContent.id;
+    editor.commands.insertContentAt(editor.state.doc.content.size, appendContent.content);
+  }, [editor, appendContent]);
 
   async function insertImage(file: File, current = editor, pos?: number) {
     if (!current || !current.isEditable || (!journalId && !media.upload)) return;
@@ -106,9 +113,13 @@ function JournalEditor({ document, journalId, editable = false, onChange, onErro
     try {
       uploadCount.current += 1; setUploading(true); onUploading?.(true);
       const imageId = media.upload ? await media.upload(file) : await uploadJournalImage(journalId!, file);
+      if (current.isDestroyed) return;
       const node = { type: "journalImage", attrs: { imageId, alt: file.name || "交易截圖" } };
-      if (pos === undefined) current.chain().focus().insertContent(node).run();
-      else current.chain().focus().insertContentAt(pos, node).run();
+      const chain = current.chain();
+      // Uploads may finish while the teacher is reading the other tab.
+      if (current.view.dom.getClientRects().length) chain.focus();
+      if (pos === undefined) chain.insertContent(node).run();
+      else chain.insertContentAt(pos, node).run();
     } catch (error) { onError?.(error instanceof Error ? error.message : "圖片上傳失敗"); }
     finally { uploadCount.current -= 1; const pending = uploadCount.current > 0; setUploading(pending); onUploading?.(pending); if (fileInput.current) fileInput.current.value = ""; }
   }
