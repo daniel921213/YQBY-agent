@@ -9,12 +9,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.v1.routes.auth import require_active_user, require_member_user
+from app.api.v1.routes.auth import require_journal_user, require_member_user, has_member_access
 from app.db import get_db
 from app.models import Journal, JournalEvent, JournalImage, JournalRead, User
 from app.services.auth_service import PLAN_LIFETIME
 
-router = APIRouter(prefix="/journals", tags=["journals"], dependencies=[Depends(require_member_user)])
+router = APIRouter(prefix="/journals", tags=["journals"], dependencies=[Depends(require_journal_user)])
 
 
 class Block(BaseModel):
@@ -39,8 +39,9 @@ def display_name(user: User) -> str:
     return user.display_name or user.uid
 
 
-def mine(db: Session, journal_id: int, owner_id: int) -> Journal:
-    row = db.scalar(select(Journal).where(Journal.id == journal_id, Journal.owner_id == owner_id))
+def mine(db: Session, journal_id: int, owner_id: int, *, lock: bool = False) -> Journal:
+    query = select(Journal).where(Journal.id == journal_id, Journal.owner_id == owner_id)
+    row = db.scalar(query.with_for_update() if lock else query)
     if row is None:
         raise HTTPException(status_code=404, detail="journal_not_found")
     return row
@@ -123,13 +124,13 @@ def validate_images(db: Session, journal_id: int, blocks: list[Block], document:
 
 
 @router.get("/mine")
-def list_mine(user=Depends(require_active_user), db: Session = Depends(get_db)) -> list[dict]:
+def list_mine(user=Depends(require_journal_user), db: Session = Depends(get_db)) -> list[dict]:
     rows = db.scalars(select(Journal).where(Journal.owner_id == user.id).order_by(Journal.updated_at.desc(), Journal.id.desc())).all()
     return [row_json(row, user) for row in rows]
 
 
 @router.post("/mine", status_code=201)
-def create_journal(data: JournalInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def create_journal(data: JournalInput, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     if any(block.type == "image" for block in data.blocks) or document_image_ids(data.document):
         raise HTTPException(status_code=422, detail="create_before_adding_images")
     row = Journal(owner_id=user.id, title=data.title.strip() or "未命名日誌", journal_date=data.journal_date, tags_json=json.dumps([tag.strip()[:30] for tag in data.tags if tag.strip()], ensure_ascii=False), blocks_json=json.dumps([block.model_dump() for block in data.blocks], ensure_ascii=False), document_json=json.dumps(data.document, ensure_ascii=False) if data.document else None)
@@ -140,12 +141,12 @@ def create_journal(data: JournalInput, user=Depends(require_active_user), db: Se
 
 
 @router.get("/mine/{journal_id}")
-def get_mine(journal_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def get_mine(journal_id: int, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     return row_json(mine(db, journal_id, user.id), user)
 
 
 @router.put("/mine/{journal_id}")
-def update_journal(journal_id: int, data: JournalInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def update_journal(journal_id: int, data: JournalInput, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     row = mine(db, journal_id, user.id)
     validate_images(db, row.id, data.blocks, data.document)
     row.title = data.title.strip() or "未命名日誌"
@@ -159,8 +160,11 @@ def update_journal(journal_id: int, data: JournalInput, user=Depends(require_act
 
 
 @router.delete("/mine/{journal_id}", status_code=204)
-def delete_journal(journal_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> None:
-    row = mine(db, journal_id, user.id)
+def delete_journal(journal_id: int, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> None:
+    row = mine(db, journal_id, user.id, lock=True)
+    from app.review_models import JournalReview
+    # Submitted content/images live in immutable review snapshots.
+    db.query(JournalReview).filter(JournalReview.journal_id == row.id).update({"journal_id": None})
     db.query(JournalEvent).filter(JournalEvent.journal_id == row.id).delete()
     db.query(JournalImage).filter(JournalImage.journal_id == row.id).delete()
     db.delete(row)
@@ -168,7 +172,7 @@ def delete_journal(journal_id: int, user=Depends(require_active_user), db: Sessi
 
 
 @router.post("/mine/{journal_id}/publish")
-def publish_journal(journal_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def publish_journal(journal_id: int, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     if user.plan != PLAN_LIFETIME:
         raise HTTPException(status_code=403, detail="lifetime_required")
     row = mine(db, journal_id, user.id)
@@ -187,7 +191,7 @@ def publish_journal(journal_id: int, user=Depends(require_active_user), db: Sess
 
 
 @router.post("/mine/{journal_id}/unpublish")
-def unpublish_journal(journal_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def unpublish_journal(journal_id: int, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     row = mine(db, journal_id, user.id)
     row.is_published = False
     row.published_title = None
@@ -201,13 +205,13 @@ def unpublish_journal(journal_id: int, user=Depends(require_active_user), db: Se
 
 
 @router.get("/teachers")
-def teachers(user=Depends(require_active_user), db: Session = Depends(get_db)) -> list[dict]:
+def teachers(user=Depends(require_member_user), db: Session = Depends(get_db)) -> list[dict]:
     rows = db.execute(select(User.id, User.uid, User.display_name, func.count(Journal.id)).join(Journal, Journal.owner_id == User.id).where(Journal.is_published.is_(True)).group_by(User.id, User.uid, User.display_name).order_by(User.display_name, User.uid)).all()
     return [{"id": item[0], "name": item[2] or item[1], "count": item[3]} for item in rows]
 
 
 @router.get("/published")
-def list_published(teacher_id: int | None = None, user=Depends(require_active_user), db: Session = Depends(get_db)) -> list[dict]:
+def list_published(teacher_id: int | None = None, user=Depends(require_member_user), db: Session = Depends(get_db)) -> list[dict]:
     query = select(Journal, User).join(User, Journal.owner_id == User.id).where(Journal.is_published.is_(True))
     if teacher_id is not None:
         query = query.where(User.id == teacher_id)
@@ -216,14 +220,14 @@ def list_published(teacher_id: int | None = None, user=Depends(require_active_us
 
 
 @router.get("/published/{journal_id}")
-def get_published(journal_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def get_published(journal_id: int, user=Depends(require_member_user), db: Session = Depends(get_db)) -> dict:
     row = public(db, journal_id)
     author = db.get(User, row.owner_id)
     return row_json(row, author, True)
 
 
 @router.post("/mine/{journal_id}/images", status_code=201)
-async def upload_image(journal_id: int, request: Request, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+async def upload_image(journal_id: int, request: Request, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> dict:
     mine(db, journal_id, user.id)
     content_type = request.headers.get("content-type", "").split(";")[0].lower()
     if content_type not in {"image/png", "image/jpeg", "image/webp", "image/gif"}:
@@ -242,7 +246,7 @@ async def upload_image(journal_id: int, request: Request, user=Depends(require_a
 
 
 @router.get("/images/{image_id}")
-def get_image(image_id: int, user=Depends(require_active_user), db: Session = Depends(get_db)) -> Response:
+def get_image(image_id: int, user=Depends(require_journal_user), db: Session = Depends(get_db)) -> Response:
     image = db.get(JournalImage, image_id)
     if image is None:
         raise HTTPException(status_code=404, detail="image_not_found")
@@ -250,6 +254,8 @@ def get_image(image_id: int, user=Depends(require_active_user), db: Session = De
     if journal is None:
         raise HTTPException(status_code=404, detail="image_not_found")
     if journal.owner_id != user.id:
+        if not has_member_access(user):
+            raise HTTPException(status_code=404, detail="image_not_found")
         published_images = document_image_ids(json.loads(journal.published_document_json)) if journal.published_document_json else set()
         if not journal.is_published or (image_id not in published_images and not any(block.get("image_id") == image_id for block in json.loads(journal.published_blocks_json or "[]"))):
             raise HTTPException(status_code=404, detail="image_not_found")
@@ -257,7 +263,7 @@ def get_image(image_id: int, user=Depends(require_active_user), db: Session = De
 
 
 @router.get("/events")
-def new_events(user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def new_events(user=Depends(require_member_user), db: Session = Depends(get_db)) -> dict:
     read = db.get(JournalRead, user.id)
     latest = db.scalar(select(func.max(JournalEvent.id))) or 0
     if read is None:
@@ -270,7 +276,7 @@ def new_events(user=Depends(require_active_user), db: Session = Depends(get_db))
 
 
 @router.post("/events/read")
-def mark_events_read(data: ReadEventsInput, user=Depends(require_active_user), db: Session = Depends(get_db)) -> dict:
+def mark_events_read(data: ReadEventsInput, user=Depends(require_member_user), db: Session = Depends(get_db)) -> dict:
     latest = db.scalar(select(func.max(JournalEvent.id))) or 0
     cursor = min(data.cursor, latest)
     read = db.get(JournalRead, user.id)

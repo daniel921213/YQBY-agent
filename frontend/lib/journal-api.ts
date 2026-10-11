@@ -3,7 +3,7 @@ import type { JSONContent } from "@tiptap/core";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
+export async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const response = await fetch(new URL(`/api/v1${path}`, BASE), {
     ...init,

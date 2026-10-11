@@ -16,6 +16,7 @@ class AuthResponse(BaseModel):
 class MeResponse(BaseModel):
     uid: str
     display_name: str | None = None
+    ct_prime: bool = False
     plan: str  # "unactivated" | "trial" | "member" | "lifetime"
     starts_at: datetime | None = None
     scheduled: bool = False

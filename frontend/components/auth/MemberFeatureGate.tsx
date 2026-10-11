@@ -9,12 +9,12 @@ import { ScheduledMembership } from "./ScheduledMembership";
 
 const CONTACT_URL = "https://lin.ee/RP6APHg";
 
-export function MemberFeatureGate({ title, children }: { title: string; children: React.ReactNode }) {
+export function MemberFeatureGate({ title, children, allowPrime = false }: { title: string; children: React.ReactNode; allowPrime?: boolean }) {
   const { me, loading, error, refresh } = useEntitlement();
 
   if (loading || !me) return <main className="relative grid min-h-screen place-items-center px-4"><SpaceParticleField /><div className="glass-panel relative z-10 flex w-full max-w-sm flex-col items-center rounded-xl border border-white/10 p-8 text-center"><span className="text-gold">{loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <ShieldAlert className="h-6 w-6" />}</span><p className="mt-4 text-sm text-slate-300">{loading ? "正在確認帳號權限…" : error ?? "帳號權限讀取失敗"}</p>{!loading && <button onClick={() => void refresh()} className="mt-5 rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-200">重新檢查</button>}</div></main>;
 
-  if (me.plan === "lifetime" || (me.plan === "member" && me.active)) return <>{children}</>;
+  if ((allowPrime && me.ct_prime) || me.plan === "lifetime" || (me.plan === "member" && me.active)) return <>{children}</>;
 
   if (me.scheduled) return <main className="relative min-h-screen px-4 py-5"><SpaceParticleField /><div className="relative z-10"><PageHeader title={title} kicker="MEMBER ACCESS" /><ScheduledMembership me={me} /></div></main>;
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { JournalMediaContext } from "./JournalMediaContext";
 import { Bold, Heading2, Heading3, ImagePlus, Italic, List, ListOrdered, Palette, Quote, Redo2, Undo2 } from "lucide-react";
 import { Node, type JSONContent } from "@tiptap/core";
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps } from "@tiptap/react";
@@ -62,15 +63,19 @@ type Props = {
   editable?: boolean;
   onChange?: (document: JSONContent) => void;
   onError?: (message: string) => void;
+  onUploading?: (uploading: boolean) => void;
+  disabled?: boolean;
 };
 
 export function RichJournal(props: Props) {
   return props.editable ? <JournalEditor {...props} /> : <JournalReader document={props.document} />;
 }
 
-function JournalEditor({ document, journalId, editable = false, onChange, onError }: Props) {
+function JournalEditor({ document, journalId, editable = false, onChange, onError, onUploading, disabled = false }: Props) {
+  const media = useContext(JournalMediaContext);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const uploadCount = useRef(0);
   const [colorOpen, setColorOpen] = useState(false);
   const [, setSelection] = useState(0);
   const editor = useEditor({
@@ -93,18 +98,19 @@ function JournalEditor({ document, journalId, editable = false, onChange, onErro
     onUpdate: ({ editor }) => onChange?.(editor.getJSON()),
     onSelectionUpdate: () => setSelection((value) => value + 1)
   });
+  useEffect(() => { editor?.setEditable(editable && !disabled, false); }, [editor, editable, disabled]);
 
   async function insertImage(file: File, current = editor, pos?: number) {
-    if (!current || !journalId) return;
+    if (!current || !current.isEditable || (!journalId && !media.upload)) return;
     if (file.size > 5_000_000) { onError?.("圖片上限為 5 MB"); return; }
     try {
-      setUploading(true);
-      const imageId = await uploadJournalImage(journalId, file);
+      uploadCount.current += 1; setUploading(true); onUploading?.(true);
+      const imageId = media.upload ? await media.upload(file) : await uploadJournalImage(journalId!, file);
       const node = { type: "journalImage", attrs: { imageId, alt: file.name || "交易截圖" } };
       if (pos === undefined) current.chain().focus().insertContent(node).run();
       else current.chain().focus().insertContentAt(pos, node).run();
     } catch (error) { onError?.(error instanceof Error ? error.message : "圖片上傳失敗"); }
-    finally { setUploading(false); if (fileInput.current) fileInput.current.value = ""; }
+    finally { uploadCount.current -= 1; const pending = uploadCount.current > 0; setUploading(pending); onUploading?.(pending); if (fileInput.current) fileInput.current.value = ""; }
   }
 
   const tool = (label: string, Icon: typeof Bold, action: () => void, active = false, disabled = false) => <button key={label} type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action} className={`rounded-md p-2 transition hover:bg-white/10 disabled:opacity-40 ${active ? "bg-gold/15 text-gold" : "text-slate-300"}`}><Icon className="h-4 w-4" /></button>;

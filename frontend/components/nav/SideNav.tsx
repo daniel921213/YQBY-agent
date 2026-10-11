@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ReviewAlerts } from "@/components/journal/ReviewAlerts";
 import { JournalAlerts } from "@/components/journal/JournalAlerts";
 import { BookOpen, GraduationCap, LayoutDashboard, LineChart, Radar, Users, X } from "lucide-react";
 
@@ -14,7 +15,7 @@ const NAV_ITEMS = [
   { href: "/mentors", label: "團隊專區", description: "認識 CT_Trader 團隊", icon: Users },
   { href: "/yokai", label: "妖怪篩選器", description: "題材熱度 × Gate 數據確認", icon: Radar },
   { href: "/backtest", label: "回測系統", description: "30 天／永久 · 私人績效", icon: LineChart },
-  { href: "/journal", label: "交易日誌", description: "30 天／永久 · 私人與老師日誌", icon: BookOpen }
+  { href: "/journal", label: "交易日誌", description: "私人紀錄・老師日誌", icon: BookOpen }
 ] as const;
 
 /** 左上角 CT 字紋按鈕 + 左側滑出導覽抽屜。桌機/手機共用一套。 */
@@ -47,6 +48,7 @@ export function SideNav() {
   return (
     <>
       <JournalAlerts />
+      <ReviewAlerts />
       {/* CT 字紋選單鈕：香檳金漸層字 = 品牌記號，不是漢堡圖示 */}
       <button
         type="button"

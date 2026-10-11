@@ -140,6 +140,18 @@ def require_member_user(user=Depends(current_session)):
     return user
 
 
+def require_journal_user(user=Depends(current_session)):
+    if not user.ct_prime and not has_member_access(user):
+        raise HTTPException(status_code=403, detail="member_plan_required")
+    return user
+
+
+def require_prime_user(user=Depends(current_session)):
+    if not user.ct_prime:
+        raise HTTPException(status_code=404, detail="not_found")
+    return user
+
+
 def require_yokai_user(user=Depends(current_session)):
     """Allow Yokai Intelligence for lifetime or active 30-day members."""
     if not has_member_access(user):
@@ -151,6 +163,7 @@ def _me_response(user) -> MeResponse:
     return MeResponse(
         uid=user.uid,
         display_name=user.display_name,
+        ct_prime=bool(user.ct_prime),
         plan=user.plan,
         starts_at=auth_service._as_utc(user.starts_at),
         scheduled=auth_service.is_scheduled(user),

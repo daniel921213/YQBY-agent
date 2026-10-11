@@ -11,6 +11,8 @@ from app.api.v1.routes.auth import router as auth_router
 from app.api.v1.routes.yokai import router as yokai_router
 from app.api.v1.routes.trades import router as trades_router
 from app.api.v1.routes.journals import router as journals_router
+from app.api.v1.routes.reviews import router as reviews_router
+from app.services.review_migration import run_review_migration
 from app.core.config import get_settings
 from app.db import SessionLocal, engine, init_db
 from app.services.auth_security_migration import run_auth_security_migration
@@ -32,6 +34,7 @@ async def lifespan(app: FastAPI):
     try:
         init_db()
         run_journal_migration(engine)
+        run_review_migration(engine)
         run_auth_security_migration(engine)
         # 冪等的資格遷移：補欄位 + 幫「還沒有資格設定」的舊帳號 backfill
         # （永久名單 → lifetime、其他 → 試用 +7 天）。套用過就是 no-op。
@@ -80,6 +83,7 @@ app.include_router(admin_router, prefix=settings.api_v1_prefix)
 app.include_router(yokai_router, prefix=settings.api_v1_prefix)
 app.include_router(trades_router, prefix=settings.api_v1_prefix)
 app.include_router(journals_router, prefix=settings.api_v1_prefix)
+app.include_router(reviews_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

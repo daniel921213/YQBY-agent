@@ -23,6 +23,7 @@ class User(Base):
     # becomes invalid without touching the user's entitlement.
     auth_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     display_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ct_prime: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false", default=False)
 
 
 class Trade(Base):

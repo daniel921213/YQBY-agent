@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { journalImageUrl } from "@/lib/journal-api";
+import { useContext, useEffect, useRef, useState } from "react";
+import { JournalMediaContext } from "./JournalMediaContext";
 
 // Keep only nearby images decoded while reading an image-heavy journal.
 // Retain the image's aspect ratio so releasing a blob does not move the text.
 export function ProtectedImage({ imageId, alt, releaseOffscreen = false }: { imageId: number; alt: string; releaseOffscreen?: boolean }) {
+  const { imageUrl } = useContext(JournalMediaContext);
   const container = useRef<HTMLDivElement>(null);
   const [nearby, setNearby] = useState(false);
   const [url, setUrl] = useState("");
@@ -31,7 +32,7 @@ export function ProtectedImage({ imageId, alt, releaseOffscreen = false }: { ima
     const controller = new AbortController();
     let objectUrl = "";
     setFailed(false);
-    journalImageUrl(imageId, controller.signal).then((value) => {
+    imageUrl(imageId, controller.signal).then((value) => {
       if (controller.signal.aborted) { URL.revokeObjectURL(value); return; }
       objectUrl = value;
       setUrl(value);
@@ -41,7 +42,7 @@ export function ProtectedImage({ imageId, alt, releaseOffscreen = false }: { ima
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       setUrl("");
     };
-  }, [imageId, nearby, attempt]);
+  }, [imageId, nearby, attempt, imageUrl]);
 
   return <div ref={container} className="my-4 w-full overflow-hidden rounded-lg border border-white/10" style={{ aspectRatio, maxHeight: 700, minHeight: aspectRatio ? undefined : 160 }}>
     {nearby && url && !failed ? (

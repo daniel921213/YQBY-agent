@@ -13,6 +13,7 @@ from app.db import SessionLocal
 from app.models import User
 from app.services import auth_service
 from app.services.entitlement_migration import run_entitlement_migration
+from app.services.review_migration import run_review_migration
 
 ADMIN = {"X-Admin-Key": "test-admin-secret"}
 PATH = "/api/v1/admin/users/membership-window"
@@ -145,6 +146,8 @@ def test_migration_adds_nullable_start_once(tmp_path):
         connection.execute(text("CREATE TABLE users (id INTEGER PRIMARY KEY, uid VARCHAR, uid_key VARCHAR, password_hash VARCHAR, created_at DATETIME, plan VARCHAR, expires_at DATETIME, auth_version INTEGER, display_name VARCHAR)"))
         connection.execute(text("INSERT INTO users (uid, uid_key, plan, expires_at) VALUES ('legacy', 'legacy', 'member', '2026-11-01 00:00:00')"))
     sessions = sessionmaker(bind=engine)
+    # Match startup: add feature columns before migrations query the full User.
+    run_review_migration(engine)
     run_entitlement_migration(engine, sessions)
     run_entitlement_migration(engine, sessions)
     assert "starts_at" in {column["name"] for column in inspect(engine).get_columns("users")}

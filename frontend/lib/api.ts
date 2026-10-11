@@ -96,6 +96,7 @@ export async function fetchYokai(): Promise<YokaiResponse> {
 }
 
 export interface Entitlement {
+  ct_prime?: boolean;
   uid: string;
   display_name?: string | null;
   plan: "unactivated" | "trial" | "member" | "lifetime";
