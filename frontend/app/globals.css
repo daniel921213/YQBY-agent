@@ -13,85 +13,88 @@
   --font-space-grotesk: "Space Grotesk Variable";
   --font-jetbrains-mono: "JetBrains Mono Variable";
 
-  --c-obsidian: 7 12 24;
-  --c-graphite: 14 23 41;
-  --c-steel: 27 44 74;
-  --c-ember: 76 194 255;
-  --c-copper: 156 181 213;
+  /* CT_Trader「Confluence」色票：夜空炭黑 × 香檳金 × 地平線銅琥珀 × 銀藍。
+     取樣自品牌主視覺（山景地平線光、CT 金屬字、TIME 銀藍環）。 */
+  --c-obsidian: 10 10 12; /* #0a0a0c 夜空炭黑 */
+  --c-graphite: 22 21 23; /* #161517 面板 */
+  --c-steel: 42 38 37; /* #2a2625 抬升表面 */
+  --c-ember: 230 164 96; /* #e6a460 銅琥珀主強調（地平線光 / 標語橘） */
+  --c-copper: 160 180 196; /* #a0b4c4 銀藍金屬（TIME 環） */
   --c-long: 35 221 141;
   --c-short: 255 81 102;
-  --c-ink: 255 255 255;
+  --c-ink: 255 250 242; /* 暖白墨色 */
   --c-amber: 253 224 71;
   --c-red-soft: 254 226 226;
-  --c-gold: 202 138 4;
-  --c-gold-hi: 240 200 118;
+  --c-gold: 200 166 118; /* #c8a676 香檳古金 */
+  --c-gold-hi: 241 224 196; /* #f1e0c4 香檳高光 */
 
-  --c-slate-50: 248 250 252;
-  --c-slate-100: 241 245 249;
-  --c-slate-200: 226 232 240;
-  --c-slate-300: 203 213 225;
-  --c-slate-400: 148 163 184;
-  --c-slate-500: 100 116 139;
-  --c-slate-600: 71 85 105;
-  --c-slate-700: 51 65 85;
-  --c-slate-800: 30 41 59;
-  --c-slate-900: 15 23 42;
-  --c-slate-950: 2 6 23;
+  /* 暖石灰刻度（取代冷藍灰），對比度與原刻度相當。 */
+  --c-slate-50: 252 249 243;
+  --c-slate-100: 244 238 228;
+  --c-slate-200: 230 222 208;
+  --c-slate-300: 208 198 182;
+  --c-slate-400: 168 158 143;
+  --c-slate-500: 128 119 107;
+  --c-slate-600: 92 85 77;
+  --c-slate-700: 66 61 56;
+  --c-slate-800: 41 38 35;
+  --c-slate-900: 25 23 22;
+  --c-slate-950: 13 12 12;
 
   /* 圖表 tokens（K 線圖、雷達圖、四象限圖共用） */
-  --chart-bg: #0e1729;
-  --chart-ink: #8fa9c9;
-  --chart-grid: rgba(255, 255, 255, 0.05);
-  --chart-axis: rgba(255, 255, 255, 0.16);
-  --chart-frame: rgba(255, 255, 255, 0.08);
-  --chart-up: #6fc6ff;
-  --chart-down: #42507a;
-  --chart-cvd: #d6e7ff;
-  --chart-label-ink: #e2e8f0;
-  --chart-label-halo: #04060c;
+  --chart-bg: #121113;
+  --chart-ink: #a89e8f;
+  --chart-grid: rgba(255, 250, 242, 0.05);
+  --chart-axis: rgba(255, 250, 242, 0.16);
+  --chart-frame: rgba(255, 250, 242, 0.08);
+  --chart-up: #e6c48e;
+  --chart-down: #5f5752;
+  --chart-cvd: #a0b4c4;
+  --chart-label-ink: #f4eee4;
+  --chart-label-halo: #050505;
 
   background: rgb(var(--c-obsidian));
 }
 
-/* 淺色模式：同一套品牌語言（冰藍 × 冷藍灰），亮度反轉、彩度校正到
+/* 淺色模式：同一套品牌語言（香檳金 × 暖紙白），亮度反轉、彩度校正到
    白底可讀（ember 深一階、多空色深一階），slate 刻度整組對調。 */
 html[data-theme="light"] {
   color-scheme: light;
 
-  --c-obsidian: 234 240 249;
-  --c-graphite: 255 255 255;
-  --c-steel: 216 228 243;
-  --c-ember: 2 132 199;
-  --c-copper: 77 106 134;
+  --c-obsidian: 246 242 235;
+  --c-graphite: 255 253 249;
+  --c-steel: 236 228 216;
+  --c-ember: 160 94 31;
+  --c-copper: 84 104 122;
   --c-long: 4 120 87;
   --c-short: 220 38 38;
-  --c-ink: 15 23 42;
+  --c-ink: 41 33 24;
   --c-amber: 180 83 9;
   --c-red-soft: 127 29 29;
-  --c-gold: 161 98 7;
-  --c-gold-hi: 202 138 4;
+  --c-gold: 150 110 50;
+  --c-gold-hi: 184 140 74;
 
-  --c-slate-50: 2 6 23;
-  --c-slate-100: 15 23 42;
-  --c-slate-200: 30 41 59;
-  --c-slate-300: 51 65 85;
-  --c-slate-400: 71 85 105;
-  --c-slate-500: 100 116 139;
-  --c-slate-600: 148 163 184;
-  --c-slate-700: 203 213 225;
-  --c-slate-800: 226 232 240;
-  --c-slate-900: 241 245 249;
-  --c-slate-950: 248 250 252;
+  --c-slate-50: 20 16 12;
+  --c-slate-100: 36 30 24;
+  --c-slate-200: 56 48 40;
+  --c-slate-300: 78 69 59;
+  --c-slate-400: 96 87 76;
+  --c-slate-500: 118 108 96;
+  --c-slate-600: 168 158 144;
+  --c-slate-700: 208 199 186;
+  --c-slate-800: 228 221 210;
+  --c-slate-900: 240 235 227;
+  --c-slate-950: 248 245 240;
 
-  --chart-bg: #ffffff;
-  --chart-ink: #64748b;
-  --chart-grid: rgba(15, 30, 60, 0.07);
-  --chart-axis: rgba(15, 30, 60, 0.22);
-  --chart-frame: rgba(15, 30, 60, 0.12);
-  --chart-up: #0284c7;
-  --chart-down: #94a3b8;
-  --chart-cvd: #1e3a5f;
-  --chart-label-ink: #1e293b;
+  --chart-bg: #fffdf9;
+  --chart-ink: #766c60;
+  --chart-grid: rgba(60, 45, 28, 0.07);
+  --chart-axis: rgba(60, 45, 28, 0.22);
+  --chart-frame: rgba(60, 45, 28, 0.12);
+  --chart-up: #b07a35;
+  --chart-down: #b9b0a4;
+  --chart-cvd: #3f5a70;
+  --chart-label-ink: #241e18;
   --chart-label-halo: #ffffff;
 }
 
@@ -103,41 +106,39 @@ html,
 body {
   min-height: 100%;
   margin: 0;
-  color: #e6edf7;
+  color: #f1ebe0;
 }
 
 html[data-theme="light"] body {
-  color: #142238;
+  color: #241e18;
 }
 
-/* 深空底：星點（8 顆）→ 兩片極淡星雲 → 深空黑。fixed 讓星空釘在視窗、內容在其上滑動。 */
+/* 夜空底：香檳星點（8 顆）→ 地平線琥珀光 → 夜空炭黑。山景照片掛在全頁共用的
+   .space-particle-field 上；這層是照片載入前與無粒子層頁面的同色調底。 */
 body {
   font-family: var(--font-noto-tc), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   background:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(190, 226, 255, 0.62) 50%, transparent 51%),
-    radial-gradient(1px 1px at 28% 64%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 41% 12%, rgba(190, 226, 255, 0.52) 50%, transparent 51%),
-    radial-gradient(1px 1px at 57% 38%, rgba(190, 226, 255, 0.38) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 66% 80%, rgba(190, 226, 255, 0.46) 50%, transparent 51%),
-    radial-gradient(1px 1px at 75% 16%, rgba(190, 226, 255, 0.54) 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 87% 52%, rgba(190, 226, 255, 0.42) 50%, transparent 51%),
-    radial-gradient(1px 1px at 94% 86%, rgba(190, 226, 255, 0.38) 50%, transparent 51%),
-    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.22), transparent 62%),
-    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.17), transparent 60%),
-    radial-gradient(1000px 500px at 50% 118%, rgba(202, 138, 4, 0.05), transparent 60%),
-    #05070f;
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(246, 228, 196, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 64%, rgba(246, 228, 196, 0.4) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 41% 12%, rgba(246, 228, 196, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 57% 38%, rgba(246, 228, 196, 0.36) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 66% 80%, rgba(246, 228, 196, 0.44) 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 16%, rgba(246, 228, 196, 0.52) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 87% 52%, rgba(246, 228, 196, 0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 94% 86%, rgba(246, 228, 196, 0.36) 50%, transparent 51%),
+    radial-gradient(1300px 520px at 50% 104%, rgba(176, 128, 82, 0.3), transparent 62%),
+    linear-gradient(180deg, #08090c 0%, #121216 58%, #1a1716 100%);
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
-/* 淺色頁底：冷藍紙感 + 同位置的兩片極淡藍暈（星點交給粒子層）。 */
+/* 淺色頁底：暖紙白 + 底部一抹香檳地平線光。 */
 html[data-theme="light"] body {
   background:
-    radial-gradient(1100px 620px at 80% -12%, rgba(56, 130, 220, 0.12), transparent 62%),
-    radial-gradient(900px 540px at 6% 112%, rgba(40, 92, 170, 0.09), transparent 60%),
-    radial-gradient(1000px 500px at 50% 118%, rgba(161, 98, 7, 0.04), transparent 60%),
-    #eaf0f9;
+    radial-gradient(1300px 520px at 50% 108%, rgba(200, 150, 90, 0.16), transparent 62%),
+    radial-gradient(1100px 620px at 80% -12%, rgba(160, 94, 31, 0.05), transparent 62%),
+    #f6f2eb;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -183,10 +184,10 @@ h3,
 }
 
 ::selection {
-  background: rgba(76, 194, 255, 0.3);
+  background: rgba(230, 164, 96, 0.3);
 }
 html[data-theme="light"] ::selection {
-  background: rgba(2, 132, 199, 0.22);
+  background: rgba(160, 94, 31, 0.22);
 }
 
 ::-webkit-scrollbar {
@@ -197,30 +198,30 @@ html[data-theme="light"] ::selection {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #24365a;
-  border: 2px solid #05070f;
+  background: #3a332b;
+  border: 2px solid #0a0a0c;
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #33507f;
+  background: #5a4a36;
 }
 html[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #b7c8e0;
-  border-color: #eaf0f9;
+  background: #d6c8b4;
+  border-color: #f6f2eb;
 }
 html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: #8fabd0;
+  background: #b9a284;
 }
 
 /* ──────────────────────────────────────────────────────────────
-   妖怪篩選器：沿用 CT 深空材質，金色代表題材熱度、冰藍代表情報流。
+   妖怪篩選器：沿用 CT 夜空材質，金色代表題材熱度、銅琥珀代表情報流。
    動畫只作用在專區的局部合成層，不讓整頁持續重繪。
    ────────────────────────────────────────────────────────────── */
 .yokai-shell {
   isolation: isolate;
   background:
-    radial-gradient(900px 620px at 84% 12%, rgba(30, 112, 194, 0.13), transparent 67%),
-    radial-gradient(720px 520px at 8% 48%, rgba(202, 138, 4, 0.055), transparent 70%);
+    radial-gradient(900px 620px at 84% 12%, rgba(176, 118, 62, 0.13), transparent 67%),
+    radial-gradient(720px 520px at 8% 48%, rgba(200, 160, 105, 0.055), transparent 70%);
 }
 
 .yokai-aurora {
@@ -246,38 +247,38 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 .yokai-aurora::before {
   right: -24vw;
   top: 8vh;
-  background: #3fa9f5;
+  background: #b0763e;
   animation: yokai-drift-a 18s ease-in-out infinite alternate;
 }
 
 .yokai-aurora::after {
   bottom: -32vw;
   left: -18vw;
-  background: #d4af37;
+  background: #ceaa70;
   animation: yokai-drift-b 22s ease-in-out infinite alternate;
 }
 
 .yokai-core-frame {
   background: conic-gradient(
     from var(--yokai-angle, 0deg),
-    rgba(76, 194, 255, 0.08),
-    rgba(76, 194, 255, 0.76),
-    rgba(240, 200, 118, 0.36),
+    rgba(230, 164, 96, 0.08),
+    rgba(230, 164, 96, 0.76),
+    rgba(236, 208, 160, 0.36),
     rgba(255, 255, 255, 0.04),
-    rgba(76, 194, 255, 0.08)
+    rgba(230, 164, 96, 0.08)
   );
   box-shadow:
-    0 34px 100px -52px rgba(35, 135, 220, 0.72),
-    0 0 54px -34px rgba(240, 200, 118, 0.55);
+    0 34px 100px -52px rgba(176, 118, 62, 0.72),
+    0 0 54px -34px rgba(236, 208, 160, 0.55);
   animation: yokai-border-spin 10s linear infinite;
 }
 
 .yokai-network {
   background:
-    linear-gradient(rgba(76, 194, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 194, 255, 0.025) 1px, transparent 1px),
-    radial-gradient(circle at 50% 48%, rgba(30, 112, 194, 0.12), transparent 48%),
-    linear-gradient(160deg, rgba(9, 17, 34, 0.94), rgba(2, 5, 12, 0.98));
+    linear-gradient(rgba(230, 164, 96, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 164, 96, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(176, 118, 62, 0.12), transparent 48%),
+    linear-gradient(160deg, rgba(16, 15, 17, 0.94), rgba(2, 5, 12, 0.98));
   background-size: 32px 32px, 32px 32px, auto, auto;
 }
 
@@ -286,61 +287,61 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(115deg, transparent 34%, rgba(197, 231, 255, 0.045) 48%, transparent 60%);
+  background: linear-gradient(115deg, transparent 34%, rgba(246, 232, 206, 0.045) 48%, transparent 60%);
   transform: translateX(-110%);
   animation: yokai-scan 7s ease-in-out infinite;
 }
 
 .yokai-gradient-text {
-  background: linear-gradient(104deg, #eef8ff 3%, #75cfff 45%, #f0c876 90%);
+  background: linear-gradient(104deg, #fbf3e4 3%, #e6a460 45%, #ecd0a0 90%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 26px rgba(76, 194, 255, 0.18));
+  filter: drop-shadow(0 0 26px rgba(230, 164, 96, 0.18));
 }
 
 .narrative-universe-frame {
   box-shadow:
-    inset 0 1px 0 rgba(196, 230, 255, 0.09),
+    inset 0 1px 0 rgba(246, 232, 206, 0.09),
     inset 0 -1px 0 rgba(0, 0, 0, 0.46),
-    0 36px 100px -55px rgba(38, 143, 223, 0.72),
-    0 0 70px -48px rgba(240, 200, 118, 0.38);
+    0 36px 100px -55px rgba(176, 118, 62, 0.72),
+    0 0 70px -48px rgba(236, 208, 160, 0.38);
 }
 
 .narrative-radar-icon {
   position: relative;
-  box-shadow: inset 0 0 16px rgba(76, 194, 255, 0.08), 0 0 22px -10px rgba(76, 194, 255, 0.75);
+  box-shadow: inset 0 0 16px rgba(230, 164, 96, 0.08), 0 0 22px -10px rgba(230, 164, 96, 0.75);
 }
 
 .narrative-radar-icon::after {
   content: "";
   position: absolute;
   inset: 4px;
-  border: 1px solid rgba(76, 194, 255, 0.18);
+  border: 1px solid rgba(230, 164, 96, 0.18);
   border-radius: 999px;
   animation: narrative-radar-pulse 2.8s ease-out infinite;
 }
 
 .narrative-universe-scroll {
-  scrollbar-color: rgba(76, 194, 255, 0.28) rgba(255, 255, 255, 0.025);
+  scrollbar-color: rgba(230, 164, 96, 0.28) rgba(255, 255, 255, 0.025);
 }
 
 .narrative-universe-map {
   background:
-    radial-gradient(circle at 19% 29%, rgba(76, 194, 255, 0.105), transparent 20%),
-    radial-gradient(circle at 50% 27%, rgba(240, 200, 118, 0.085), transparent 21%),
+    radial-gradient(circle at 19% 29%, rgba(230, 164, 96, 0.105), transparent 20%),
+    radial-gradient(circle at 50% 27%, rgba(236, 208, 160, 0.085), transparent 21%),
     radial-gradient(circle at 81% 29%, rgba(124, 229, 195, 0.08), transparent 20%),
     radial-gradient(circle at 30% 74%, rgba(255, 81, 102, 0.07), transparent 23%),
     radial-gradient(circle at 76% 74%, rgba(215, 139, 255, 0.065), transparent 19%),
-    linear-gradient(160deg, rgba(8, 16, 34, 0.82), rgba(1, 4, 11, 0.98));
+    linear-gradient(160deg, rgba(14, 13, 15, 0.82), rgba(4, 4, 5, 0.98));
 }
 
 .narrative-universe-grid {
   opacity: 0.72;
   background-image:
-    linear-gradient(rgba(76, 194, 255, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 194, 255, 0.026) 1px, transparent 1px),
-    radial-gradient(circle, rgba(190, 226, 255, 0.24) 0.7px, transparent 1.1px);
+    linear-gradient(rgba(230, 164, 96, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 164, 96, 0.026) 1px, transparent 1px),
+    radial-gradient(circle, rgba(246, 228, 196, 0.24) 0.7px, transparent 1.1px);
   background-size: 36px 36px, 36px 36px, 83px 83px;
   mask-image: radial-gradient(ellipse 85% 90% at 50% 50%, #000 36%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 85% 90% at 50% 50%, #000 36%, transparent 100%);
@@ -349,7 +350,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 .narrative-universe-sweep {
   left: -18%;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(76, 194, 255, 0.075), transparent);
+  background: linear-gradient(90deg, transparent, rgba(230, 164, 96, 0.075), transparent);
   filter: blur(8px);
   transform: skewX(-12deg);
   animation: narrative-universe-sweep 10s ease-in-out infinite;
@@ -476,7 +477,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 .narrative-star-node:focus-visible .narrative-node-copy,
 .narrative-star-node.is-selected .narrative-node-copy {
   border-color: color-mix(in srgb, currentColor 28%, transparent);
-  background: rgba(3, 8, 18, 0.82);
+  background: rgba(10, 9, 10, 0.82);
   box-shadow: 0 10px 28px -18px currentColor;
   backdrop-filter: blur(8px);
 }
@@ -508,7 +509,7 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 18px 56px -24px rgba(0, 0, 0, 0.9),
-    0 0 32px -24px rgba(76, 194, 255, 0.72);
+    0 0 32px -24px rgba(230, 164, 96, 0.72);
 }
 
 @property --yokai-angle {
@@ -562,41 +563,41 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
 
 html[data-theme="light"] .yokai-network {
   background:
-    linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at 50% 48%, rgba(2, 132, 199, 0.1), transparent 50%),
-    rgba(239, 246, 255, 0.94);
+    linear-gradient(rgba(160, 94, 31, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160, 94, 31, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(160, 94, 31, 0.1), transparent 50%),
+    rgba(250, 246, 239, 0.94);
   background-size: 32px 32px, 32px 32px, auto, auto;
 }
 
 html[data-theme="light"] .narrative-universe-frame {
-  border-color: rgba(2, 132, 199, 0.18);
-  background: rgba(239, 246, 255, 0.96);
-  box-shadow: 0 28px 74px -48px rgba(2, 102, 178, 0.48);
+  border-color: rgba(160, 94, 31, 0.18);
+  background: rgba(250, 246, 239, 0.96);
+  box-shadow: 0 28px 74px -48px rgba(130, 80, 30, 0.48);
 }
 
 html[data-theme="light"] .narrative-universe-map {
   background:
-    radial-gradient(circle at 20% 28%, rgba(2, 132, 199, 0.12), transparent 24%),
-    radial-gradient(circle at 50% 27%, rgba(202, 138, 4, 0.09), transparent 25%),
+    radial-gradient(circle at 20% 28%, rgba(160, 94, 31, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 27%, rgba(200, 160, 105, 0.09), transparent 25%),
     radial-gradient(circle at 80% 30%, rgba(5, 150, 105, 0.08), transparent 23%),
-    linear-gradient(160deg, rgba(248, 252, 255, 0.98), rgba(226, 237, 250, 0.96));
+    linear-gradient(160deg, rgba(253, 251, 247, 0.98), rgba(240, 233, 222, 0.96));
 }
 
 html[data-theme="light"] .narrative-node-copy {
-  color: #334155;
+  color: #453c33;
 }
 
 html[data-theme="light"] .narrative-star-node:hover .narrative-node-copy,
 html[data-theme="light"] .narrative-star-node:focus-visible .narrative-node-copy,
 html[data-theme="light"] .narrative-star-node.is-selected .narrative-node-copy,
 html[data-theme="light"] .narrative-lock-panel {
-  background: rgba(241, 247, 255, 0.92);
+  background: rgba(251, 247, 240, 0.92);
 }
 
 @media (max-width: 639px) {
   .yokai-shell {
-    background: radial-gradient(520px 440px at 78% 10%, rgba(30, 112, 194, 0.12), transparent 70%);
+    background: radial-gradient(520px 440px at 78% 10%, rgba(176, 118, 62, 0.12), transparent 70%);
   }
   .yokai-aurora::before,
   .yokai-aurora::after {
@@ -634,18 +635,18 @@ html[data-theme="light"] .narrative-lock-panel {
   /* 標準面板：由上而下的受光漸層 + 頂緣鏡面高光 + 底緣暗線 + 景深陰影。
      大腦讀成「被上方的光照到、浮在背景上」= 有實體感。 */
   .surface {
-    background: linear-gradient(180deg, rgba(32, 48, 80, 0.66), rgba(13, 22, 40, 0.74));
+    background: linear-gradient(180deg, rgba(40, 37, 36, 0.66), rgba(18, 17, 19, 0.74));
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
       inset 0 -1px 0 0 rgba(0, 0, 0, 0.3),
       0 1px 2px rgba(0, 0, 0, 0.28),
-      0 18px 40px -16px rgba(3, 10, 26, 0.65);
+      0 18px 40px -16px rgba(4, 3, 3, 0.65);
   }
 
   /* 凹陷/次要表面：表格容器、空狀態等，比 .surface 暗一階、往內收。 */
   .surface-sunken {
-    background: linear-gradient(180deg, rgba(12, 21, 40, 0.62), rgba(9, 15, 30, 0.72));
+    background: linear-gradient(180deg, rgba(16, 15, 17, 0.62), rgba(11, 10, 12, 0.72));
     border: 1px solid rgba(255, 255, 255, 0.07);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
@@ -654,27 +655,27 @@ html[data-theme="light"] .narrative-lock-panel {
 
   /* 浮起卡片：亮一階、陰影更深更開，明顯「浮」在面板之上。 */
   .surface-raised {
-    background: linear-gradient(180deg, rgba(40, 58, 94, 0.7), rgba(17, 28, 50, 0.76));
+    background: linear-gradient(180deg, rgba(50, 46, 43, 0.7), rgba(22, 21, 23, 0.76));
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 248, 235, 0.16),
       inset 0 -1px 0 0 rgba(0, 0, 0, 0.34),
       0 2px 4px rgba(0, 0, 0, 0.32),
-      0 26px 56px -18px rgba(3, 10, 26, 0.72);
+      0 26px 56px -18px rgba(4, 3, 3, 0.72);
   }
 
-  /* 毛玻璃固定條（header）：內容從底下糊著滑過，底緣一條冰藍高光。 */
+  /* 毛玻璃固定條（header）：內容從底下糊著滑過，底緣一條銅琥珀高光。 */
   .glass-bar {
-    background: rgba(12, 19, 36, 0.6);
+    background: rgba(14, 13, 15, 0.6);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 1px 0 0 rgba(76, 194, 255, 0.16), 0 14px 30px -18px rgba(3, 10, 26, 0.75);
+    box-shadow: 0 1px 0 0 rgba(230, 164, 96, 0.16), 0 14px 30px -18px rgba(4, 3, 3, 0.75);
   }
 
   /* 漂浮 chrome（側欄、彈窗、下拉）：真的浮在內容上，上玻璃才合理。 */
   .glass-panel {
-    background: rgba(15, 24, 44, 0.72);
+    background: rgba(20, 19, 21, 0.72);
     backdrop-filter: blur(22px) saturate(170%);
     -webkit-backdrop-filter: blur(22px) saturate(170%);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -683,82 +684,82 @@ html[data-theme="light"] .narrative-lock-panel {
       0 30px 80px -20px rgba(0, 0, 0, 0.65);
   }
 
-  /* hover 抬升微互動：邊框透出冰藍、輕輕浮起，像玻璃被點亮。 */
+  /* hover 抬升微互動：邊框透出銅琥珀、輕輕浮起，像玻璃被點亮。 */
   .lift {
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
   .lift:hover {
     transform: translateY(-2px);
-    border-color: rgba(76, 194, 255, 0.4);
+    border-color: rgba(230, 164, 96, 0.4);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
       0 2px 4px rgba(0, 0, 0, 0.34),
-      0 22px 46px -16px rgba(2, 8, 22, 0.7),
-      0 0 28px -6px rgba(76, 194, 255, 0.3);
+      0 22px 46px -16px rgba(3, 2, 2, 0.7),
+      0 0 28px -6px rgba(230, 164, 96, 0.3);
   }
 
   /* 訊號光：只給「選中/推薦/active」的那一個，克制才顯貴。 */
   .signal-glow {
     box-shadow:
       inset 0 1px 0 0 rgba(255, 248, 235, 0.12),
-      0 0 0 1px rgba(76, 194, 255, 0.45),
-      0 0 32px -4px rgba(76, 194, 255, 0.4);
+      0 0 0 1px rgba(230, 164, 96, 0.45),
+      0 0 32px -4px rgba(230, 164, 96, 0.4);
   }
 
   /* ── 淺色模式的材質系統：白卡 + 柔和景深陰影取代發光邊。
         層次語言不變（sunken < surface < raised < glass），只換光源方向。 ── */
   html[data-theme="light"] .surface {
-    background: linear-gradient(180deg, #ffffff, #f4f8fd);
-    border: 1px solid rgba(15, 30, 60, 0.09);
+    background: linear-gradient(180deg, #ffffff, #fbf8f2);
+    border: 1px solid rgba(60, 45, 28, 0.09);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
-      0 1px 2px rgba(15, 30, 60, 0.05),
-      0 14px 34px -18px rgba(30, 58, 110, 0.22);
+      0 1px 2px rgba(60, 45, 28, 0.05),
+      0 14px 34px -18px rgba(70, 50, 25, 0.22);
   }
 
   html[data-theme="light"] .surface-sunken {
-    background: linear-gradient(180deg, #e9eff8, #eef3fa);
-    border: 1px solid rgba(15, 30, 60, 0.07);
-    box-shadow: inset 0 1px 6px rgba(15, 30, 60, 0.06);
+    background: linear-gradient(180deg, #efe8dc, #f3ede3);
+    border: 1px solid rgba(60, 45, 28, 0.07);
+    box-shadow: inset 0 1px 6px rgba(60, 45, 28, 0.06);
   }
 
   html[data-theme="light"] .surface-raised {
-    background: linear-gradient(180deg, #ffffff, #f7fafe);
-    border: 1px solid rgba(15, 30, 60, 0.11);
+    background: linear-gradient(180deg, #ffffff, #fcfaf6);
+    border: 1px solid rgba(60, 45, 28, 0.11);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 1),
-      0 2px 4px rgba(15, 30, 60, 0.06),
-      0 22px 48px -20px rgba(30, 58, 110, 0.28);
+      0 2px 4px rgba(60, 45, 28, 0.06),
+      0 22px 48px -20px rgba(70, 50, 25, 0.28);
   }
 
   html[data-theme="light"] .glass-bar {
     background: rgba(255, 255, 255, 0.7);
-    border-bottom: 1px solid rgba(15, 30, 60, 0.08);
-    box-shadow: 0 1px 0 0 rgba(2, 132, 199, 0.14), 0 14px 30px -18px rgba(30, 58, 110, 0.2);
+    border-bottom: 1px solid rgba(60, 45, 28, 0.08);
+    box-shadow: 0 1px 0 0 rgba(160, 94, 31, 0.14), 0 14px 30px -18px rgba(70, 50, 25, 0.2);
   }
 
   html[data-theme="light"] .glass-panel {
     background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(15, 30, 60, 0.1);
+    border: 1px solid rgba(60, 45, 28, 0.1);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-      0 30px 80px -20px rgba(30, 58, 110, 0.3);
+      0 30px 80px -20px rgba(70, 50, 25, 0.3);
   }
 
   html[data-theme="light"] .lift:hover {
-    border-color: rgba(2, 132, 199, 0.45);
+    border-color: rgba(160, 94, 31, 0.45);
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-      0 2px 4px rgba(15, 30, 60, 0.06),
-      0 18px 40px -18px rgba(30, 58, 110, 0.26),
-      0 0 24px -8px rgba(2, 132, 199, 0.35);
+      0 2px 4px rgba(60, 45, 28, 0.06),
+      0 18px 40px -18px rgba(70, 50, 25, 0.26),
+      0 0 24px -8px rgba(160, 94, 31, 0.35);
   }
 
   html[data-theme="light"] .signal-glow {
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-      0 0 0 1px rgba(2, 132, 199, 0.5),
-      0 0 28px -6px rgba(2, 132, 199, 0.35);
+      0 0 0 1px rgba(160, 94, 31, 0.5),
+      0 0 28px -6px rgba(160, 94, 31, 0.35);
   }
 }
 
@@ -790,11 +791,11 @@ html[data-theme="light"] .narrative-lock-panel {
 
 /* 金色主行動按鈕：沿用 auth-submit 的金屬漸層語言，但不綁 .auth-scene 作用域。 */
 .btn-gold {
-  background: linear-gradient(135deg, #8a5a0d 0%, #d4a437 42%, #f0c876 58%, #c8942a 100%);
+  background: linear-gradient(135deg, #7a5a32 0%, #c9a46c 42%, #ecd0a0 58%, #b08a58 100%);
   color: #241503;
-  border: 1px solid rgba(240, 200, 118, 0.55);
+  border: 1px solid rgba(236, 208, 160, 0.55);
   box-shadow:
-    0 8px 30px rgba(202, 138, 4, 0.28),
+    0 8px 30px rgba(200, 160, 105, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: filter 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
@@ -802,21 +803,21 @@ html[data-theme="light"] .narrative-lock-panel {
   filter: brightness(1.07);
   transform: translateY(-1px);
   box-shadow:
-    0 12px 38px rgba(202, 138, 4, 0.4),
+    0 12px 38px rgba(200, 160, 105, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 .btn-gold:active {
   transform: translateY(0);
 }
 
-/* 名稱沿用 ember-pulse（全站既有 class），光色已換成冰藍。 */
+/* 名稱沿用 ember-pulse（全站既有 class），光色為銅琥珀。 */
 @keyframes ember-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(76, 194, 255, 0);
+    box-shadow: 0 0 0 0 rgba(230, 164, 96, 0);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(76, 194, 255, 0.18);
+    box-shadow: 0 0 0 3px rgba(230, 164, 96, 0.18);
   }
 }
 
@@ -1067,11 +1068,11 @@ html[data-theme="light"] .narrative-lock-panel {
   }
 
   html[data-theme="light"] .mobile-dashboard-top {
-    background: rgba(245, 248, 253, 0.9);
+    background: rgba(250, 247, 241, 0.9);
   }
 
   html[data-theme="light"] .mobile-dashboard nav[aria-label="手機版主要功能"] {
-    background: rgba(247, 250, 254, 0.94);
+    background: rgba(251, 249, 244, 0.94);
   }
 }
 
@@ -1110,8 +1111,8 @@ html[data-theme="light"] .narrative-lock-panel {
 .chapter-rail-fill {
   bottom: auto;
   height: calc((100% - 1.5rem) * var(--chapter-progress));
-  background: linear-gradient(180deg, rgba(76, 194, 255, 0.2), rgba(190, 226, 255, 0.95));
-  box-shadow: 0 0 13px rgba(76, 194, 255, 0.65);
+  background: linear-gradient(180deg, rgba(230, 164, 96, 0.2), rgba(246, 228, 196, 0.95));
+  box-shadow: 0 0 13px rgba(230, 164, 96, 0.65);
 }
 
 .chapter-rail-dot {
@@ -1122,10 +1123,10 @@ html[data-theme="light"] .narrative-lock-panel {
   height: 7px;
   border-radius: 999px;
   transform: translate(-50%, -50%);
-  background: #d7eeff;
+  background: #fbe9c8;
   box-shadow:
-    0 0 0 3px rgba(76, 194, 255, 0.12),
-    0 0 18px rgba(76, 194, 255, 0.95);
+    0 0 0 3px rgba(230, 164, 96, 0.12),
+    0 0 18px rgba(230, 164, 96, 0.95);
 }
 
 .chapter-index {
@@ -1133,7 +1134,7 @@ html[data-theme="light"] .narrative-lock-panel {
   left: 50%;
   top: 0;
   transform: translateX(-50%);
-  color: rgba(240, 200, 118, 0.68);
+  color: rgba(236, 208, 160, 0.68);
   font-size: 0.58rem;
   letter-spacing: 0.08em;
 }
@@ -1148,11 +1149,11 @@ html[data-theme="light"] .narrative-lock-panel {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(76, 194, 255, 0.55),
-    rgba(240, 200, 118, 0.28),
+    rgba(230, 164, 96, 0.55),
+    rgba(236, 208, 160, 0.28),
     transparent
   );
-  box-shadow: 0 0 14px rgba(76, 194, 255, 0.22);
+  box-shadow: 0 0 14px rgba(230, 164, 96, 0.22);
   transform-origin: center;
 }
 
@@ -1176,8 +1177,8 @@ html[data-theme="light"] .narrative-lock-panel {
   background:
     radial-gradient(
       260px circle at var(--pointer-x) var(--pointer-y),
-      rgba(176, 224, 255, 0.15),
-      rgba(76, 194, 255, 0.05) 38%,
+      rgba(246, 222, 180, 0.15),
+      rgba(230, 164, 96, 0.05) 38%,
       transparent 68%
     );
   transition: opacity 0.28s ease;
@@ -1203,8 +1204,8 @@ html[data-theme="light"] .narrative-lock-panel {
   background: linear-gradient(
     120deg,
     rgba(255, 255, 255, 0.06),
-    rgba(76, 194, 255, calc(0.08 + var(--chapter-progress) * 0.34)),
-    rgba(240, 200, 118, calc(0.04 + var(--chapter-progress) * 0.18)),
+    rgba(230, 164, 96, calc(0.08 + var(--chapter-progress) * 0.34)),
+    rgba(236, 208, 160, calc(0.04 + var(--chapter-progress) * 0.18)),
     rgba(255, 255, 255, 0.04)
   );
   -webkit-mask:
@@ -1225,19 +1226,19 @@ html[data-theme="light"] .narrative-lock-panel {
   inset: auto 0 0;
   height: calc(var(--chapter-progress) * 100%);
   pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.09));
+  background: linear-gradient(180deg, transparent, rgba(230, 164, 96, 0.09));
   transition: height 0.08s linear;
 }
 
 html[data-theme="light"] .chapter-rail-track {
-  background: rgba(15, 30, 60, 0.1);
+  background: rgba(60, 45, 28, 0.1);
 }
 
 html[data-theme="light"] .pointer-glow::after,
 html[data-theme="light"] .cursor-glow::after {
   background: radial-gradient(
     260px circle at var(--pointer-x) var(--pointer-y),
-    rgba(2, 132, 199, 0.12),
+    rgba(160, 94, 31, 0.12),
     transparent 68%
   );
 }
@@ -1256,7 +1257,7 @@ html[data-theme="light"] .cursor-glow::after {
   padding: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 999px;
-  background: rgba(3, 8, 18, 0.42);
+  background: rgba(10, 9, 10, 0.42);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -1273,12 +1274,12 @@ html[data-theme="light"] .cursor-glow::after {
 
 .page-anchor-link:hover {
   color: rgb(var(--c-slate-50));
-  background: rgba(76, 194, 255, 0.08);
+  background: rgba(230, 164, 96, 0.08);
 }
 
 html[data-theme="light"] .page-anchor-nav {
   background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(15, 30, 60, 0.1);
+  border-color: rgba(60, 45, 28, 0.1);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1305,7 +1306,7 @@ html[data-theme="light"] .page-anchor-nav {
   min-height: 680px;
   overflow: hidden;
   isolation: isolate;
-  background: #050608;
+  background: #0a0a0c;
 }
 
 .nova-scene {
@@ -1321,17 +1322,17 @@ html[data-theme="light"] .page-anchor-nav {
 .nova-scene-b {
   opacity: var(--scene-b-opacity);
   background:
-    radial-gradient(circle at 56% 50%, rgba(76, 194, 255, 0.11), transparent 20%),
-    radial-gradient(circle at 65% 60%, rgba(212, 175, 55, 0.04), transparent 30%),
-    #030405;
+    radial-gradient(circle at 56% 50%, rgba(230, 164, 96, 0.11), transparent 20%),
+    radial-gradient(circle at 65% 60%, rgba(206, 170, 112, 0.04), transparent 30%),
+    #070707;
 }
 
 .nova-scene-vignette {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(1, 3, 6, 0.8), transparent 46%, rgba(1, 3, 6, 0.18)),
-    linear-gradient(0deg, rgba(1, 3, 6, 0.74), transparent 40%, rgba(1, 3, 6, 0.35));
+    linear-gradient(90deg, rgba(4, 3, 3, 0.8), transparent 46%, rgba(4, 3, 3, 0.18)),
+    linear-gradient(0deg, rgba(4, 3, 3, 0.74), transparent 40%, rgba(4, 3, 3, 0.35));
 }
 
 .nova-watermark {
@@ -1352,12 +1353,12 @@ html[data-theme="light"] .page-anchor-nav {
   inset: 0;
   opacity: 0.55;
   background:
-    radial-gradient(circle at 12% 25%, rgba(218, 239, 255, 0.82) 0 1px, transparent 1.6px),
-    radial-gradient(circle at 24% 68%, rgba(218, 239, 255, 0.58) 0 1px, transparent 1.8px),
-    radial-gradient(circle at 38% 35%, rgba(76, 194, 255, 0.72) 0 1.2px, transparent 2px),
-    radial-gradient(circle at 62% 18%, rgba(218, 239, 255, 0.58) 0 1px, transparent 1.8px),
-    radial-gradient(circle at 76% 72%, rgba(240, 200, 118, 0.48) 0 1.1px, transparent 1.9px),
-    radial-gradient(circle at 91% 42%, rgba(218, 239, 255, 0.62) 0 1px, transparent 1.8px);
+    radial-gradient(circle at 12% 25%, rgba(246, 232, 206, 0.82) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 24% 68%, rgba(246, 232, 206, 0.58) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 38% 35%, rgba(230, 164, 96, 0.72) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 62% 18%, rgba(246, 232, 206, 0.58) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 76% 72%, rgba(236, 208, 160, 0.48) 0 1.1px, transparent 1.9px),
+    radial-gradient(circle at 91% 42%, rgba(246, 232, 206, 0.62) 0 1px, transparent 1.8px);
   animation: nova-dust-drift 13s ease-in-out infinite alternate;
 }
 
@@ -1380,7 +1381,7 @@ div.nova-copy-a {
   bottom: 7vh;
   z-index: 8;
   max-width: 15rem;
-  color: rgba(226, 232, 240, 0.78);
+  color: rgba(229, 221, 208, 0.78);
   font-size: 0.78rem;
   line-height: 1.8;
   text-align: right;
@@ -1388,7 +1389,7 @@ div.nova-copy-a {
 
 .nova-side-note span {
   display: block;
-  color: rgba(148, 163, 184, 0.7);
+  color: rgba(168, 158, 143, 0.7);
 }
 
 .nova-copy-b {
@@ -1415,13 +1416,13 @@ div.nova-copy-a {
   padding: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
-  background: rgba(6, 10, 18, 0.68);
+  background: rgba(12, 11, 12, 0.68);
   backdrop-filter: blur(14px);
 }
 
 .story-secondary-cta {
   border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(6, 10, 18, 0.52);
+  background: rgba(12, 11, 12, 0.52);
   color: rgb(var(--c-slate-200));
   backdrop-filter: blur(12px);
   transition:
@@ -1430,8 +1431,8 @@ div.nova-copy-a {
 }
 
 .story-secondary-cta:hover {
-  border-color: rgba(76, 194, 255, 0.5);
-  background: rgba(76, 194, 255, 0.08);
+  border-color: rgba(230, 164, 96, 0.5);
+  background: rgba(230, 164, 96, 0.08);
 }
 
 .nova-object {
@@ -1474,7 +1475,7 @@ div.nova-copy-a {
   transform: translateX(-50%) rotateX(72deg);
   border-radius: 50%;
   opacity: calc(0.34 + var(--scene-b-opacity) * 0.24);
-  background: radial-gradient(ellipse, rgba(125, 204, 255, 0.34), rgba(76, 194, 255, 0.08) 45%, transparent 72%);
+  background: radial-gradient(ellipse, rgba(236, 190, 130, 0.34), rgba(230, 164, 96, 0.08) 45%, transparent 72%);
   filter: blur(18px);
 }
 
@@ -1483,7 +1484,7 @@ div.nova-copy-a {
   inset: -7%;
   z-index: -1;
   border-radius: 2.3rem;
-  background: radial-gradient(circle at 50% 45%, rgba(76, 194, 255, 0.18), transparent 68%);
+  background: radial-gradient(circle at 50% 45%, rgba(230, 164, 96, 0.18), transparent 68%);
   filter: blur(16px);
   transform: translateZ(-60px);
   animation: nova-aura-breathe 4.8s ease-in-out infinite;
@@ -1499,7 +1500,7 @@ div.nova-copy-a {
   transform-style: preserve-3d;
   box-shadow:
     0 35px 90px -28px rgba(0, 0, 0, 0.9),
-    0 0 48px -18px rgba(76, 194, 255, 0.62);
+    0 0 48px -18px rgba(230, 164, 96, 0.62);
 }
 
 .nova-card-face::before {
@@ -1513,9 +1514,9 @@ div.nova-copy-a {
   background: conic-gradient(
     from var(--border-angle, 0deg),
     transparent 0 34%,
-    rgba(201, 232, 255, 0.22) 42%,
-    rgba(76, 194, 255, 0.95) 49%,
-    rgba(240, 200, 118, 0.42) 54%,
+    rgba(246, 230, 200, 0.22) 42%,
+    rgba(230, 164, 96, 0.95) 49%,
+    rgba(236, 208, 160, 0.42) 54%,
     transparent 64%
   );
   -webkit-mask:
@@ -1542,7 +1543,7 @@ div.nova-copy-a {
 }
 
 .nova-card-front {
-  background: rgba(9, 17, 32, 0.94);
+  background: rgba(16, 15, 17, 0.94);
 }
 
 .nova-card-back {
@@ -1553,7 +1554,7 @@ div.nova-copy-a {
   transform: rotateY(180deg);
   background:
     radial-gradient(circle at 25% 12%, rgba(255, 248, 223, 0.55), transparent 32%),
-    linear-gradient(135deg, #8b5c12, #d4af37 43%, #f0d27b 68%, #a26b14);
+    linear-gradient(135deg, #7a5a32, #ceaa70 43%, #f1e0c4 68%, #9a7444);
 }
 
 .nova-card-chrome {
@@ -1563,7 +1564,7 @@ div.nova-copy-a {
   gap: 0.55rem;
   padding: 0.55rem 0.8rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  background: linear-gradient(180deg, rgba(45, 64, 102, 0.72), rgba(18, 29, 51, 0.76));
+  background: linear-gradient(180deg, rgba(52, 47, 44, 0.72), rgba(22, 21, 23, 0.76));
 }
 
 .nova-specular {
@@ -1574,7 +1575,7 @@ div.nova-copy-a {
   background: radial-gradient(
     290px circle at var(--hero-pointer-x) var(--hero-pointer-y),
     rgba(255, 255, 255, 0.17),
-    rgba(133, 204, 255, 0.05) 36%,
+    rgba(240, 206, 160, 0.05) 36%,
     transparent 68%
   );
 }
@@ -1602,8 +1603,8 @@ div.nova-copy-a {
   display: block;
   width: calc(var(--story-progress) * 100%);
   height: 100%;
-  background: linear-gradient(90deg, #8dd2ff, #f0c876);
-  box-shadow: 0 0 13px rgba(76, 194, 255, 0.7);
+  background: linear-gradient(90deg, #e6a460, #ecd0a0);
+  box-shadow: 0 0 13px rgba(230, 164, 96, 0.7);
 }
 
 .nova-scroll-hint {
@@ -1612,7 +1613,7 @@ div.nova-copy-a {
   bottom: 2.2rem;
   z-index: 10;
   transform: translateX(-50%);
-  color: rgba(148, 163, 184, 0.68);
+  color: rgba(168, 158, 143, 0.68);
   font-size: 0.55rem;
   letter-spacing: 0.28em;
 }
@@ -1714,13 +1715,13 @@ div.nova-copy-a {
 .dashboard-shell .surface,
 .dashboard-shell .surface-raised,
 .dashboard-shell .surface-sunken {
-  --dashboard-edge: rgba(76, 194, 255, 0.08);
+  --dashboard-edge: rgba(230, 164, 96, 0.08);
 }
 
 .dashboard-header {
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-    0 1px 0 rgba(76, 194, 255, 0.16),
+    0 1px 0 rgba(230, 164, 96, 0.16),
     0 24px 70px -28px rgba(0, 0, 0, 0.82);
 }
 
@@ -1735,7 +1736,7 @@ div.nova-copy-a {
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background: linear-gradient(105deg, transparent 28%, rgba(76, 194, 255, 0.08), transparent 70%);
+  background: linear-gradient(105deg, transparent 28%, rgba(230, 164, 96, 0.08), transparent 70%);
   transform: translateX(-80%);
   transition:
     opacity 0.2s ease,
@@ -1751,9 +1752,9 @@ div.nova-copy-a {
 .oi-reactor-shell {
   isolation: isolate;
   box-shadow:
-    inset 0 1px 0 rgba(202, 230, 255, 0.08),
+    inset 0 1px 0 rgba(246, 232, 206, 0.08),
     inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-    0 32px 90px -55px rgba(31, 137, 224, 0.62);
+    0 32px 90px -55px rgba(176, 118, 62, 0.62);
 }
 
 .oi-reactor-ambient {
@@ -1761,7 +1762,7 @@ div.nova-copy-a {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 38% 48%, rgba(76, 194, 255, 0.09), transparent 38%),
+    radial-gradient(circle at 38% 48%, rgba(230, 164, 96, 0.09), transparent 38%),
     radial-gradient(circle at 82% 38%, rgba(35, 221, 141, 0.045), transparent 24%),
     linear-gradient(112deg, transparent 30%, rgba(255, 255, 255, 0.025) 48%, transparent 64%);
 }
@@ -1868,19 +1869,19 @@ div.nova-copy-a {
 }
 
 html[data-theme="light"] .oi-reactor-shell {
-  border-color: rgba(2, 132, 199, 0.16);
-  background: rgba(239, 246, 255, 0.94);
-  box-shadow: 0 26px 72px -50px rgba(2, 102, 178, 0.46);
+  border-color: rgba(160, 94, 31, 0.16);
+  background: rgba(250, 246, 239, 0.94);
+  box-shadow: 0 26px 72px -50px rgba(130, 80, 30, 0.46);
 }
 
 html[data-theme="light"] .oi-reactor-ambient {
   background:
-    radial-gradient(circle at 38% 48%, rgba(2, 132, 199, 0.11), transparent 40%),
+    radial-gradient(circle at 38% 48%, rgba(160, 94, 31, 0.11), transparent 40%),
     radial-gradient(circle at 82% 38%, rgba(5, 150, 105, 0.06), transparent 26%);
 }
 
 html[data-theme="light"] .oi-signal-lens {
-  background: rgba(244, 248, 255, 0.94);
+  background: rgba(251, 248, 242, 0.94);
 }
 
 @media (max-width: 639px) {
@@ -1931,7 +1932,7 @@ html[data-theme="light"] .oi-signal-lens {
     padding: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
-    background: rgba(4, 8, 15, 0.62);
+    background: rgba(9, 8, 9, 0.62);
     backdrop-filter: blur(12px);
   }
 
@@ -2025,9 +2026,20 @@ html[data-theme="light"] .oi-signal-lens {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  /* 全站背景：CT_Trader 山景（地平線金光）。cover + 底部對齊：桌機看到完整山脈，
+     直式手機自動裁到中央主峰。上方一層暗化漸層讓頁首與面板文字保持清楚。 */
   background:
-    radial-gradient(circle at 78% 12%, rgba(76, 194, 255, 0.22), transparent 32%),
-    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.15), transparent 36%);
+    linear-gradient(
+      180deg,
+      rgba(8, 8, 10, 0.55) 0%,
+      rgba(8, 8, 10, 0.2) 40%,
+      rgba(8, 8, 10, 0.14) 62%,
+      rgba(8, 8, 10, 0.26) 78%,
+      rgba(8, 8, 10, 0.36) 100%
+    ),
+    radial-gradient(circle at 78% 10%, rgba(236, 208, 160, 0.07), transparent 34%),
+    url("/backgrounds/ct-mountain.jpg") center bottom / cover no-repeat,
+    #0a0a0c;
 }
 
 /* 斜向極光帶：帶寬拉到 ~20%，讀起來是「光」而不是一條線。 */
@@ -2037,8 +2049,8 @@ html[data-theme="light"] .oi-signal-lens {
   inset: -20%;
   opacity: 0.3;
   background:
-    linear-gradient(115deg, transparent 0 36%, rgba(76, 194, 255, 0.1) 46%, rgba(76, 194, 255, 0.05) 52%, transparent 60%),
-    linear-gradient(145deg, transparent 0 50%, rgba(143, 169, 201, 0.09) 60%, transparent 72%);
+    linear-gradient(115deg, transparent 0 36%, rgba(230, 164, 96, 0.1) 46%, rgba(230, 164, 96, 0.05) 52%, transparent 60%),
+    linear-gradient(145deg, transparent 0 50%, rgba(160, 180, 196, 0.09) 60%, transparent 72%);
   filter: blur(6px);
   transform: translate3d(-2%, 0, 0);
   animation: cosmic-sweep 22s ease-in-out infinite alternate;
@@ -2065,23 +2077,23 @@ html[data-theme="light"] .oi-signal-lens {
 
 .space-nebula-a {
   background:
-    radial-gradient(closest-side at 68% 28%, rgba(76, 194, 255, 0.28), transparent 70%),
-    radial-gradient(closest-side at 28% 62%, rgba(56, 130, 220, 0.18), transparent 74%);
+    radial-gradient(closest-side at 68% 28%, rgba(230, 164, 96, 0.28), transparent 70%),
+    radial-gradient(closest-side at 28% 62%, rgba(176, 118, 62, 0.18), transparent 74%);
   animation: nebula-drift-a 18s ease-in-out infinite alternate;
 }
 
 .space-nebula-b {
   background:
-    radial-gradient(closest-side at 52% 78%, rgba(143, 169, 201, 0.18), transparent 72%),
-    radial-gradient(closest-side at 86% 68%, rgba(76, 194, 255, 0.16), transparent 76%);
+    radial-gradient(closest-side at 52% 78%, rgba(160, 180, 196, 0.18), transparent 72%),
+    radial-gradient(closest-side at 86% 68%, rgba(230, 164, 96, 0.16), transparent 76%);
   animation: nebula-drift-b 24s ease-in-out infinite alternate;
 }
 
 .space-stars-far {
   opacity: 0.6;
   background-image:
-    radial-gradient(circle, rgba(230, 237, 247, 0.72) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(76, 194, 255, 0.58) 0 1px, transparent 1.5px);
+    radial-gradient(circle, rgba(244, 238, 228, 0.72) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(230, 164, 96, 0.58) 0 1px, transparent 1.5px);
   background-position: 0 0, 42px 74px;
   background-size: 180px 180px, 260px 260px;
   animation: star-drift-far 80s linear infinite;
@@ -2090,8 +2102,8 @@ html[data-theme="light"] .oi-signal-lens {
 .space-stars-near {
   opacity: 0.5;
   background-image:
-    radial-gradient(circle, rgba(230, 237, 247, 0.9) 0 1.1px, transparent 1.7px),
-    radial-gradient(circle, rgba(76, 194, 255, 0.72) 0 1.3px, transparent 1.9px);
+    radial-gradient(circle, rgba(244, 238, 228, 0.9) 0 1.1px, transparent 1.7px),
+    radial-gradient(circle, rgba(230, 164, 96, 0.72) 0 1.3px, transparent 1.9px);
   background-position: 18px 36px, 110px 20px;
   background-size: 320px 320px, 430px 430px;
   animation: star-drift-near 55s linear infinite;
@@ -2100,29 +2112,29 @@ html[data-theme="light"] .oi-signal-lens {
 /* 稀疏的「亮星」層：帶光暈、緩慢呼吸，是星空的視覺錨點。 */
 .space-stars-twinkle {
   background:
-    radial-gradient(circle at 16% 18%, rgba(190, 226, 255, 0.9) 0 1.6px, rgba(76, 194, 255, 0.25) 3px, transparent 6px),
-    radial-gradient(circle at 71% 9%, rgba(240, 200, 118, 0.85) 0 1.4px, rgba(202, 138, 4, 0.22) 2.8px, transparent 5.5px),
-    radial-gradient(circle at 89% 41%, rgba(190, 226, 255, 0.8) 0 1.5px, rgba(76, 194, 255, 0.22) 3px, transparent 6px),
-    radial-gradient(circle at 34% 55%, rgba(230, 237, 247, 0.75) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px),
-    radial-gradient(circle at 55% 84%, rgba(240, 200, 118, 0.8) 0 1.5px, rgba(202, 138, 4, 0.2) 3px, transparent 6px),
-    radial-gradient(circle at 8% 76%, rgba(230, 237, 247, 0.7) 0 1.2px, rgba(76, 194, 255, 0.18) 2.4px, transparent 5px);
+    radial-gradient(circle at 16% 18%, rgba(246, 228, 196, 0.9) 0 1.6px, rgba(230, 164, 96, 0.25) 3px, transparent 6px),
+    radial-gradient(circle at 71% 9%, rgba(236, 208, 160, 0.85) 0 1.4px, rgba(200, 160, 105, 0.22) 2.8px, transparent 5.5px),
+    radial-gradient(circle at 89% 41%, rgba(246, 228, 196, 0.8) 0 1.5px, rgba(230, 164, 96, 0.22) 3px, transparent 6px),
+    radial-gradient(circle at 34% 55%, rgba(244, 238, 228, 0.75) 0 1.2px, rgba(230, 164, 96, 0.18) 2.4px, transparent 5px),
+    radial-gradient(circle at 55% 84%, rgba(236, 208, 160, 0.8) 0 1.5px, rgba(200, 160, 105, 0.2) 3px, transparent 6px),
+    radial-gradient(circle at 8% 76%, rgba(244, 238, 228, 0.7) 0 1.2px, rgba(230, 164, 96, 0.18) 2.4px, transparent 5px);
   animation: star-twinkle 5.5s ease-in-out infinite alternate;
 }
 
-/* 漂浮粒子：每顆帶柔和冰藍光暈，數量加倍，是「元宇宙塵埃」的主體。 */
+/* 漂浮粒子：每顆帶柔和銅琥珀光暈，數量加倍，是「金色塵埃」的主體。 */
 .space-drift-particles {
   opacity: 0.9;
   background:
-    radial-gradient(circle at 10% 24%, rgba(76, 194, 255, 0.85) 0 1.6px, rgba(76, 194, 255, 0.2) 3.2px, transparent 5.5px),
-    radial-gradient(circle at 22% 72%, rgba(230, 237, 247, 0.75) 0 1.1px, rgba(76, 194, 255, 0.14) 2.4px, transparent 4.5px),
-    radial-gradient(circle at 42% 18%, rgba(76, 194, 255, 0.78) 0 1.3px, rgba(76, 194, 255, 0.18) 2.8px, transparent 5px),
-    radial-gradient(circle at 62% 48%, rgba(230, 237, 247, 0.62) 0 1.1px, rgba(76, 194, 255, 0.12) 2.2px, transparent 4px),
-    radial-gradient(circle at 79% 31%, rgba(76, 194, 255, 0.85) 0 1.5px, rgba(76, 194, 255, 0.2) 3px, transparent 5.5px),
-    radial-gradient(circle at 88% 78%, rgba(230, 237, 247, 0.66) 0 1.1px, rgba(76, 194, 255, 0.12) 2.2px, transparent 4px),
-    radial-gradient(circle at 31% 39%, rgba(76, 194, 255, 0.7) 0 1.2px, rgba(76, 194, 255, 0.15) 2.5px, transparent 4.5px),
-    radial-gradient(circle at 50% 66%, rgba(230, 237, 247, 0.58) 0 1px, rgba(76, 194, 255, 0.1) 2px, transparent 3.8px),
-    radial-gradient(circle at 70% 12%, rgba(76, 194, 255, 0.74) 0 1.3px, rgba(76, 194, 255, 0.16) 2.7px, transparent 5px),
-    radial-gradient(circle at 94% 56%, rgba(230, 237, 247, 0.6) 0 1px, rgba(76, 194, 255, 0.1) 2px, transparent 3.8px);
+    radial-gradient(circle at 10% 24%, rgba(230, 164, 96, 0.85) 0 1.6px, rgba(230, 164, 96, 0.2) 3.2px, transparent 5.5px),
+    radial-gradient(circle at 22% 72%, rgba(244, 238, 228, 0.75) 0 1.1px, rgba(230, 164, 96, 0.14) 2.4px, transparent 4.5px),
+    radial-gradient(circle at 42% 18%, rgba(230, 164, 96, 0.78) 0 1.3px, rgba(230, 164, 96, 0.18) 2.8px, transparent 5px),
+    radial-gradient(circle at 62% 48%, rgba(244, 238, 228, 0.62) 0 1.1px, rgba(230, 164, 96, 0.12) 2.2px, transparent 4px),
+    radial-gradient(circle at 79% 31%, rgba(230, 164, 96, 0.85) 0 1.5px, rgba(230, 164, 96, 0.2) 3px, transparent 5.5px),
+    radial-gradient(circle at 88% 78%, rgba(244, 238, 228, 0.66) 0 1.1px, rgba(230, 164, 96, 0.12) 2.2px, transparent 4px),
+    radial-gradient(circle at 31% 39%, rgba(230, 164, 96, 0.7) 0 1.2px, rgba(230, 164, 96, 0.15) 2.5px, transparent 4.5px),
+    radial-gradient(circle at 50% 66%, rgba(244, 238, 228, 0.58) 0 1px, rgba(230, 164, 96, 0.1) 2px, transparent 3.8px),
+    radial-gradient(circle at 70% 12%, rgba(230, 164, 96, 0.74) 0 1.3px, rgba(230, 164, 96, 0.16) 2.7px, transparent 5px),
+    radial-gradient(circle at 94% 56%, rgba(244, 238, 228, 0.6) 0 1px, rgba(230, 164, 96, 0.1) 2px, transparent 3.8px);
   animation: particle-float 12s ease-in-out infinite alternate;
 }
 
@@ -2138,9 +2150,9 @@ html[data-theme="light"] .oi-signal-lens {
   transform: perspective(640px) rotateX(62deg);
   transform-origin: 50% 100%;
   background:
-    repeating-linear-gradient(90deg, rgba(76, 194, 255, 0.4) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(0deg, rgba(76, 194, 255, 0.32) 0 1px, transparent 1px 56px),
-    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.05));
+    repeating-linear-gradient(90deg, rgba(230, 164, 96, 0.4) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(230, 164, 96, 0.32) 0 1px, transparent 1px 56px),
+    linear-gradient(180deg, transparent, rgba(230, 164, 96, 0.05));
   mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 42%, #000 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 42%, #000 100%);
   animation: grid-flow 8s linear infinite;
@@ -2149,11 +2161,11 @@ html[data-theme="light"] .oi-signal-lens {
 .space-scanline {
   opacity: 0.18;
   background:
-    linear-gradient(180deg, transparent, rgba(76, 194, 255, 0.5), transparent),
+    linear-gradient(180deg, transparent, rgba(230, 164, 96, 0.5), transparent),
     repeating-linear-gradient(
       90deg,
       transparent 0 32px,
-      rgba(76, 194, 255, 0.1) 33px,
+      rgba(230, 164, 96, 0.1) 33px,
       transparent 34px
     );
   transform: translateY(-60%);
@@ -2249,30 +2261,32 @@ html[data-theme="light"] .oi-signal-lens {
 
 /* 分析師聊天的 markdown 在淺色模式改用亮底 prose 色板（元件不用動）。 */
 html[data-theme="light"] .prose-invert {
-  --tw-prose-body: #1e293b;
-  --tw-prose-headings: #0f172a;
-  --tw-prose-lead: #334155;
-  --tw-prose-links: #0284c7;
-  --tw-prose-bold: #0f172a;
-  --tw-prose-counters: #64748b;
-  --tw-prose-bullets: #94a3b8;
-  --tw-prose-hr: rgba(15, 30, 60, 0.12);
-  --tw-prose-quotes: #0f172a;
-  --tw-prose-quote-borders: rgba(15, 30, 60, 0.16);
-  --tw-prose-captions: #64748b;
-  --tw-prose-code: #0f172a;
-  --tw-prose-pre-code: #e2e8f0;
-  --tw-prose-pre-bg: #0f172a;
-  --tw-prose-th-borders: rgba(15, 30, 60, 0.2);
-  --tw-prose-td-borders: rgba(15, 30, 60, 0.12);
+  --tw-prose-body: #2b241d;
+  --tw-prose-headings: #1c1712;
+  --tw-prose-lead: #453c33;
+  --tw-prose-links: #a05e1f;
+  --tw-prose-bold: #1c1712;
+  --tw-prose-counters: #7d7368;
+  --tw-prose-bullets: #a89e8f;
+  --tw-prose-hr: rgba(60, 45, 28, 0.12);
+  --tw-prose-quotes: #1c1712;
+  --tw-prose-quote-borders: rgba(60, 45, 28, 0.16);
+  --tw-prose-captions: #7d7368;
+  --tw-prose-code: #1c1712;
+  --tw-prose-pre-code: #e5ddcf;
+  --tw-prose-pre-bg: #1c1712;
+  --tw-prose-th-borders: rgba(60, 45, 28, 0.2);
+  --tw-prose-td-borders: rgba(60, 45, 28, 0.12);
 }
 
-/* ── 淺色模式的星空：白色星塵翻轉成深藍微粒（invert 後 hue-rotate 180° 保住
-      冰藍色相），動畫層用 filter: opacity() 調權重（keyframes 會蓋掉 opacity 屬性）。 ── */
+/* ── 淺色模式的星空：香檳星塵翻轉成深銅微粒（invert 後 hue-rotate 180° 保住
+      暖色相），動畫層用 filter: opacity() 調權重（keyframes 會蓋掉 opacity 屬性）。
+      深色山景照片在淺底上會變成一片灰，淺色模式改用暖紙白 + 地平線金光。 ── */
 html[data-theme="light"] .space-particle-field {
   background:
-    radial-gradient(circle at 78% 12%, rgba(2, 132, 199, 0.1), transparent 32%),
-    radial-gradient(circle at 18% 82%, rgba(56, 130, 220, 0.08), transparent 36%);
+    radial-gradient(1300px 460px at 50% 106%, rgba(200, 150, 90, 0.18), transparent 64%),
+    radial-gradient(circle at 78% 12%, rgba(160, 94, 31, 0.07), transparent 34%),
+    #f6f2eb;
 }
 
 html[data-theme="light"] .space-particle-field::before {
@@ -2303,26 +2317,26 @@ html[data-theme="light"] .space-scanline {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   CT_Trader auth 場景（僅 login/register）。暖金為主視覺、冰藍降為
+   CT_Trader auth 場景（僅 login/register）。香檳金為主視覺、銅琥珀為
    輔助光；金色 token 只存在於 .auth-scene 作用域，不進全域色票。
    ────────────────────────────────────────────────────────────── */
 .auth-scene {
-  --au-gold: 202 138 4;       /* 主金 #ca8a04 */
-  --au-gold-hi: 240 200 118;  /* 香檳高光 #f0c876 */
-  --au-gold-deep: 133 88 12;  /* 深琥珀 #85580c */
+  --au-gold: 200 160 105;     /* 主金 #c8a069 */
+  --au-gold-hi: 236 208 160;  /* 香檳高光 #ecd0a0 */
+  --au-gold-deep: 122 90 50;  /* 深古銅 #7a5a32 */
   --au-ink-warm: 245 239 226; /* 暖白 #f5efe2 */
   background:
-    radial-gradient(900px 620px at 50% 26%, rgba(30, 58, 110, 0.2), transparent 64%),
+    radial-gradient(900px 620px at 50% 26%, rgba(8, 8, 10, 0.32), transparent 64%),
     radial-gradient(1200px 760px at 50% 118%, rgba(var(--au-gold) / 0.06), transparent 60%);
 }
 
 html[data-theme="light"] .auth-scene {
-  --au-gold: 161 98 7;
-  --au-gold-hi: 202 138 4;
+  --au-gold: 150 110 50;
+  --au-gold-hi: 184 140 74;
   --au-gold-deep: 113 63 18;
   --au-ink-warm: 41 37 36;
   background:
-    radial-gradient(900px 620px at 50% 26%, rgba(56, 130, 220, 0.1), transparent 64%),
+    radial-gradient(900px 620px at 50% 26%, rgba(200, 150, 90, 0.08), transparent 64%),
     radial-gradient(1200px 760px at 50% 118%, rgba(var(--au-gold) / 0.06), transparent 60%);
 }
 
@@ -2392,11 +2406,11 @@ html[data-theme="light"] .auth-scene .auth-beam {
 
 /* 深色玻璃卡：金色髮絲邊框、頂緣最亮、柔和金暈 */
 .auth-scene .auth-card {
-  background: linear-gradient(180deg, rgba(14, 20, 36, 0.82), rgba(9, 14, 27, 0.9));
+  background: linear-gradient(180deg, rgba(20, 19, 21, 0.82), rgba(12, 11, 13, 0.9));
   border: 1px solid rgba(var(--au-gold) / 0.24);
   box-shadow:
     inset 0 1px 0 0 rgba(var(--au-gold-hi) / 0.14),
-    0 30px 90px rgba(2, 8, 22, 0.7),
+    0 30px 90px rgba(3, 2, 2, 0.7),
     0 0 44px -14px rgba(var(--au-gold) / 0.3);
 }
 html[data-theme="light"] .auth-scene .auth-card {
@@ -2404,7 +2418,7 @@ html[data-theme="light"] .auth-scene .auth-card {
   border-color: rgba(var(--au-gold) / 0.35);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-    0 30px 80px rgba(30, 58, 110, 0.18),
+    0 30px 80px rgba(70, 50, 25, 0.18),
     0 0 36px -14px rgba(var(--au-gold) / 0.3);
 }
 .auth-scene .auth-card-topline {
@@ -2416,14 +2430,14 @@ html[data-theme="light"] .auth-scene .auth-card {
   background: radial-gradient(
     closest-side,
     rgba(var(--au-gold) / 0.06),
-    rgba(76, 194, 255, 0.025) 55%,
+    rgba(230, 164, 96, 0.025) 55%,
     transparent 72%
   );
   transition: opacity 0.45s ease;
   will-change: transform;
 }
 
-/* 輸入框：預設低調、focus 金色光暈 + 一絲冰藍 kicker */
+/* 輸入框：預設低調、focus 金色光暈 + 一絲銅琥珀 kicker */
 .auth-scene .auth-input {
   transition: border-color 0.22s ease, box-shadow 0.22s ease;
 }
@@ -2432,7 +2446,7 @@ html[data-theme="light"] .auth-scene .auth-card {
   box-shadow:
     0 0 0 3px rgba(var(--au-gold) / 0.14),
     0 0 22px rgba(var(--au-gold) / 0.16),
-    0 0 10px rgba(76, 194, 255, 0.07);
+    0 0 10px rgba(230, 164, 96, 0.07);
 }
 
 /* 淺色主題的 focus 環加實：鍵盤導航要一眼可見（WCAG focus visibility）。 */
@@ -2445,7 +2459,7 @@ html[data-theme="light"] .auth-scene .auth-input:focus {
 
 /* 主按鈕：深金→香檳金漸層、深褐墨文字、克制的 hover */
 .auth-scene .auth-submit {
-  background: linear-gradient(135deg, #8a5a0d 0%, #d4a437 42%, #f0c876 58%, #c8942a 100%);
+  background: linear-gradient(135deg, #7a5a32 0%, #c9a46c 42%, #ecd0a0 58%, #b08a58 100%);
   color: #241503;
   border: 1px solid rgba(var(--au-gold-hi) / 0.55);
   box-shadow:
@@ -2567,7 +2581,7 @@ html[data-theme="light"] .auth-scene .auth-link:hover { color: rgb(var(--au-gold
     transition: none;
   }
   .nova-card-face::before {
-    background: linear-gradient(120deg, rgba(76, 194, 255, 0.7), rgba(240, 200, 118, 0.3));
+    background: linear-gradient(120deg, rgba(230, 164, 96, 0.7), rgba(236, 208, 160, 0.3));
   }
   .chapter-divider,
   .chapter-rail-fill,

@@ -40,7 +40,7 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
           <img
             src="/logo.png"
             alt="CT Trader"
-            className="h-24 w-auto [filter:drop-shadow(0_4px_16px_rgba(15,30,60,0.35))]"
+            className="h-24 w-auto [filter:drop-shadow(0_4px_16px_rgba(60,45,28,0.35))]"
           />
           <span className="auth-title text-2xl font-semibold tracking-[0.08em]">
             CONFLUENCE THEORY

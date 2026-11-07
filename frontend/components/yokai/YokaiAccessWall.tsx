@@ -12,7 +12,7 @@ const CONTACT_URL = "https://lin.ee/RP6APHg";
 
 const PREVIEW_NODES = [
   { label: "AI", x: "16%", y: "32%", heat: "84.2", tone: "#4cc2ff" },
-  { label: "BTCFi", x: "39%", y: "19%", heat: "71.8", tone: "#f0c876" },
+  { label: "BTCFi", x: "39%", y: "19%", heat: "71.8", tone: "#ecd0a0" },
   { label: "RWA", x: "64%", y: "28%", heat: "67.4", tone: "#7ce5c3" },
   { label: "DePIN", x: "81%", y: "53%", heat: "58.1", tone: "#d78bff" },
   { label: "PayFi", x: "55%", y: "72%", heat: "49.6", tone: "#ff8f9f" },
@@ -57,16 +57,16 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
           </div>
         </header>
 
-        <section className="relative mt-5 min-h-[76svh] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#030711]/92">
+        <section className="relative mt-5 min-h-[76svh] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#080709]/92">
           <div aria-hidden className="pointer-events-none select-none p-3 sm:p-5">
             <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
-              <div className="relative h-[350px] overflow-hidden rounded-2xl border border-ember/15 bg-[radial-gradient(circle_at_center,rgba(32,123,194,.16),transparent_48%),linear-gradient(160deg,#081225,#02050c)] sm:h-[430px]">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(76,194,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(76,194,255,.035)_1px,transparent_1px)] bg-[size:32px_32px]" />
+              <div className="relative h-[350px] overflow-hidden rounded-2xl border border-ember/15 bg-[radial-gradient(circle_at_center,rgba(176,118,62,.16),transparent_48%),linear-gradient(160deg,#121012,#050405)] sm:h-[430px]">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(230,164,96,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(230,164,96,.035)_1px,transparent_1px)] bg-[size:32px_32px]" />
                 <div className="absolute left-5 top-5 flex items-center gap-2 text-xs text-slate-400">
                   <Radar className="h-4 w-4 text-ember" />
                   妖氣偵測核心
                 </div>
-                <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/30 bg-gold/[.06] text-gold shadow-[0_0_60px_rgba(202,138,4,.18)]">
+                <div className="absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/30 bg-gold/[.06] text-gold shadow-[0_0_60px_rgba(200,160,105,.18)]">
                   <Orbit className="h-8 w-8" />
                 </div>
                 {PREVIEW_NODES.map((node) => (
@@ -108,16 +108,16 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
 
           <div aria-hidden className="absolute inset-0 backdrop-blur-[4px]" />
           <div aria-hidden className="absolute inset-0 backdrop-blur-[15px] [mask-image:linear-gradient(180deg,transparent_0%,#000_42%)]" />
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#030711]/20 via-[#030711]/60 to-[#030711]/90" />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#080709]/20 via-[#080709]/60 to-[#080709]/90" />
 
           <div className="absolute inset-0 grid place-items-center p-4">
             <div className="glass-panel relative flex w-full max-w-lg flex-col items-center overflow-hidden rounded-2xl px-6 py-8 text-center sm:px-10 sm:py-10">
-              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent shadow-[0_0_18px_rgba(240,200,118,.7)]" />
+              <div aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent shadow-[0_0_18px_rgba(236,208,160,.7)]" />
               <span className="font-kicker mb-5 inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/[.07] px-3 py-1.5 text-[9px] tracking-[0.2em] text-gold">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 30D + LIFETIME ACCESS
               </span>
-              <span className="relative grid h-16 w-16 place-items-center rounded-full border border-gold/35 bg-gold/10 text-gold shadow-[0_0_38px_rgba(202,138,4,.28)]">
+              <span className="relative grid h-16 w-16 place-items-center rounded-full border border-gold/35 bg-gold/10 text-gold shadow-[0_0_38px_rgba(200,160,105,.28)]">
                 <LockKeyhole className="h-7 w-7" />
                 <span className="absolute inset-0 animate-ping rounded-full border border-gold/15" />
               </span>

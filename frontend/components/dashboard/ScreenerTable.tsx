@@ -92,7 +92,7 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
               onClick={() => setSortMode(tab.mode)}
               className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
                 sortMode === tab.mode
-                  ? "border-ember/70 bg-ember/85 text-obsidian shadow-[0_0_22px_rgba(76,194,255,0.22)]"
+                  ? "border-ember/70 bg-ember/85 text-obsidian shadow-[0_0_22px_rgba(230,164,96,0.22)]"
                   : "border-white/10 bg-black/15 text-slate-400 hover:border-ember/35 hover:bg-ember/10 hover:text-slate-100"
               }`}
             >

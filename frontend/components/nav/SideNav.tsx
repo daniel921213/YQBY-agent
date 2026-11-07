@@ -57,7 +57,7 @@ export function SideNav() {
         aria-expanded={open}
         className="surface lift inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md"
       >
-        <span className="bg-gradient-to-b from-goldhi to-gold bg-clip-text text-sm font-bold tracking-[0.03em] text-transparent [filter:drop-shadow(0_0_10px_rgba(240,200,118,0.35))]">
+        <span className="bg-gradient-to-b from-goldhi to-gold bg-clip-text text-sm font-bold tracking-[0.03em] text-transparent [filter:drop-shadow(0_0_10px_rgba(236,208,160,0.35))]">
           CT
         </span>
       </button>
@@ -135,7 +135,7 @@ function SideNavOverlay({
                 }`}
               >
                 {active ? (
-                  <span className="absolute inset-y-2 left-0 w-px bg-gold shadow-[0_0_12px_rgba(202,138,4,0.8)]" />
+                  <span className="absolute inset-y-2 left-0 w-px bg-gold shadow-[0_0_12px_rgba(200,160,105,0.8)]" />
                 ) : null}
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex min-w-0 flex-col">

@@ -49,10 +49,10 @@ const ZONES: Record<ReactorSide, ZoneMeta> = {
   空頭回補: { color: "#4cc2ff", desc: "價格↑ · OI↓", angle: 225, start: 186, end: 264, kind: "chamber" },
   多頭去槓桿: { color: "#f0b429", desc: "價格↓ · OI↓", angle: 135, start: 96, end: 174, kind: "chamber" },
   "OI增倉／價格持平": { color: "#a78bfa", desc: "OI↑ · 價格持平", angle: 0, start: 354, end: 366, kind: "corridor" },
-  "OI減倉／價格持平": { color: "#94a3b8", desc: "OI↓ · 價格持平", angle: 180, start: 174, end: 186, kind: "corridor" },
+  "OI減倉／價格持平": { color: "#a89e8f", desc: "OI↓ · 價格持平", angle: 180, start: 174, end: 186, kind: "corridor" },
   "價格上漲／OI持平": { color: "#67e8f9", desc: "價格↑ · OI持平", angle: 270, start: 264, end: 276, kind: "corridor" },
   "價格下跌／OI持平": { color: "#fb7185", desc: "價格↓ · OI持平", angle: 90, start: 84, end: 96, kind: "corridor" },
-  持平: { color: "#8fa9c9", desc: "價格與 OI 皆持平", angle: 0, kind: "core" }
+  持平: { color: "#a0b4c4", desc: "價格與 OI 皆持平", angle: 0, kind: "core" }
 };
 
 const MAIN_SIDES: ReactorSide[] = ["空頭回補", "多頭建倉", "多頭去槓桿", "空頭建倉"];
@@ -218,7 +218,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
   };
 
   return (
-    <div className="oi-reactor-shell relative overflow-hidden rounded-2xl border border-white/[.09] bg-[#030711]/90 p-3 sm:p-4">
+    <div className="oi-reactor-shell relative overflow-hidden rounded-2xl border border-white/[.09] bg-[#080709]/90 p-3 sm:p-4">
       <div className="oi-reactor-ambient" aria-hidden />
 
       <div className="relative z-10 flex flex-col gap-3">
@@ -237,7 +237,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             <ThresholdControl
               label="OI 門檻"
               value={oiThreshold}
-              color="#4cc2ff"
+              color="#e6a460"
               onChange={(value) => {
                 setOiThreshold(value);
                 setSelectedSymbol(null);
@@ -280,9 +280,9 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
             >
               <defs>
                 <radialGradient id="oi-reactor-backdrop" cx="50%" cy="48%" r="54%">
-                  <stop offset="0" stopColor="#17294a" stopOpacity=".34" />
-                  <stop offset=".64" stopColor="#07101f" stopOpacity=".16" />
-                  <stop offset="1" stopColor="#02050b" stopOpacity=".82" />
+                  <stop offset="0" stopColor="#2a2420" stopOpacity=".34" />
+                  <stop offset=".64" stopColor="#110f0f" stopOpacity=".16" />
+                  <stop offset="1" stopColor="#050405" stopOpacity=".82" />
                 </radialGradient>
                 {MAIN_SIDES.map((side) => (
                   <radialGradient key={`fill:${side}`} id={`reactor-fill-${side}`} cx="50%" cy="50%" r="72%">
@@ -300,7 +300,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
                 <pattern id="reactor-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-                  <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(76,194,255,.035)" strokeWidth="1" />
+                  <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(230,164,96,.035)" strokeWidth="1" />
                 </pattern>
               </defs>
 
@@ -312,14 +312,14 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                 const label = polar(radius, 278);
                 return (
                   <g key={value} opacity=".52">
-                    <circle cx={CX} cy={CY} r={radius} fill="none" stroke="rgba(143,169,201,.17)" strokeWidth=".8" strokeDasharray="3 8" />
-                    <text x={label.x + 3} y={label.y} fill="#64748b" fontSize="8" dominantBaseline="middle">{value}</text>
+                    <circle cx={CX} cy={CY} r={radius} fill="none" stroke="rgba(160,180,196,.17)" strokeWidth=".8" strokeDasharray="3 8" />
+                    <text x={label.x + 3} y={label.y} fill="#7d7368" fontSize="8" dominantBaseline="middle">{value}</text>
                   </g>
                 );
               })}
 
-              <circle className="oi-reactor-outer-ring" cx={CX} cy={CY} r={OUTER_R + 10} fill="none" stroke="rgba(76,194,255,.16)" strokeWidth="1" strokeDasharray="12 8 2 8" />
-              <circle cx={CX} cy={CY} r={OUTER_R + 3} fill="none" stroke="rgba(240,200,118,.1)" strokeWidth="7" />
+              <circle className="oi-reactor-outer-ring" cx={CX} cy={CY} r={OUTER_R + 10} fill="none" stroke="rgba(230,164,96,.16)" strokeWidth="1" strokeDasharray="12 8 2 8" />
+              <circle cx={CX} cy={CY} r={OUTER_R + 3} fill="none" stroke="rgba(236,208,160,.1)" strokeWidth="7" />
 
               {MAIN_SIDES.map((side) => {
                 const zone = ZONES[side];
@@ -424,7 +424,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   cx={CX}
                   cy={CY}
                   r={CORE_R}
-                  fill="rgba(8,16,31,.82)"
+                  fill="rgba(14,13,15,.82)"
                   stroke={ZONES.持平.color}
                   strokeOpacity=".42"
                   strokeWidth="1.2"
@@ -441,7 +441,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                   strokeWidth=".8"
                   strokeDasharray="2 7"
                 />
-                <circle cx={CX} cy={CY} r={CORE_R - 25} fill="rgba(4,10,21,.72)" stroke="rgba(143,169,201,.16)" strokeWidth=".8" />
+                <circle cx={CX} cy={CY} r={CORE_R - 25} fill="rgba(8,7,9,.72)" stroke="rgba(160,180,196,.16)" strokeWidth=".8" />
                 {[0, 90, 180, 270].map((angle) => {
                   const start = polar(CORE_R - 4, angle);
                   const end = polar(CORE_R + 4, angle);
@@ -458,10 +458,10 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                     />
                   );
                 })}
-                <text x={CX} y={CY - 28} fill="#64748b" fontSize="6.8" letterSpacing="1.8" textAnchor="middle">LOW ACTIVITY</text>
-                <text x={CX} y={CY - 2} fill="#dbeafe" fontSize="22" fontWeight="700" textAnchor="middle" className="font-data">{counts.持平}</text>
-                <text x={CX} y={CY + 17} fill="#b7c7db" fontSize="11" fontWeight="600" textAnchor="middle">低變動區</text>
-                <text x={CX} y={CY + 33} fill="#64748b" fontSize="7.4" textAnchor="middle">價格近持平 × OI近持平</text>
+                <text x={CX} y={CY - 28} fill="#7d7368" fontSize="6.8" letterSpacing="1.8" textAnchor="middle">LOW ACTIVITY</text>
+                <text x={CX} y={CY - 2} fill="#f4eee4" fontSize="22" fontWeight="700" textAnchor="middle" className="font-data">{counts.持平}</text>
+                <text x={CX} y={CY + 17} fill="#d0c6b6" fontSize="11" fontWeight="600" textAnchor="middle">低變動區</text>
+                <text x={CX} y={CY + 33} fill="#7d7368" fontSize="7.4" textAnchor="middle">價格近持平 × OI近持平</text>
               </g>
 
               {nodes.map((node) => {
@@ -523,7 +523,7 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
                     />
                     {node.rank <= 8 ? (
                       <g transform={`translate(${node.x - node.radius - 7} ${node.y - node.radius - 7})`}>
-                        <circle r="7" fill="#050811" stroke={node.color} strokeOpacity=".65" />
+                        <circle r="7" fill="#0b0a0c" stroke={node.color} strokeOpacity=".65" />
                         <text y=".5" fill={node.color} fontSize="7" textAnchor="middle" dominantBaseline="middle">{String(node.rank).padStart(2, "0")}</text>
                       </g>
                     ) : null}
@@ -548,8 +548,8 @@ export function OiQuadrantChart({ movers, onSelect }: OiQuadrantChartProps) {
 
               {!pool.length ? (
                 <g className="pointer-events-none" textAnchor="middle">
-                  <text x={CX} y={CY - 6} fill="#94a3b8" fontSize="14">沒有符合門檻的異動</text>
-                  <text x={CX} y={CY + 16} fill="#475569" fontSize="10">請調低門檻，或等待下一輪市場掃描</text>
+                  <text x={CX} y={CY - 6} fill="#a89e8f" fontSize="14">沒有符合門檻的異動</text>
+                  <text x={CX} y={CY + 16} fill="#5c554d" fontSize="10">請調低門檻，或等待下一輪市場掃描</text>
                 </g>
               ) : null}
             </svg>
@@ -645,7 +645,7 @@ function SignalLens({
   const previous = canonicalSide(mover.previous_side);
   return (
     <aside
-      className="oi-signal-lens relative overflow-hidden rounded-xl border bg-[#050a15]/92 p-4 shadow-2xl backdrop-blur-xl sm:p-5"
+      className="oi-signal-lens relative overflow-hidden rounded-xl border bg-[#0c0b0d]/92 p-4 shadow-2xl backdrop-blur-xl sm:p-5"
       style={{ borderColor: `${meta.color}58`, boxShadow: `0 22px 56px -30px ${meta.color}88` }}
     >
       <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-current to-transparent" style={{ color: meta.color }} />

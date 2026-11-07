@@ -31,7 +31,7 @@ export function UnderConstruction({ title, iconKey }: UnderConstructionProps) {
         </header>
 
         <section className="surface flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl px-6 py-16 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-[0_0_32px_rgba(202,138,4,0.2)]">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-[0_0_32px_rgba(200,160,105,0.2)]">
             <Icon className="h-6 w-6" />
           </span>
           <h2 className="text-lg font-semibold text-slate-50">功能製作中，請稍後</h2>

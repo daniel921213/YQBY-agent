@@ -173,7 +173,7 @@ export default function BeginnerPage() {
           {/* 章節 04：CTA 加入核心 */}
           <ScrollChapter id="join" index="04" label="加入核心" className="pb-16 pt-10">
             <Reveal>
-              <div className="surface-raised story-card chapter-light-fill rounded-xl border border-gold/30 px-6 py-12 text-center shadow-[0_0_40px_-12px_rgba(202,138,4,0.4)]">
+              <div className="surface-raised story-card chapter-light-fill rounded-xl border border-gold/30 px-6 py-12 text-center shadow-[0_0_40px_-12px_rgba(200,160,105,0.4)]">
                 <p className="font-kicker text-xs tracking-[0.28em] text-gold">JOIN THE CORE</p>
                 <h3 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-3xl font-black text-transparent">
                   加入核心，學習更多知識

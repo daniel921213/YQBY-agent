@@ -88,7 +88,7 @@ export function RiskRadarPanel({ radar, onSelect }: RiskRadarPanelProps) {
   return (
     <>
       <section className="surface relative overflow-hidden rounded-lg px-4 py-3">
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(255,81,102,0.10),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(76,194,255,0.10),transparent_30%)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(255,81,102,0.10),transparent_32%),radial-gradient(circle_at_92%_8%,rgba(230,164,96,0.10),transparent_30%)]" />
         <div className="relative z-10 flex flex-col gap-2.5">
           <header className="flex flex-wrap items-center gap-2.5">
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-ember/30 bg-ember/10 text-ember">

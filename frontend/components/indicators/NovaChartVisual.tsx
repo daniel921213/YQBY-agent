@@ -57,7 +57,7 @@ const HIST_BASE = 402;
 
 /** 面板列 */
 const PANEL_ROWS: Array<[string, string, string]> = [
-  ["階段", "進場訊號", "#f0c876"],
+  ["階段", "進場訊號", "#ecd0a0"],
   ["方向", "做多 LONG", "#23dd8d"],
   ["動能", "多方增強", "#2dd4bf"],
   ["4H 同向", "通過", "#23dd8d"]
@@ -81,7 +81,7 @@ export function NovaChartVisual() {
       <line x1="16" x2="744" y1="352" y2="352" stroke="var(--chart-frame)" />
 
       {/* Squeeze 壓縮區（灰底） */}
-      <rect x={X0 - 6} y="34" width={12 * STEP} height="312" fill="rgba(148,163,184,0.09)" />
+      <rect x={X0 - 6} y="34" width={12 * STEP} height="312" fill="rgba(168,158,143,0.09)" />
       <text x={X0 + 6 * STEP} y="52" textAnchor="middle" fontSize="10" letterSpacing="2" fill="var(--chart-ink)">
         SQUEEZE
       </text>
@@ -125,7 +125,7 @@ export function NovaChartVisual() {
       {/* 進場 / 停損 / TP 水平線（從訊號 K 棒延伸到右緣） */}
       {(
         [
-          [ENTRY_Y, "#f0c876", "進場"],
+          [ENTRY_Y, "#ecd0a0", "進場"],
           [SL_Y, "#ff5166", "停損"],
           [TP1_Y, "#23dd8d", "TP1 +1R"],
           [TP2_Y, "#23dd8d", "TP2 +2.5R"]
@@ -152,7 +152,7 @@ export function NovaChartVisual() {
 
       {/* 右上：CT_NOVA 即時面板 */}
       <g>
-        <rect x="576" y="40" width="152" height="84" rx="7" fill="rgba(7,12,24,0.78)" stroke="var(--chart-frame)" />
+        <rect x="576" y="40" width="152" height="84" rx="7" fill="rgba(12,11,13,0.78)" stroke="var(--chart-frame)" />
         <text x="588" y="58" fontSize="9" letterSpacing="1.5" fill="var(--chart-ink)">
           CT_NOVA PANEL
         </text>

@@ -207,7 +207,7 @@ function Dashboard() {
         <button
           type="button"
           onClick={() => setAnalystOpen(true)}
-          className="fixed bottom-5 right-5 z-30 hidden items-center gap-2 rounded-full border border-gold/40 bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(202,138,4,0.3)] backdrop-blur transition hover:bg-gold/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(202,138,4,0.45)] md:inline-flex"
+          className="fixed bottom-5 right-5 z-30 hidden items-center gap-2 rounded-full border border-gold/40 bg-gold/15 px-4 py-2.5 text-sm font-medium text-gold shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_24px_rgba(200,160,105,0.3)] backdrop-blur transition hover:bg-gold/25 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5),0_0_36px_rgba(200,160,105,0.45)] md:inline-flex"
         >
           <Bot className="h-4 w-4" />
           分析師

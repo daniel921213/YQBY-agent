@@ -49,7 +49,7 @@ type TokenFilter = "ALL" | YokaiTokenStatus;
 
 const LIFECYCLE_TONE: Record<YokaiLifecycle, string> = {
   潛伏: "border-white/10 bg-white/5 text-slate-400",
-  顯形: "border-ember/40 bg-ember/10 text-ember",
+  顯形: "border-sky-400/40 bg-sky-400/10 text-sky-300",
   發酵: "border-gold/40 bg-gold/10 text-goldhi",
   狂熱: "border-short/45 bg-short/10 text-short",
   退散: "border-white/10 bg-black/20 text-slate-500"
@@ -57,7 +57,7 @@ const LIFECYCLE_TONE: Record<YokaiLifecycle, string> = {
 
 const SOURCE_TONE: Record<YokaiSourceHealth, string> = {
   HEALTHY: "bg-long shadow-[0_0_10px_rgba(35,221,141,.75)]",
-  STALE: "bg-gold shadow-[0_0_10px_rgba(202,138,4,.65)]",
+  STALE: "bg-gold shadow-[0_0_10px_rgba(200,160,105,.65)]",
   OFFLINE: "bg-short shadow-[0_0_10px_rgba(255,81,102,.55)]"
 };
 
@@ -200,7 +200,7 @@ function YokaiIntelligence() {
           </div>
 
           <div className="yokai-core-frame relative min-w-0 rounded-[1.6rem] p-px">
-            <div className="relative overflow-hidden rounded-[calc(1.6rem-1px)] bg-[#050811]/88">
+            <div className="relative overflow-hidden rounded-[calc(1.6rem-1px)] bg-[#0b0a0c]/88">
               <div className="pointer-events-none absolute left-5 top-5 z-10">
                 <div className="font-kicker text-[9px] tracking-[0.24em] text-slate-500">DETECTION CORE</div>
                 <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-200">
@@ -245,7 +245,7 @@ function YokaiIntelligence() {
               onInspect={() => document.getElementById("narrative-room")?.scrollIntoView({ behavior: "smooth" })}
             />
           ) : (
-            <div className="grid min-h-72 place-items-center rounded-[1.6rem] border border-white/10 bg-[#030711]/92 p-6 text-center text-sm text-slate-500">
+            <div className="grid min-h-72 place-items-center rounded-[1.6rem] border border-white/10 bg-[#080709]/92 p-6 text-center text-sm text-slate-500">
               {loading ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />正在建立全市場敘事星圖…</> : "等待第一批題材資料，原有 Gate 功能仍正常運作。"}
             </div>
           )}
@@ -280,7 +280,7 @@ function YokaiIntelligence() {
         <button
           type="button"
           onClick={() => setAnalystOpen(true)}
-          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/45 bg-[#10172a]/92 text-gold shadow-[0_12px_40px_rgba(0,0,0,.55),0_0_28px_rgba(202,138,4,.3)] backdrop-blur-xl transition hover:scale-105 hover:bg-gold/15 lg:bottom-6 lg:right-6 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
+          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/45 bg-[#17151a]/92 text-gold shadow-[0_12px_40px_rgba(0,0,0,.55),0_0_28px_rgba(200,160,105,.3)] backdrop-blur-xl transition hover:scale-105 hover:bg-gold/15 lg:bottom-6 lg:right-6 lg:h-auto lg:w-auto lg:gap-2 lg:px-4 lg:py-3"
           aria-label="開啟 CT 分析師"
         >
           <Bot className="h-5 w-5" />
@@ -359,7 +359,7 @@ function NarrativeRoom({ narrative }: { narrative: YokaiNarrative }) {
         <div className="mt-3 divide-y divide-white/5">
           {narrative.articles.slice(0, 8).map((article) => (
             <a key={article.id} href={article.url} target="_blank" rel="noopener noreferrer" className="group flex gap-3 py-3">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ember shadow-[0_0_8px_rgba(76,194,255,.7)]" />
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ember shadow-[0_0_8px_rgba(230,164,96,.7)]" />
               <span className="min-w-0 flex-1">
                 <span className="line-clamp-2 text-sm leading-5 text-slate-300 transition group-hover:text-ember">{article.title}</span>
                 <span className="mt-1 flex items-center gap-2 text-[10px] text-slate-600"><span>{article.source}</span><span>・</span><span>{relativeFromEpoch(article.published_at)}</span></span>
@@ -431,36 +431,36 @@ function HeatChart({ points }: { points: YokaiHistoryPoint[] }) {
     .filter((point) => point.count > 0);
   const latestEvent = eventPoints[eventPoints.length - 1] ?? null;
   return (
-    <div className="relative h-28 overflow-hidden rounded-xl border border-white/5 bg-[radial-gradient(circle_at_72%_50%,rgba(240,200,118,.045),transparent_30%),rgba(0,0,0,.15)]">
+    <div className="relative h-28 overflow-hidden rounded-xl border border-white/5 bg-[radial-gradient(circle_at_72%_50%,rgba(236,208,160,.045),transparent_30%),rgba(0,0,0,.15)]">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full" aria-label="近七天題材敘事能量流">
         <defs>
           <linearGradient id="yokaiCurrent" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#4cc2ff" stopOpacity=".16" />
-            <stop offset=".48" stopColor="#79ddff" stopOpacity=".26" />
-            <stop offset=".78" stopColor="#b9d9d2" stopOpacity=".32" />
-            <stop offset="1" stopColor="#f0c876" stopOpacity=".4" />
+            <stop offset="0" stopColor="#8fa6b8" stopOpacity=".16" />
+            <stop offset=".48" stopColor="#b7bdbc" stopOpacity=".26" />
+            <stop offset=".78" stopColor="#d9c8a4" stopOpacity=".32" />
+            <stop offset="1" stopColor="#ecd0a0" stopOpacity=".4" />
           </linearGradient>
           <linearGradient id="yokaiCurrentEdge" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#4cc2ff" />
-            <stop offset=".58" stopColor="#8adfff" />
-            <stop offset="1" stopColor="#f0c876" />
+            <stop offset="0" stopColor="#a0b4c4" />
+            <stop offset=".58" stopColor="#d9c8a4" />
+            <stop offset="1" stopColor="#ecd0a0" />
           </linearGradient>
           <filter id="yokaiHeatGlow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="5.2" /></filter>
         </defs>
-        <line x1="0" x2={width} y1={centerY} y2={centerY} stroke="rgba(143,169,201,.08)" strokeDasharray="2 9" />
+        <line x1="0" x2={width} y1={centerY} y2={centerY} stroke="rgba(160,180,196,.08)" strokeDasharray="2 9" />
         <path d={ribbon} fill="url(#yokaiCurrent)" opacity=".62" filter="url(#yokaiHeatGlow)" />
         <path d={ribbon} fill="url(#yokaiCurrent)" />
         <path className="yokai-heat-line" pathLength="1" d={upperPath} fill="none" stroke="url(#yokaiCurrentEdge)" strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         <path className="yokai-heat-line" pathLength="1" d={lowerPath} fill="none" stroke="url(#yokaiCurrentEdge)" strokeWidth="1.25" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         {eventPoints.map((point) => (
           <g key={`${point.time}:${point.count}`}>
-            <line x1={point.x} x2={point.x} y1={centerY - 5} y2={centerY + 5} stroke="rgba(217,244,255,.18)" strokeWidth=".8" />
-            <circle cx={point.x} cy={centerY} r={1.7 + Math.min(point.count, 4) * .45} fill="#d9f4ff" fillOpacity=".88">
+            <line x1={point.x} x2={point.x} y1={centerY - 5} y2={centerY + 5} stroke="rgba(246,232,206,.18)" strokeWidth=".8" />
+            <circle cx={point.x} cy={centerY} r={1.7 + Math.min(point.count, 4) * .45} fill="#f6e8ce" fillOpacity=".88">
               <title>{point.count} 個真實消息事件</title>
             </circle>
           </g>
         ))}
-        {latestEvent ? <circle className="yokai-heat-latest" cx={latestEvent.x} cy={centerY} r="3" fill="#f0c876" /> : null}
+        {latestEvent ? <circle className="yokai-heat-latest" cx={latestEvent.x} cy={centerY} r="3" fill="#ecd0a0" /> : null}
       </svg>
       <div className="pointer-events-none absolute inset-x-3 top-2 flex items-center justify-between font-kicker text-[7px] tracking-[0.2em] text-slate-700">
         <span>NARRATIVE CURRENT</span>

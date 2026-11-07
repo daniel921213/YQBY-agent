@@ -247,7 +247,7 @@ function RecommendationRow({
       onClick={onClick}
       className={`grid min-h-[48px] grid-cols-[36px_minmax(84px,1fr)_92px_150px_74px] items-center gap-3 rounded-lg border px-3 py-2 text-left transition ${
         selected
-          ? "border-ember/55 bg-ember/10 shadow-[0_0_22px_rgba(76,194,255,0.18)]"
+          ? "border-ember/55 bg-ember/10 shadow-[0_0_22px_rgba(230,164,96,0.18)]"
           : "border-white/10 bg-black/15 hover:border-ember/35 hover:bg-white/[0.04]"
       }`}
     >

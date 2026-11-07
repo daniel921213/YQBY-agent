@@ -161,7 +161,7 @@ export function NovaScrollStage({ activateUrl }: NovaScrollStageProps) {
           <div className={`nova-object-tilt ${flipped ? "is-flipped" : ""}`}>
             <div className="nova-card-face nova-card-front">
               <div className="nova-card-chrome">
-                <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_12px_rgba(240,200,118,0.9)]" />
+                <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_12px_rgba(236,208,160,0.9)]" />
                 <span className="font-kicker text-[10px] font-medium tracking-[0.18em] text-slate-200">
                   CT_NOVA
                 </span>
@@ -241,9 +241,9 @@ function NovaAtmosphereCanvas() {
 
     const draw = (time: number) => {
       const sky = context.createLinearGradient(0, 0, 0, height);
-      sky.addColorStop(0, "#05070d");
-      sky.addColorStop(0.58, "#071422");
-      sky.addColorStop(1, "#0a1621");
+      sky.addColorStop(0, "#070708");
+      sky.addColorStop(0.58, "#110f0e");
+      sky.addColorStop(1, "#1a1512");
       context.fillStyle = sky;
       context.fillRect(0, 0, width, height);
 
@@ -251,9 +251,9 @@ function NovaAtmosphereCanvas() {
       const moonY = height * 0.22;
       const moonRadius = Math.max(42, Math.min(width, height) * 0.075);
       const halo = context.createRadialGradient(moonX, moonY, moonRadius * 0.2, moonX, moonY, moonRadius * 3.4);
-      halo.addColorStop(0, "rgba(222,240,255,0.45)");
-      halo.addColorStop(0.24, "rgba(108,185,255,0.12)");
-      halo.addColorStop(1, "rgba(48,135,220,0)");
+      halo.addColorStop(0, "rgba(248,232,204,0.45)");
+      halo.addColorStop(0.24, "rgba(214,160,96,0.12)");
+      halo.addColorStop(1, "rgba(176,118,62,0)");
       context.fillStyle = halo;
       context.fillRect(0, 0, width, height);
       const moon = context.createRadialGradient(
@@ -264,9 +264,9 @@ function NovaAtmosphereCanvas() {
         moonY,
         moonRadius
       );
-      moon.addColorStop(0, "#f6fbff");
-      moon.addColorStop(0.7, "#d8e8f6");
-      moon.addColorStop(1, "#91abc1");
+      moon.addColorStop(0, "#fdf8ee");
+      moon.addColorStop(0.7, "#eadcc4");
+      moon.addColorStop(1, "#b59f80");
       context.beginPath();
       context.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
       context.fillStyle = moon;
@@ -276,7 +276,7 @@ function NovaAtmosphereCanvas() {
         const twinkle = reduceMotion ? 0.72 : 0.42 + Math.sin(time * 0.0012 + star.phase) * 0.28;
         context.beginPath();
         context.arc(star.x * width, star.y * height * 0.72, star.radius, 0, Math.PI * 2);
-        context.fillStyle = `rgba(198,229,255,${Math.max(0.12, twinkle)})`;
+        context.fillStyle = `rgba(246,232,206,${Math.max(0.12, twinkle)})`;
         context.fill();
       });
 
@@ -291,14 +291,14 @@ function NovaAtmosphereCanvas() {
         }
         context.lineTo(width * 1.2, height);
         context.closePath();
-        context.fillStyle = `rgba(${16 + layer * 8},${35 + layer * 10},${52 + layer * 12},${0.22 + layer * 0.08})`;
+        context.fillStyle = `rgba(${24 + layer * 9},${20 + layer * 7},${17 + layer * 5},${0.22 + layer * 0.08})`;
         context.fill();
       }
 
       const fog = context.createLinearGradient(0, height * 0.68, 0, height);
-      fog.addColorStop(0, "rgba(154,211,255,0)");
-      fog.addColorStop(0.72, "rgba(125,190,235,0.08)");
-      fog.addColorStop(1, "rgba(185,222,246,0.16)");
+      fog.addColorStop(0, "rgba(236,200,150,0)");
+      fog.addColorStop(0.72, "rgba(214,160,96,0.08)");
+      fog.addColorStop(1, "rgba(236,208,160,0.16)");
       context.fillStyle = fog;
       context.fillRect(0, height * 0.62, width, height * 0.38);
     };

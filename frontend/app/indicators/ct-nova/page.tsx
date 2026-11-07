@@ -64,8 +64,8 @@ const LEGEND = [
   { color: "#22d3ee", label: "小 Vegas 通道 144/169" },
   { color: "#fb923c", label: "大 Vegas 通道 576/676" },
   { color: "#a78bfa", label: "EMA12 觸發線" },
-  { color: "rgba(148,163,184,0.6)", label: "Squeeze 壓縮區（灰底）" },
-  { color: "#f0c876", label: "進場 / 停損 / TP 水平線" },
+  { color: "rgba(168,158,143,0.6)", label: "Squeeze 壓縮區（灰底）" },
+  { color: "#ecd0a0", label: "進場 / 停損 / TP 水平線" },
   { color: "#2dd4bf", label: "CT_Squeeze 動能柱" }
 ] as const;
 
@@ -188,7 +188,7 @@ export default function CtNovaPage() {
                     direction={rightSide ? "right" : "left"}
                     className="relative mb-10 pl-14 last:mb-0 md:pl-0"
                   >
-                    <span className="absolute left-5 top-0 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-obsidian text-xs font-semibold text-gold shadow-[0_0_18px_rgba(202,138,4,0.3)] md:left-1/2">
+                    <span className="absolute left-5 top-0 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-obsidian text-xs font-semibold text-gold shadow-[0_0_18px_rgba(200,160,105,0.3)] md:left-1/2">
                       0{i + 1}
                     </span>
                     <div
@@ -233,7 +233,7 @@ export default function CtNovaPage() {
             <Reveal direction="right" delay={120} className="md:col-span-3">
               <div className="surface-raised overflow-hidden rounded-xl">
                 <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-                  <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(240,200,118,0.8)]" aria-hidden />
+                  <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(236,208,160,0.8)]" aria-hidden />
                   <span className="text-xs font-medium tracking-wide text-slate-200">CT_NOVA</span>
                   <span className="text-xs text-slate-500">BTCUSDT.P · 15m</span>
                   <span className="ml-auto rounded border border-long/30 bg-long/10 px-2 py-0.5 text-xs text-long">

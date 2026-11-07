@@ -64,12 +64,12 @@ export function OutroSilk() {
           else ctx.lineTo(x, y);
         }
         const grad = ctx.createLinearGradient(0, 0, w, 0);
-        grad.addColorStop(0, "rgba(240,200,118,0)");
-        grad.addColorStop(0.5, `rgba(240,200,118,${L.alpha})`);
-        grad.addColorStop(1, "rgba(202,138,4,0)");
+        grad.addColorStop(0, "rgba(236,208,160,0)");
+        grad.addColorStop(0.5, `rgba(236,208,160,${L.alpha})`);
+        grad.addColorStop(1, "rgba(200,160,105,0)");
         ctx.strokeStyle = grad;
         ctx.lineWidth = L.bloom ? L.width * 5 : L.width;
-        ctx.shadowColor = "rgba(240,200,118,0.55)";
+        ctx.shadowColor = "rgba(236,208,160,0.55)";
         ctx.shadowBlur = L.bloom ? 26 : 12;
         ctx.stroke();
       }

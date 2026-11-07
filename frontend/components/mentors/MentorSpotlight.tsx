@@ -183,7 +183,7 @@ function MentorPortraitStage({ mentor }: { mentor: Mentor }) {
             // 只認卡片自己的轉入動畫結束，忽略任何子元素冒泡上來的 animationend。
             if (event.target === event.currentTarget) setSpinning(false);
           }}
-          className={`relative w-[230px] rounded-[22px] border border-gold/40 bg-gradient-to-br from-gold/15 to-white/5 px-6 pb-7 pt-8 text-center shadow-[0_30px_60px_-24px_rgba(0,0,0,0.65),inset_0_0_0_1px_rgba(240,200,118,0.12)] ${
+          className={`relative w-[230px] rounded-[22px] border border-gold/40 bg-gradient-to-br from-gold/15 to-white/5 px-6 pb-7 pt-8 text-center shadow-[0_30px_60px_-24px_rgba(0,0,0,0.65),inset_0_0_0_1px_rgba(236,208,160,0.12)] ${
             spinning ? "mentor-portrait-spin" : ""
           }`}
           style={{
@@ -194,7 +194,7 @@ function MentorPortraitStage({ mentor }: { mentor: Mentor }) {
         >
           <span
             aria-hidden
-            className="mx-auto mb-3.5 flex h-[120px] w-[120px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(240,200,118,0.3),rgba(10,15,30,0.7))] text-5xl font-extrabold text-goldhi shadow-[0_0_0_2px_rgb(var(--c-obsidian)),0_0_0_3.5px_rgb(var(--c-gold)),0_0_22px_-3px_rgba(202,138,4,0.5)]"
+            className="mx-auto mb-3.5 flex h-[120px] w-[120px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(236,208,160,0.3),rgba(14,12,12,0.7))] text-5xl font-extrabold text-goldhi shadow-[0_0_0_2px_rgb(var(--c-obsidian)),0_0_0_3.5px_rgb(var(--c-gold)),0_0_22px_-3px_rgba(200,160,105,0.5)]"
           >
             {mentor.photo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -211,7 +211,7 @@ function MentorPortraitStage({ mentor }: { mentor: Mentor }) {
                 <li key={item} className="flex items-center gap-2 text-xs text-slate-300">
                   <span
                     aria-hidden
-                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold shadow-[0_0_8px_rgba(240,200,118,0.6)]"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold shadow-[0_0_8px_rgba(236,208,160,0.6)]"
                   />
                   {item}
                 </li>

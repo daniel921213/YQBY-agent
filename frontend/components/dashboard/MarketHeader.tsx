@@ -80,8 +80,8 @@ export function MarketHeader({
         <div>
           {/* 環境 + 時間：市場環境（山寨/BTC 指數）搭配即時時鐘，取代靜態標語。 */}
           <p className="font-kicker inline-flex items-center gap-2 text-xs tracking-[0.18em]">
-            <Radar className="h-4 w-4 text-gold [filter:drop-shadow(0_0_8px_rgba(240,200,118,0.45))]" />
-            <span className="text-gold [text-shadow:0_0_14px_rgba(240,200,118,0.35)]">
+            <Radar className="h-4 w-4 text-gold [filter:drop-shadow(0_0_8px_rgba(236,208,160,0.45))]" />
+            <span className="text-gold [text-shadow:0_0_14px_rgba(236,208,160,0.35)]">
               環境 {altseason ? `${altseason.label} ${altseason.index}` : "--"}
             </span>
             <span className="text-slate-600">·</span>

@@ -3,7 +3,7 @@ import type { Config } from "tailwindcss";
 // 主題雙模式：所有顏色指向 globals.css 的 CSS 變數（RGB 三元組），
 // html[data-theme="light"] 換一組變數值即可全站換膚。
 // 關鍵語意反轉：
-// - `white` 代表「墨色」(ink)：深色模式=白、淺色模式=深藍黑。
+// - `white` 代表「墨色」(ink)：深色模式=暖白、淺色模式=深褐黑。
 //   於是 border-white/10、bg-white/5 這類分隔線/淡填色在兩種模式都正確。
 // - `slate` 整組刻度反轉：slate-100 永遠是「主要文字」、slate-500 永遠是「次要」。
 const v = (name: string) => `rgb(var(${name}) / <alpha-value>)`;
@@ -21,8 +21,8 @@ const config: Config = {
         obsidian: v("--c-obsidian"), // 頁面底色
         graphite: v("--c-graphite"), // 面板底色
         steel: v("--c-steel"), // 抬升/hover 表面
-        ember: v("--c-ember"), // 冰藍主強調色
-        copper: v("--c-copper"), // 冷銀藍金屬
+        ember: v("--c-ember"), // 銅琥珀主強調色（地平線光）
+        copper: v("--c-copper"), // 銀藍金屬（TIME 環）
         gold: v("--c-gold"),
         goldhi: v("--c-gold-hi"),
         long: v("--c-long"),

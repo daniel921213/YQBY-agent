@@ -128,7 +128,7 @@ export function MobileDashboard({
 
   return (
     <div className="mobile-dashboard min-h-screen w-full min-w-0 max-w-full pb-[calc(7.5rem+env(safe-area-inset-bottom))]">
-      <div className="mobile-dashboard-top sticky top-0 z-30 -mx-3 border-b border-white/10 bg-[#05080f]/88 px-3 pb-3 pt-[max(.7rem,env(safe-area-inset-top))] backdrop-blur-xl">
+      <div className="mobile-dashboard-top sticky top-0 z-30 -mx-3 border-b border-white/10 bg-[#0a0a0c]/88 px-3 pb-3 pt-[max(.7rem,env(safe-area-inset-top))] backdrop-blur-xl">
         <header className="flex items-center gap-2.5">
           <SideNav />
           <div className="min-w-0 flex-1">
@@ -161,7 +161,7 @@ export function MobileDashboard({
             placeholder="搜尋幣種，例如 BTC、ETH…"
             inputMode="search"
             aria-label="搜尋幣種"
-            className="h-12 w-full rounded-xl border border-gold/20 bg-black/35 pl-10 pr-10 text-base text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-gold/50 focus:shadow-[0_0_22px_rgba(212,175,55,.12)]"
+            className="h-12 w-full rounded-xl border border-gold/20 bg-black/35 pl-10 pr-10 text-base text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-gold/50 focus:shadow-[0_0_22px_rgba(206,170,112,.12)]"
           />
           {query ? (
             <button
@@ -237,14 +237,14 @@ export function MobileDashboard({
         onClick={onOpenAnalyst}
         aria-label="開啟 CT 分析師"
         title="CT 分析師"
-        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-gold/50 bg-[#11101a]/92 text-gold shadow-[0_12px_34px_rgba(0,0,0,.5),0_0_24px_rgba(212,175,55,.25)] backdrop-blur-md"
+        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-30 inline-flex h-12 w-12 items-center justify-center rounded-full border border-gold/50 bg-[#141215]/92 text-gold shadow-[0_12px_34px_rgba(0,0,0,.5),0_0_24px_rgba(206,170,112,.25)] backdrop-blur-md"
       >
         <Bot className="h-5 w-5" />
       </button>
 
       <nav
         aria-label="手機版主要功能"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/15 bg-[#05070d]/94 px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_50px_rgba(0,0,0,.55)] backdrop-blur-xl"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/15 bg-[#0a0a0c]/94 px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_50px_rgba(0,0,0,.55)] backdrop-blur-xl"
       >
         <div className="mx-auto grid max-w-lg grid-cols-5">
           {NAV_ITEMS.map((item) => {
@@ -269,8 +269,8 @@ export function MobileDashboard({
                     item.primary
                       ? `h-12 w-12 -translate-y-3 rounded-full border ${
                           active
-                            ? "border-gold/70 bg-gold/15 text-gold shadow-[0_0_26px_rgba(212,175,55,.28)]"
-                            : "border-white/15 bg-[#0b1120] text-slate-400"
+                            ? "border-gold/70 bg-gold/15 text-gold shadow-[0_0_26px_rgba(206,170,112,.28)]"
+                            : "border-white/15 bg-[#141316] text-slate-400"
                         }`
                       : "h-6 w-8"
                   }`}
@@ -310,7 +310,7 @@ function MobileOverview({
   return (
     <div className="grid gap-4">
       <section className="surface relative overflow-hidden rounded-2xl p-4">
-        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_88%_0%,rgba(76,194,255,.13),transparent_38%)]" />
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_88%_0%,rgba(230,164,96,.13),transparent_38%)]" />
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <div>

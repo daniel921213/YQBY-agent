@@ -32,18 +32,18 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
     const instance = createChart(container, {
       autoSize: true,
       layout: {
-        background: { type: ColorType.Solid, color: token("--chart-bg", "#0e1729") },
-        textColor: token("--chart-ink", "#8fa9c9")
+        background: { type: ColorType.Solid, color: token("--chart-bg", "#121113") },
+        textColor: token("--chart-ink", "#a89e8f")
       },
       grid: {
-        vertLines: { color: token("--chart-grid", "rgba(255,255,255,0.04)") },
-        horzLines: { color: token("--chart-grid", "rgba(255,255,255,0.04)") }
+        vertLines: { color: token("--chart-grid", "rgba(255,250,242,0.05)") },
+        horzLines: { color: token("--chart-grid", "rgba(255,250,242,0.05)") }
       },
       rightPriceScale: {
-        borderColor: token("--chart-frame", "rgba(255,255,255,0.08)")
+        borderColor: token("--chart-frame", "rgba(255,250,242,0.08)")
       },
       timeScale: {
-        borderColor: token("--chart-frame", "rgba(255,255,255,0.08)"),
+        borderColor: token("--chart-frame", "rgba(255,250,242,0.08)"),
         timeVisible: true,
         secondsVisible: false
       },
@@ -52,9 +52,9 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
       }
     });
 
-    // 單一光源敘事：漲 = 發光冰藍，跌 = 暗冷鋼藍（亮度只給上漲）。
-    const up = token("--chart-up", "#6fc6ff");
-    const down = token("--chart-down", "#42507a");
+    // 單一光源敘事：漲 = 發光香檳金，跌 = 暗暖灰（亮度只給上漲）。
+    const up = token("--chart-up", "#e6c48e");
+    const down = token("--chart-down", "#5f5752");
     const candleSeries = instance.addCandlestickSeries({
       upColor: up,
       downColor: down,
@@ -65,7 +65,7 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
     });
 
     const cvdSeries = instance.addLineSeries({
-      color: token("--chart-cvd", "#d6e7ff"),
+      color: token("--chart-cvd", "#a0b4c4"),
       lineWidth: 2,
       priceScaleId: "cvd"
     });
@@ -75,7 +75,7 @@ export function LightweightMarketChart({ chart }: LightweightMarketChartProps) {
         top: 0.72,
         bottom: 0.06
       },
-      borderColor: token("--chart-frame", "rgba(140,199,255,0.12)")
+      borderColor: token("--chart-frame", "rgba(255,250,242,0.08)")
     });
 
     candleSeries.setData(

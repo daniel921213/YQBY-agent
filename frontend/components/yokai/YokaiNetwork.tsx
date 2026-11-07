@@ -31,9 +31,9 @@ interface Edge {
 const lifecycleColor: Record<YokaiNarrative["lifecycle"], string> = {
   潛伏: "rgba(112, 153, 196, .8)",
   顯形: "rgba(76, 194, 255, .95)",
-  發酵: "rgba(240, 200, 118, .98)",
+  發酵: "rgba(236, 208, 160, .98)",
   狂熱: "rgba(255, 81, 102, .98)",
-  退散: "rgba(100, 116, 139, .72)"
+  退散: "rgba(128, 119, 107, .72)"
 };
 
 export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect }: YokaiNetworkProps) {
@@ -147,8 +147,8 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
       });
 
       const ambient = context.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, width * 0.5);
-      ambient.addColorStop(0, "rgba(31, 109, 178, .12)");
-      ambient.addColorStop(0.55, "rgba(7, 26, 54, .05)");
+      ambient.addColorStop(0, "rgba(176, 118, 62, .1)");
+      ambient.addColorStop(0.55, "rgba(30, 22, 14, .05)");
       ambient.addColorStop(1, "rgba(0, 0, 0, 0)");
       context.fillStyle = ambient;
       context.fillRect(0, 0, width, height);
@@ -160,8 +160,8 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
         const bend = (edge.to.x - edge.from.x) * 0.48;
         context.bezierCurveTo(edge.from.x + bend, edge.from.y, edge.to.x - bend, edge.to.y, edge.to.x, edge.to.y);
         context.strokeStyle = selected
-          ? "rgba(240, 200, 118, .65)"
-          : `rgba(76, 194, 255, ${0.07 + edge.strength * 0.18})`;
+          ? "rgba(236, 208, 160, .65)"
+          : `rgba(214, 190, 150, ${0.07 + edge.strength * 0.18})`;
         context.lineWidth = selected ? 1.5 : 0.7;
         context.stroke();
 
@@ -172,7 +172,7 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
           const y = inv * inv * inv * edge.from.y + 3 * inv * inv * progress * edge.from.y + 3 * inv * progress * progress * edge.to.y + progress * progress * progress * edge.to.y;
           context.beginPath();
           context.arc(x, y, selected ? 2.2 : 1.3, 0, Math.PI * 2);
-          context.fillStyle = selected ? "rgba(240, 200, 118, .95)" : "rgba(133, 211, 255, .75)";
+          context.fillStyle = selected ? "rgba(236, 208, 160, .95)" : "rgba(160, 180, 196, .75)";
           context.shadowBlur = 10;
           context.shadowColor = context.fillStyle;
           context.fill();
@@ -182,12 +182,12 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
 
       allNodes.forEach((node) => {
         const active = node.id === selectedId || node.id === hovered;
-        let color = "rgba(76, 194, 255, .9)";
+        let color = "rgba(230, 164, 96, .9)";
         if (node.kind === "narrative") {
           const narrative = topNarratives.find((item) => item.id === node.id);
           if (narrative) color = lifecycleColor[narrative.lifecycle];
         } else if (node.kind === "token") {
-          color = node.status === "QUALIFIED" ? "rgba(35, 221, 141, .95)" : node.status === "RISK" ? "rgba(255, 81, 102, .9)" : "rgba(112, 174, 224, .78)";
+          color = node.status === "QUALIFIED" ? "rgba(35, 221, 141, .95)" : node.status === "RISK" ? "rgba(255, 81, 102, .9)" : "rgba(160, 180, 196, .78)";
         }
         const pulse = reduceMotion ? 0 : Math.sin(now / 850 + node.y) * 1.2;
         context.beginPath();
@@ -206,7 +206,7 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
         context.textAlign = labelRight ? "left" : "right";
         context.textBaseline = "middle";
         context.font = `${node.kind === "narrative" ? 700 : 600} ${compact ? 10 : 12}px "Noto Sans TC Variable", sans-serif`;
-        context.fillStyle = active ? "rgba(248, 250, 252, .98)" : "rgba(203, 213, 225, .78)";
+        context.fillStyle = active ? "rgba(252, 249, 243, .98)" : "rgba(208, 198, 182, .78)";
         context.fillText(node.label, node.x + (labelRight ? node.radius + 7 : -node.radius - 7), node.y);
       });
 

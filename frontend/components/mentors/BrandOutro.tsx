@@ -13,7 +13,7 @@ export function BrandOutro() {
       {/* 金色光效層（裝飾、不可互動） */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         {/* 主光源：柔和金色光暈（橢圓、羽化） */}
-        <div className="mentor-outro-glow absolute left-1/2 top-1/2 h-[70vw] w-[92vw] max-h-[520px] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse,rgba(240,200,118,0.16),rgba(202,138,4,0.05)_44%,transparent_72%)] blur-2xl" />
+        <div className="mentor-outro-glow absolute left-1/2 top-1/2 h-[70vw] w-[92vw] max-h-[520px] max-w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse,rgba(236,208,160,0.16),rgba(200,160,105,0.05)_44%,transparent_72%)] blur-2xl" />
         {/* 流動絲綢金光（canvas） */}
         <OutroSilk />
       </div>
@@ -24,7 +24,7 @@ export function BrandOutro() {
         <img
           src="/logo.png"
           alt="CT_Trader"
-          className="h-auto w-[clamp(240px,46vw,560px)] max-w-full [filter:drop-shadow(0_0_45px_rgba(202,138,4,0.35))]"
+          className="h-auto w-[clamp(240px,46vw,560px)] max-w-full [filter:drop-shadow(0_0_45px_rgba(200,160,105,0.35))]"
         />
         <p className="mt-4 text-xs tracking-[0.42em] text-goldhi/70 sm:text-sm sm:tracking-[0.5em]">
           CONFLUENCE THEORY

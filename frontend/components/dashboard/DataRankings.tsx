@@ -58,16 +58,16 @@ const SQUEEZE_MIN_SCORE = 40;
 const SIDE_META: Record<OiMoverSide, { color: string; text: string; bg: string }> = {
   多頭建倉: { color: "#23dd8d", text: "text-long", bg: "bg-long/10" },
   空頭建倉: { color: "#ff5166", text: "text-short", bg: "bg-short/10" },
-  空頭回補: { color: "#4cc2ff", text: "text-ember", bg: "bg-ember/10" },
+  空頭回補: { color: "#4cc2ff", text: "text-sky-300", bg: "bg-sky-400/10" },
   多頭去槓桿: { color: "#f0b429", text: "text-yellow-300", bg: "bg-yellow-300/10" },
   "OI增倉／價格持平": { color: "#a78bfa", text: "text-violet-300", bg: "bg-violet-400/10" },
-  "OI減倉／價格持平": { color: "#94a3b8", text: "text-slate-300", bg: "bg-white/5" },
+  "OI減倉／價格持平": { color: "#a89e8f", text: "text-slate-300", bg: "bg-white/5" },
   "價格上漲／OI持平": { color: "#67e8f9", text: "text-cyan-300", bg: "bg-cyan-400/10" },
   "價格下跌／OI持平": { color: "#fb7185", text: "text-rose-300", bg: "bg-rose-400/10" },
   // Cached labels from the previous four-quadrant API.
-  空頭平倉: { color: "#4cc2ff", text: "text-ember", bg: "bg-ember/10" },
+  空頭平倉: { color: "#4cc2ff", text: "text-sky-300", bg: "bg-sky-400/10" },
   多頭平倉: { color: "#f0b429", text: "text-yellow-300", bg: "bg-yellow-300/10" },
-  持平: { color: "#8fa9c9", text: "text-slate-300", bg: "bg-white/5" }
+  持平: { color: "#a0b4c4", text: "text-slate-300", bg: "bg-white/5" }
 };
 
 const PARTICLES = [
@@ -590,7 +590,7 @@ function EmptyState({ text }: { text: string }) {
 function PanelParticles() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(76,194,255,0.11),transparent_28%),linear-gradient(115deg,transparent_0_46%,rgba(76,194,255,0.06)_50%,transparent_56%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(230,164,96,0.11),transparent_28%),linear-gradient(115deg,transparent_0_46%,rgba(230,164,96,0.06)_50%,transparent_56%)]" />
       {PARTICLES.map((particle, index) => (
         <span
           key={index}
@@ -602,7 +602,7 @@ function PanelParticles() {
             height: particle.size,
             opacity: particle.opacity,
             animationDelay: particle.delay,
-            boxShadow: "0 0 10px rgba(76,194,255,0.75)"
+            boxShadow: "0 0 10px rgba(230,164,96,0.75)"
           }}
         />
       ))}

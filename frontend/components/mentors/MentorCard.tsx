@@ -40,10 +40,10 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
       onClick={onOpen}
       onPointerMove={trackGlow}
       aria-label={`${mentor.name} ${mentor.role}`}
-      className="surface-raised cursor-glow story-card group flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl px-4 py-6 text-center transition duration-200 ease-out hover:-translate-y-1 hover:border-gold/40 hover:shadow-[0_18px_40px_-18px_rgba(202,138,4,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+      className="surface-raised cursor-glow story-card group flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl px-4 py-6 text-center transition duration-200 ease-out hover:-translate-y-1 hover:border-gold/40 hover:shadow-[0_18px_40px_-18px_rgba(200,160,105,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
     >
       <span
-        className="inline-flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(240,200,118,0.3),rgba(10,15,30,0.7))] text-3xl font-extrabold text-goldhi shadow-[0_0_0_2px_rgb(var(--c-obsidian)),0_0_0_3.5px_rgb(var(--c-gold)),0_0_22px_-3px_rgba(202,138,4,0.5)] sm:h-24 sm:w-24"
+        className="inline-flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(236,208,160,0.3),rgba(14,12,12,0.7))] text-3xl font-extrabold text-goldhi shadow-[0_0_0_2px_rgb(var(--c-obsidian)),0_0_0_3.5px_rgb(var(--c-gold)),0_0_22px_-3px_rgba(200,160,105,0.5)] sm:h-24 sm:w-24"
         aria-hidden
       >
         {mentor.photo ? (
@@ -63,7 +63,7 @@ export function MentorCard({ mentor, onOpen }: MentorCardProps) {
             <li key={item} className="flex items-center gap-1.5 text-xs text-slate-300">
               <span
                 aria-hidden
-                className="h-1 w-1 shrink-0 rounded-full bg-gold shadow-[0_0_6px_rgba(240,200,118,0.6)]"
+                className="h-1 w-1 shrink-0 rounded-full bg-gold shadow-[0_0_6px_rgba(236,208,160,0.6)]"
               />
               {item}
             </li>

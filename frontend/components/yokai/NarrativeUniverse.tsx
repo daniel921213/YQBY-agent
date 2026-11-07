@@ -38,7 +38,7 @@ const GROUPS: Record<NarrativeGroup, {
   FINANCE: {
     label: "金融與資金",
     code: "CAPITAL GRID",
-    color: "#f0c876",
+    color: "#ecd0a0",
     center: [50, 27],
     radius: [14, 19]
   },
@@ -84,9 +84,9 @@ function clamp(value: number, [minimum, maximum]: [number, number]): number {
 const LIFECYCLE_COLOR: Record<YokaiLifecycle, string> = {
   潛伏: "#6685a6",
   顯形: "#4cc2ff",
-  發酵: "#f0c876",
+  發酵: "#ecd0a0",
   狂熱: "#ff5166",
-  退散: "#64748b"
+  退散: "#7d7368"
 };
 
 const LIFECYCLE_LABEL: Record<YokaiLifecycle, string> = {
@@ -183,7 +183,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
   const nodes = [...roots, ...visibleChildren];
 
   return (
-    <div className="narrative-universe-frame relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#030711]/92">
+    <div className="narrative-universe-frame relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#080709]/92">
       <div className="relative z-20 border-b border-white/10 px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
@@ -233,8 +233,8 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
           <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
             <defs>
               <linearGradient id="universeLine" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="rgba(76,194,255,.24)" />
-                <stop offset="1" stopColor="rgba(240,200,118,.08)" />
+                <stop offset="0" stopColor="rgba(230,164,96,.24)" />
+                <stop offset="1" stopColor="rgba(236,208,160,.08)" />
               </linearGradient>
               <filter id="universeGlow"><feGaussianBlur stdDeviation="0.35" /></filter>
             </defs>
@@ -320,7 +320,7 @@ export function NarrativeUniverse({ narratives, selectedId, onSelect, onInspect 
           })}
 
           {selected ? (
-            <div className="narrative-lock-panel absolute bottom-4 left-4 z-30 flex w-[min(390px,calc(100vw-3rem))] items-center gap-3 rounded-xl border border-white/10 bg-[#060b17]/92 px-4 py-3 shadow-2xl backdrop-blur-xl sm:bottom-5 sm:left-5">
+            <div className="narrative-lock-panel absolute bottom-4 left-4 z-30 flex w-[min(390px,calc(100vw-3rem))] items-center gap-3 rounded-xl border border-white/10 bg-[#0c0b0d]/92 px-4 py-3 shadow-2xl backdrop-blur-xl sm:bottom-5 sm:left-5">
               <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-ember/30 bg-ember/10 text-ember">
                 <Crosshair className="h-4 w-4" />
                 <span className="absolute inset-0 animate-ping rounded-full border border-ember/20" />

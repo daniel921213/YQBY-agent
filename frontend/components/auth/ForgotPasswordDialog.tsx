@@ -80,7 +80,7 @@ export function ForgotPasswordDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#03050a]/80 px-4 py-8 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#060506]/80 px-4 py-8 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="password-reset-title"
@@ -88,7 +88,7 @@ export function ForgotPasswordDialog({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="auth-card relative w-full max-w-md overflow-hidden rounded-xl border border-[#d4af37]/25 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.65),0_0_40px_rgba(212,175,55,0.08)] backdrop-blur-xl">
+      <section className="auth-card relative w-full max-w-md overflow-hidden rounded-xl border border-[#ceaa70]/25 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.65),0_0_40px_rgba(206,170,112,0.08)] backdrop-blur-xl">
         <div aria-hidden className="auth-card-topline pointer-events-none absolute inset-x-0 top-0 h-px" />
         <button
           type="button"
@@ -99,7 +99,7 @@ export function ForgotPasswordDialog({
           <X className="h-4 w-4" />
         </button>
 
-        <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/10 text-[#e5c96d]">
+        <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[#ceaa70]/30 bg-[#ceaa70]/10 text-[#ecd0a0]">
           <KeyRound className="h-5 w-5" />
         </div>
         <h2 id="password-reset-title" className="pr-10 text-xl font-semibold text-slate-50">
@@ -124,7 +124,7 @@ export function ForgotPasswordDialog({
               <button
                 type="button"
                 onClick={() => setView("form")}
-                className="rounded-md border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[#d4af37]/35 hover:text-white"
+                className="rounded-md border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[#ceaa70]/35 hover:text-white"
               >
                 我已有重設碼
               </button>

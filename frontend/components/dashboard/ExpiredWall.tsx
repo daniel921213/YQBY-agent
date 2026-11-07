@@ -166,14 +166,14 @@ export function ExpiredWall({ variant = "expired" }: ExpiredWallProps) {
       {/* 暗色 scrim：確保中央卡片文字對比 */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-[rgba(5,7,15,0.18)] via-[rgba(5,7,15,0.5)] to-[rgba(5,7,15,0.78)]"
+        className="absolute inset-0 bg-gradient-to-b from-[rgba(10,10,12,0.18)] via-[rgba(10,10,12,0.5)] to-[rgba(10,10,12,0.78)]"
       />
 
       {/* 中央行動卡 */}
       <div className="absolute inset-0 grid place-items-center p-4">
         <Reveal>
           <div className="glass-panel flex w-full max-w-md flex-col items-center gap-4 rounded-2xl px-8 py-10 text-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-[0_0_32px_rgba(202,138,4,0.25)]">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-gold shadow-[0_0_32px_rgba(200,160,105,0.25)]">
               <Lock className="h-6 w-6" />
             </span>
             <h2 className="text-xl font-semibold text-slate-50">{title}</h2>
