@@ -9,6 +9,7 @@ import os
 os.environ["DATA_PROVIDER"] = "mock"
 os.environ["SCAN_BACKGROUND"] = "false"
 os.environ["YOKAI_BACKGROUND"] = "false"
+os.environ["WEEKLY_BRIEF_BACKGROUND"] = "false"
 # Isolate the auth DB to a throwaway sqlite file (not the dev yqby_auth.db).
 os.environ["DATABASE_URL"] = "sqlite:///./test_auth.db"
 # Enable the hidden admin (code-minting) endpoints in tests.

@@ -86,6 +86,16 @@ class Settings(BaseSettings):
     recommend_min_quote_volume_24h: float = 2_000_000.0
     yokai_min_quote_volume_24h: float = 1_000_000.0
 
+    # 每週消息面: Forex Factory weekly calendar (current week only, no actuals),
+    # BLS for released US values, Yahoo Finance for index/commodity closes.
+    weekly_brief_background: bool = True
+    weekly_brief_refresh_seconds: float = 3600.0
+    weekly_brief_request_timeout: float = 15.0
+    weekly_brief_model: str | None = None  # defaults to analyst_model
+    forex_factory_calendar_url: str = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
+    bls_api_url: str = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
+    yahoo_chart_url: str = "https://query1.finance.yahoo.com/v8/finance/chart"
+
     # Yokai narrative intelligence. External collectors are isolated from the
     # market scanner. A persisted last-good
     # snapshot keeps the feature useful during upstream outages/redeploys.

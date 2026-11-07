@@ -366,3 +366,98 @@ export interface YokaiResponse {
   coverage_symbols: number;
   notice: string;
 }
+
+// ---- 每週消息面 -------------------------------------------------------------
+
+export type WeeklyMode = "preview" | "live" | "recap" | "warming";
+export type WeeklyVerdict = "ABOVE" | "BELOW" | "INLINE";
+
+export interface WeeklyEvent {
+  id: string;
+  title: string;
+  title_zh: string;
+  country: string;
+  country_zh: string;
+  impact: string;
+  timestamp: number | null;
+  date: string;
+  weekday: string;
+  time_label: string;
+  forecast: string;
+  previous: string;
+  actual: string | null;
+  actual_source: string | null;
+  verdict: WeeklyVerdict | null;
+  released: boolean;
+  url: string | null;
+}
+
+export interface WeeklyFactor {
+  id: string;
+  rank: number;
+  title: string;
+  country: string;
+  country_zh: string;
+  impact: string;
+  timestamp: number | null;
+  date: string;
+  weekday: string;
+  time_label: string;
+  released: boolean;
+  holiday_note: string | null;
+  note: string | null;
+  events: WeeklyEvent[];
+}
+
+export interface WeeklyQuote {
+  key: string;
+  name: string;
+  group: "close" | "kpi";
+  kind: "price" | "yield";
+  decimals: number;
+  last: number;
+  as_of: string;
+  day_change: number | null;
+  week_change: number | null;
+  change_unit: "pct" | "bp";
+  stale: boolean;
+}
+
+export interface WeeklyNarrative {
+  headline: string[];
+  one_line: string[];
+  markets: { market: string; points: string[] }[];
+  generated_at: number;
+  mode: string;
+  stale: boolean;
+}
+
+export interface WeeklySourceStatus {
+  key: string;
+  name: string;
+  health: "HEALTHY" | "STALE" | "OFFLINE";
+  last_success_at: number | null;
+}
+
+export interface WeeklyBriefResponse {
+  generated_at: number;
+  data_as_of: number | null;
+  mode: WeeklyMode;
+  title: string;
+  kicker: string;
+  week_start: string | null;
+  week_end: string | null;
+  week_label: string;
+  results: WeeklyEvent[];
+  results_label: string;
+  kpis: WeeklyQuote[];
+  closes: WeeklyQuote[];
+  closes_label: string;
+  factors: WeeklyFactor[];
+  factors_label: string;
+  calendar: WeeklyEvent[];
+  narrative: WeeklyNarrative | null;
+  sources: WeeklySourceStatus[];
+  notice: string | null;
+  ai_enabled: boolean;
+}

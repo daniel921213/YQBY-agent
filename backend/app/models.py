@@ -125,6 +125,17 @@ class PasswordResetCode(Base):
     used_at: Mapped[object] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class WeeklyBriefSnapshot(Base):
+    """每週消息面 state (calendars, closes, BLS values, AI notes) across restarts."""
+
+    __tablename__ = "weekly_brief_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    generated_at: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class YokaiSnapshot(Base):
     """Latest external narrative intelligence, persisted across Railway restarts."""
 

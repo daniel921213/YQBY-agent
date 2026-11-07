@@ -12,6 +12,7 @@ from app.api.v1.routes.yokai import router as yokai_router
 from app.api.v1.routes.trades import router as trades_router
 from app.api.v1.routes.journals import router as journals_router
 from app.api.v1.routes.reviews import router as reviews_router
+from app.api.v1.routes.weekly_brief import router as weekly_brief_router
 from app.services.review_migration import run_review_migration
 from app.core.config import get_settings
 from app.db import SessionLocal, engine, init_db
@@ -21,6 +22,7 @@ from app.services.journal_migration import run_journal_migration
 from app.services.password_reset_service import ensure_inventory
 from app.services.scan_cache import scan_cache
 from app.services.yokai_service import yokai_cache
+from app.services.weekly_brief.service import weekly_brief_cache
 from app.services.symbol_universe import UniverseUnavailable, UnsupportedSymbol
 
 
@@ -50,7 +52,10 @@ async def lifespan(app: FastAPI):
         scan_cache.start()
     if settings.yokai_background:
         yokai_cache.start()
+    if settings.weekly_brief_background:
+        weekly_brief_cache.start()
     yield
+    weekly_brief_cache.stop()
     yokai_cache.stop()
     scan_cache.stop()
 
@@ -84,6 +89,7 @@ app.include_router(yokai_router, prefix=settings.api_v1_prefix)
 app.include_router(trades_router, prefix=settings.api_v1_prefix)
 app.include_router(journals_router, prefix=settings.api_v1_prefix)
 app.include_router(reviews_router, prefix=settings.api_v1_prefix)
+app.include_router(weekly_brief_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

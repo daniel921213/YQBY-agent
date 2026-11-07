@@ -61,5 +61,10 @@
   - `RECOMMEND_MIN_QUOTE_VOLUME_24H`：首頁多空推薦，預設 `2000000`（200 萬美元）
   - `YOKAI_MIN_QUOTE_VOLUME_24H`：妖怪篩選器，預設 `1000000`（100 萬美元）
 - 每個幣每輪掃描會多抓一次 Gate 的 1h 多空比歷史（14 天），用來判斷「相對自身常態」的擁擠程度；5m 雷達不抓。
+- **每週消息面**（`/weekly`，登入即可看）不需要新的金鑰：
+  - 經濟日曆來自 Forex Factory 公開日曆檔（只有「本週」，美東週日換週，約台灣時間週日下午）；實際值由美國勞工統計局 BLS 公開 API 補上（非農、失業率、時薪、CPI、PPI、JOLTS）；收盤價來自 Yahoo Finance，BTC／ETH 來自 Gate。
+  - AI 觀察沿用 `ANTHROPIC_API_KEY` 與 `ANALYST_MODEL`；想換模型可另設 `WEEKLY_BRIEF_MODEL`。只在換週、換模式或新數據公布時重寫，一週約 10 次。
+  - 每小時更新一次，另外在重要數據公布後 3 分鐘、以及週一 00:00／週六 06:00（台灣時間）自動更新；資料存在資料庫，重新部署不會遺失上週日曆。
+  - 關閉：`WEEKLY_BRIEF_BACKGROUND=false`。
 - 金鑰只貼在 Railway 後台，**不要**寫進程式或 commit（`backend/.env` 已被 git 忽略）。
 - Railway 有試用額度，用完後大約 $5/月（Hobby）。

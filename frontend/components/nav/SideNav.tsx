@@ -6,10 +6,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReviewAlerts } from "@/components/journal/ReviewAlerts";
 import { JournalAlerts } from "@/components/journal/JournalAlerts";
-import { BookOpen, GraduationCap, LayoutDashboard, LineChart, Radar, Users, X } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, LineChart, Newspaper, Radar, Users, X } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "主控台", description: "早期異動雷達", icon: LayoutDashboard },
+  { href: "/weekly", label: "每週消息面", description: "經濟日曆・下週主導因素", icon: Newspaper },
   { href: "/indicators", label: "指標專區", description: "CT_NOVA 指標介紹", icon: LineChart },
   { href: "/beginner", label: "新手專區", description: "開戶・看盤・SMC 入門", icon: GraduationCap },
   { href: "/mentors", label: "團隊專區", description: "認識 CT_Trader 團隊", icon: Users },
