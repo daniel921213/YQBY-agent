@@ -3,6 +3,7 @@ from typing import Literal
 
 import pandas as pd
 
+from app.indicators.crowding import describe_funding, latest_funding
 from app.utils.numeric import clamp
 
 
@@ -26,7 +27,7 @@ class FundingRateSignal:
 def analyze_funding_rate_extreme(
     frame: pd.DataFrame,
     lookback: int = 192,
-    extreme_threshold: float = 0.00035,
+    extreme_threshold: float = 0.00035,  # per 8h
 ) -> FundingRateSignal:
     recent = frame.tail(lookback)
     if len(recent) < 12:
@@ -38,8 +39,14 @@ def analyze_funding_rate_extreme(
                 "NEUTRAL", 0.0, "資金費率資料不足", "最新資金費率缺失，不以 0 冒充正常"
             )
 
-    series = recent["funding_rate"]
+    # Compare on an 8h-equivalent basis: the threshold below is per 8h, while
+    # Gate settles many contracts every 1h or 4h.
+    series = recent["funding_rate_8h"] if "funding_rate_8h" in recent.columns else recent["funding_rate"]
+    series = pd.to_numeric(series, errors="coerce").fillna(0.0)
     latest = float(series.iloc[-1])
+    _, _, hours = latest_funding(recent)
+    raw_latest = float(pd.to_numeric(recent["funding_rate"], errors="coerce").fillna(0.0).iloc[-1])
+    shown = describe_funding(raw_latest, latest, hours)
 
     # Collapse the bar-expanded step function back to (approximate) settlement
     # observations, then only trust the z-score when there are enough of them.
@@ -60,7 +67,7 @@ def analyze_funding_rate_extreme(
             "LONG",
             max(strength, 0.45),
             "資金費率極端偏負",
-            f"資金費率 {latest:.5%}，空頭付費壓力偏高，具備反向做多條件",
+            f"資金費率 {shown}，空頭付費壓力偏高，具備反向做多條件",
         )
 
     if latest >= extreme_threshold or z_score >= 1.8:
@@ -68,12 +75,12 @@ def analyze_funding_rate_extreme(
             "SHORT",
             max(strength, 0.45),
             "資金費率極端偏正",
-            f"資金費率 {latest:.5%}，多頭付費壓力偏高，具備反向做空條件",
+            f"資金費率 {shown}，多頭付費壓力偏高，具備反向做空條件",
         )
 
     return FundingRateSignal(
         "NEUTRAL",
         strength * 0.2,
         "資金費率正常",
-        f"資金費率 {latest:.5%}，未達極端閾值",
+        f"資金費率 {shown}，未達極端閾值",
     )

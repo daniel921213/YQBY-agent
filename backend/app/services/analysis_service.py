@@ -6,6 +6,7 @@ import pandas as pd
 
 from app.core.config import get_settings
 from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE
+from app.indicators.crowding import latest_funding, latest_ratio_read
 from app.indicators.risk_radar import RiskRadarReading, analyze_five_minute_risk
 from app.schemas.indicators import EvidenceItem
 from app.schemas.market import CandlePoint, LinePoint, MarketChartPayload
@@ -112,6 +113,36 @@ def _flow_quality(frame: pd.DataFrame) -> str:
     if {"buy_volume", "sell_volume"}.issubset(frame.columns):
         return "REAL"
     return "MISSING"
+
+
+def _quote_volume_24h(frame: pd.DataFrame, primary_timeframe: str) -> float | None:
+    """24h USDT turnover from closed primary candles (None when unknowable).
+
+    Gate's candle ``sum`` is quote turnover. Providers without it (Binance
+    base-asset volume, the mock) fall back to close × volume.
+    """
+    bars = _bars_for(86_400, primary_timeframe)
+    recent = frame.tail(bars)
+    if recent.empty:
+        return None
+    quote = (
+        pd.to_numeric(recent["quote_volume"], errors="coerce")
+        if "quote_volume" in recent.columns
+        else None
+    )
+    if quote is None or quote.notna().sum() == 0:
+        if not {"close", "volume"}.issubset(recent.columns):
+            return None
+        quote = pd.to_numeric(recent["close"], errors="coerce") * pd.to_numeric(
+            recent["volume"], errors="coerce"
+        )
+    total = float(quote.sum(min_count=1))
+    if pd.isna(total) or total < 0:
+        return None
+    if len(recent) < bars:
+        # Short frames (fresh listings) are scaled to a full day.
+        total *= bars / len(recent)
+    return round(total, 2)
 
 
 def _official_close_time(frame: pd.DataFrame, timeframe: str) -> int | None:
@@ -299,11 +330,23 @@ class AnalysisService:
         oi_usd = _last_value(primary, "open_interest_usd", _last_value(primary, "open_interest"))
         quote_volume_1h = _flow_sum(primary, "quote_volume", bars_1h)
         total_liq_1h = long_liq_1h + short_liq_1h
+        funding_raw, funding_8h, funding_hours = latest_funding(primary)
+        ratio_read = latest_ratio_read(primary)
         metrics = MarketSnapshot(
-            funding_rate=_last_value(primary, "funding_rate"),
+            funding_rate=funding_raw,
+            funding_rate_8h=round(funding_8h, 8),
+            funding_interval_hours=funding_hours,
             top_trader_ratio=_last_value(primary, "top_trader_long_short_ratio", 1.0),
             top_position_ratio=_last_value(primary, "top_position_long_short_ratio", 1.0),
             account_ratio=_last_value(primary, "account_long_short_ratio", 1.0),
+            account_ratio_baseline=(
+                round(ratio_read.account_median, 4)
+                if ratio_read.account_median is not None
+                else None
+            ),
+            account_ratio_deviation=round(ratio_read.account_deviation, 4),
+            account_crowded=ratio_read.crowded,
+            quote_volume_24h=_quote_volume_24h(primary, primary_timeframe),
             open_interest=oi_qty,
             open_interest_qty=oi_qty,
             open_interest_usd=oi_usd,
@@ -398,6 +441,7 @@ class AnalysisService:
                 oi_side=mover.side if mover else None,
                 oi_change_1h=mover.oi_change_1h if mover else 0.0,
                 five_minute=risk_by_symbol.get(symbol),
+                min_quote_volume_24h=self.settings.recommend_min_quote_volume_24h,
             )
             decisions_by_symbol[symbol] = decision
             yokai_decisions_by_symbol[symbol] = evaluate_yokai_long_confirmation(
@@ -408,6 +452,7 @@ class AnalysisService:
                 oi_side=mover.side if mover else None,
                 oi_change_1h=mover.oi_change_1h if mover else 0.0,
                 five_minute=risk_by_symbol.get(symbol),
+                min_quote_volume_24h=self.settings.yokai_min_quote_volume_24h,
             )
             if decision.eligible:
                 eligible[analysis.recommendation.direction].append((analysis, decision))
@@ -507,8 +552,10 @@ class AnalysisService:
 
         def run(symbol: str) -> RiskRadarReading | None:
             try:
+                # The 5m radar never reads long/short crowding, so it skips
+                # the extra 14-day ratio-history request.
                 frame = self.market_data.get_enriched_market_frame(
-                    symbol, "5m", RISK_RADAR_LOOKBACK
+                    symbol, "5m", RISK_RADAR_LOOKBACK, with_ratio_baseline=False
                 )
                 return analyze_five_minute_risk(symbol, frame, official[symbol])
             except Exception:
@@ -600,9 +647,14 @@ class AnalysisService:
                     confluence_pillars=r.confluence_pillars,
                     pillars=_pillar_breakdown(a.evidence),
                     funding_rate=m.funding_rate if m else 0.0,
+                    funding_rate_8h=m.funding_rate_8h if m else None,
+                    funding_interval_hours=m.funding_interval_hours if m else 8.0,
                     top_trader_ratio=m.top_trader_ratio if m else 1.0,
                     account_ratio=m.account_ratio if m else 1.0,
                     account_ratio_avg=m.account_ratio_avg if m else 1.0,
+                    account_ratio_baseline=m.account_ratio_baseline if m else None,
+                    account_crowded=m.account_crowded if m else None,
+                    quote_volume_24h=m.quote_volume_24h if m else None,
                     oi_change_1h=_oi_change_1h(a.chart, primary_timeframe),
                     stage=a.stage,
                     trade_eligible=decision.eligible if decision else False,

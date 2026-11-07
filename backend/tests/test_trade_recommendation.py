@@ -11,6 +11,9 @@ from app.scoring.trade_recommendation import (
 )
 
 
+_LIQUID = 50_000_000.0
+
+
 def _evidence(direction: str) -> list[EvidenceItem]:
     return [
         _item("open_interest_relation", direction, 0.74),
@@ -76,6 +79,7 @@ def _decision(
             funding_rate=0.0,
             account_ratio=1.0,
             flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
         ),
         oi_side=oi_side or ("多頭建倉" if direction == "LONG" else "空頭建倉"),
         oi_change_1h=0.025,
@@ -101,6 +105,7 @@ def _yokai_decision(
             funding_rate=0.0,
             account_ratio=1.0,
             flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
         ),
         oi_side=oi_side or ("多頭建倉" if direction == "LONG" else "空頭建倉"),
         oi_change_1h=0.025,
@@ -169,6 +174,16 @@ def test_yokai_keeps_crowding_and_liquidation_as_hard_vetoes() -> None:
             funding_rate=0.0005,
             account_ratio=1.0,
             flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
+        )
+    )
+    retail_crowded = _yokai_decision(
+        metrics=MarketSnapshot(
+            funding_rate=0.0,
+            account_ratio=2.9,
+            account_crowded="LONG",
+            flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
         )
     )
     liquidation = _yokai_decision(
@@ -176,7 +191,9 @@ def test_yokai_keeps_crowding_and_liquidation_as_hard_vetoes() -> None:
     )
 
     assert crowded.eligible is False
+    assert retail_crowded.eligible is False
     assert liquidation.eligible is False
+    assert any("多單擁擠" in reason for reason in retail_crowded.failed_reasons)
     assert any("風險否決" in reason for reason in crowded.failed_reasons)
     assert any("爆倉強度異常" in reason for reason in liquidation.failed_reasons)
 
@@ -189,9 +206,28 @@ def test_oi_exit_or_wrong_buildup_side_never_recommends() -> None:
 @pytest.mark.parametrize(
     "metrics",
     [
-        MarketSnapshot(funding_rate=0.0005, account_ratio=1.0, flow_quality="REAL"),
-        MarketSnapshot(funding_rate=0.0, account_ratio=1.5, flow_quality="REAL"),
-        MarketSnapshot(funding_rate=0.0, account_ratio=1.0, flow_quality="MISSING"),
+        MarketSnapshot(
+            funding_rate=0.0005, account_ratio=1.0, flow_quality="REAL", quote_volume_24h=_LIQUID
+        ),
+        # 0.025% per 4h settlement is 0.05% per 8h: as hot as the 8h threshold.
+        MarketSnapshot(
+            funding_rate=0.00025,
+            funding_rate_8h=0.0005,
+            funding_interval_hours=4.0,
+            account_ratio=1.0,
+            flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
+        ),
+        MarketSnapshot(
+            funding_rate=0.0,
+            account_ratio=1.0,
+            account_crowded="LONG",
+            flow_quality="REAL",
+            quote_volume_24h=_LIQUID,
+        ),
+        MarketSnapshot(
+            funding_rate=0.0, account_ratio=1.0, flow_quality="MISSING", quote_volume_24h=_LIQUID
+        ),
     ],
 )
 def test_long_crowding_or_missing_flow_quality_blocks_recommendation(
@@ -238,3 +274,94 @@ def test_all_three_core_families_and_real_cvd_thrust_are_mandatory() -> None:
 
     assert _decision(evidence=no_relative).eligible is False
     assert _decision(evidence=weak_flow).eligible is False
+
+
+def test_structurally_high_account_ratio_alone_does_not_block_a_long() -> None:
+    # Gate majors sit around 2-3 all the time; only a reading that is crowded
+    # versus the symbol's own baseline may veto.
+    metrics = MarketSnapshot(
+        funding_rate=0.0,
+        account_ratio=2.3,
+        account_ratio_baseline=2.25,
+        account_crowded=None,
+        flow_quality="REAL",
+        quote_volume_24h=_LIQUID,
+    )
+
+    assert _decision(metrics=metrics).eligible is True
+    assert _yokai_decision(metrics=metrics).eligible is True
+
+
+def test_short_crowding_uses_the_relative_flag() -> None:
+    crowded = MarketSnapshot(
+        funding_rate=0.0,
+        account_ratio=0.9,
+        account_crowded="SHORT",
+        flow_quality="REAL",
+        quote_volume_24h=_LIQUID,
+    )
+    structurally_low = crowded.model_copy(update={"account_crowded": None, "account_ratio": 0.6})
+
+    assert _decision("SHORT", metrics=crowded).eligible is False
+    assert _decision("SHORT", metrics=structurally_low).eligible is True
+
+
+def test_funding_threshold_reads_the_8h_equivalent() -> None:
+    eight_hour = MarketSnapshot(
+        funding_rate=0.0003,
+        funding_rate_8h=0.0003,
+        account_ratio=1.0,
+        flow_quality="REAL",
+        quote_volume_24h=_LIQUID,
+    )
+    four_hour = eight_hour.model_copy(
+        update={"funding_rate_8h": 0.0006, "funding_interval_hours": 4.0}
+    )
+
+    assert _decision(metrics=eight_hour).eligible is True
+    blocked = _decision(metrics=four_hour)
+    assert blocked.eligible is False
+    assert "資金費率偏高（8h 等值）" in blocked.failed_reasons
+
+
+@pytest.mark.parametrize(
+    ("volume", "dashboard", "yokai"),
+    [
+        (5_000_000.0, True, True),
+        (1_500_000.0, False, True),
+        (500_000.0, False, False),
+        (None, False, False),
+    ],
+)
+def test_liquidity_floor_gates_dashboard_and_yokai(
+    volume: float | None, dashboard: bool, yokai: bool
+) -> None:
+    metrics = MarketSnapshot(
+        funding_rate=0.0, account_ratio=1.0, flow_quality="REAL", quote_volume_24h=volume
+    )
+
+    dashboard_decision = _decision(metrics=metrics)
+    yokai_decision = _yokai_decision(metrics=metrics)
+
+    assert dashboard_decision.eligible is dashboard
+    assert yokai_decision.eligible is yokai
+    if not dashboard:
+        assert any("流動性" in reason for reason in dashboard_decision.failed_reasons)
+
+
+def test_liquidity_floor_is_configurable() -> None:
+    metrics = MarketSnapshot(
+        funding_rate=0.0, account_ratio=1.0, flow_quality="REAL", quote_volume_24h=800_000.0
+    )
+    decision = evaluate_trade_recommendation(
+        direction="LONG",
+        stage="趨勢啟動",
+        evidence=_evidence("LONG"),
+        metrics=metrics,
+        oi_side="多頭建倉",
+        oi_change_1h=0.025,
+        five_minute=_risk("LONG"),
+        min_quote_volume_24h=500_000.0,
+    )
+
+    assert decision.eligible is True

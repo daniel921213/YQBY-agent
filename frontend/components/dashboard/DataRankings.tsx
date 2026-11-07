@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, RadioTower, ShieldCheck, Zap } from "lucide-react";
 import type { OiMover, OiMoverSide, RiskRadarPayload, ScreenerRow } from "@/lib/types";
-import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
+import { formatCompactNumber, formatPercent, fundingRate8h, percentTone } from "@/lib/format";
 import { OiQuadrantChart } from "@/components/dashboard/OiQuadrantChart";
 import { RiskRadarPanel } from "@/components/dashboard/RiskRadarPanel";
 
@@ -18,7 +18,10 @@ interface DataRankingsProps {
 }
 
 interface EnrichedMover extends OiMover {
+  /** Raw per-settlement rate (display). */
   funding_rate: number;
+  /** 8h-equivalent rate: every heat heuristic below reads this. */
+  funding_8h: number;
   account_ratio: number;
   account_ratio_avg: number;
 }
@@ -114,6 +117,7 @@ export function DataRankings({
       return {
         ...mover,
         funding_rate: row?.funding_rate ?? 0,
+        funding_8h: row ? fundingRate8h(row) : 0,
         account_ratio: row?.account_ratio ?? 1,
         account_ratio_avg: row?.account_ratio_avg ?? 1
       };
@@ -264,7 +268,7 @@ function buildTransitionSignals(movers: EnrichedMover[]): TransitionSignal[] {
         Math.min(16, Math.abs(mover.change_24h) * 42) +
         Math.min(12, (Math.abs(mover.oi_delta) / Math.max(1, mover.total_oi)) * 120);
       const pressureBonus =
-        Math.min(10, Math.abs(mover.funding_rate) * 28000) +
+        Math.min(10, Math.abs(mover.funding_8h) * 28000) +
         Math.min(8, (liqUsd1h / Math.max(1, mover.total_oi)) / 0.002 * 8);
       const priority = momentum + pressureBonus + (changed ? 45 : 0);
 
@@ -298,7 +302,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
       Math.min(24, (Math.max(0, priceChange) / 0.08) * 24) +
       oiStress +
       Math.min(16, (Math.max(0, -ratioDeviation) / 0.3) * 16) +
-      Math.min(12, (Math.max(0, 0.0002 - mover.funding_rate) / 0.00035) * 12) +
+      Math.min(12, (Math.max(0, 0.0002 - mover.funding_8h) / 0.00035) * 12) +
       shortLiqPts +
       (["空頭回補", "空頭平倉"].includes(mover.side) ? 14 : mover.side === "多頭建倉" ? 7 : 0);
 
@@ -306,7 +310,7 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
       Math.min(24, (Math.max(0, -priceChange) / 0.08) * 24) +
       oiStress +
       Math.min(16, (Math.max(0, ratioDeviation) / 0.3) * 16) +
-      Math.min(12, (Math.max(0, mover.funding_rate + 0.0001) / 0.00045) * 12) +
+      Math.min(12, (Math.max(0, mover.funding_8h + 0.0001) / 0.00045) * 12) +
       longLiqPts +
       (["多頭去槓桿", "多頭平倉"].includes(mover.side) ? 14 : mover.side === "空頭建倉" ? 7 : 0);
 
@@ -356,8 +360,8 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
 }
 
 function transitionLabel(mover: EnrichedMover): string {
-  if (mover.side === "多頭建倉" && mover.funding_rate > 0.00025) return "多方偏熱";
-  if (mover.side === "空頭建倉" && mover.funding_rate < -0.00015) return "空方偏熱";
+  if (mover.side === "多頭建倉" && mover.funding_8h > 0.00025) return "多方偏熱";
+  if (mover.side === "空頭建倉" && mover.funding_8h < -0.00015) return "空方偏熱";
   if (["空頭回補", "空頭平倉"].includes(mover.side)) return "回補加速";
   if (["多頭去槓桿", "多頭平倉"].includes(mover.side)) return "降槓桿";
   if (mover.side === "多頭建倉") return "主動增倉";

@@ -21,6 +21,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from app.indicators.crowding import describe_funding, latest_funding, latest_ratio_read
 from app.indicators.divergence import DivergenceSignal
 from app.indicators.early_signals import (
     CvdThrustSignal,
@@ -66,10 +67,10 @@ _OI_ACTIVE_4H = 0.03
 _THRUST_HOT_Z = 1.5
 _THRUST_FLIP_Z = 1.8
 
-# Crowding thresholds for 過熱.
+# Crowding for 過熱: funding is compared per 8h (Gate settles many contracts
+# every 1h/4h); the all-account ratio is read against the symbol's own
+# baseline in app.indicators.crowding rather than a fixed level.
 _FUNDING_HOT = 0.0005
-_ACCOUNT_LONG_CROWDED = 1.5
-_ACCOUNT_SHORT_CROWDED = 0.65
 
 _MAX_REASONS = 4
 
@@ -107,12 +108,8 @@ def classify_stage(
             float(frame["open_interest"].iloc[-1 - bars_4h]),
             float(frame["open_interest"].iloc[-1]),
         )
-    funding = float(frame["funding_rate"].iloc[-1]) if "funding_rate" in frame.columns else 0.0
-    account_ratio = (
-        float(frame["account_long_short_ratio"].iloc[-1])
-        if "account_long_short_ratio" in frame.columns
-        else 1.0
-    )
+    funding_raw, funding, funding_hours = latest_funding(frame)
+    ratio_read = latest_ratio_read(frame)
 
     # The coin's own move direction (what the stage describes).
     move_sign = _sign(ret_24h) if abs(ret_24h) >= 0.01 else _sign(ret_4h)
@@ -167,14 +164,21 @@ def classify_stage(
     )
     if extended:
         crowd: list[str] = []
+        funding_text = describe_funding(funding_raw, funding, funding_hours)
         if move_sign > 0 and funding >= _FUNDING_HOT:
-            crowd.append(f"資金費率 {funding:.4%} 同向過熱")
+            crowd.append(f"資金費率 {funding_text} 同向過熱")
         if move_sign < 0 and funding <= -_FUNDING_HOT:
-            crowd.append(f"資金費率 {funding:.4%} 同向過熱")
-        if move_sign > 0 and account_ratio >= _ACCOUNT_LONG_CROWDED:
-            crowd.append(f"全體帳戶多空比 {account_ratio:.2f}，多單擁擠")
-        if move_sign < 0 and account_ratio <= _ACCOUNT_SHORT_CROWDED:
-            crowd.append(f"全體帳戶多空比 {account_ratio:.2f}，空單擁擠")
+            crowd.append(f"資金費率 {funding_text} 同向過熱")
+        if ratio_read.account_median is not None:
+            ratio_text = (
+                f"全體帳戶多空比 {ratio_read.account_ratio:.2f}"
+                f"（自身{ratio_read.baseline_label}常態 {ratio_read.account_median:.2f}，"
+                f"{ratio_read.account_deviation:+.0%}）"
+            )
+            if move_sign > 0 and ratio_read.crowded == "LONG":
+                crowd.append(f"{ratio_text}，多單擁擠")
+            if move_sign < 0 and ratio_read.crowded == "SHORT":
+                crowd.append(f"{ratio_text}，空單擁擠")
         if volume_surge.ratio >= _VOL_BLOWOFF_RATIO:
             crowd.append(f"量能 {volume_surge.ratio:.1f}× 急速放大，疑似末段趕價")
         if crowd:

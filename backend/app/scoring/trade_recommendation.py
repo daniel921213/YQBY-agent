@@ -17,10 +17,16 @@ from app.schemas.scoring import MarketSnapshot, Stage, TradeDirection
 
 
 _CORE_MIN_STRENGTH = 0.5
+# Per 8h. Compared with MarketSnapshot.funding_rate_8h, never the raw
+# per-settlement rate (Gate settles many contracts every 1h or 4h).
 _LONG_FUNDING_CROWDED = 0.0005
 _SHORT_FUNDING_CROWDED = -0.0005
-_LONG_ACCOUNT_CROWDED = 1.5
-_SHORT_ACCOUNT_CROWDED = 0.65
+# All-account crowding is relative to the symbol's own baseline
+# (MarketSnapshot.account_crowded); see app.indicators.crowding.
+
+# Defaults mirror Settings; the scan passes the configured values.
+DEFAULT_RECOMMEND_MIN_QUOTE_VOLUME_24H = 2_000_000.0
+DEFAULT_YOKAI_MIN_QUOTE_VOLUME_24H = 1_000_000.0
 
 _STRUCTURE_KEYS = {"open_interest_relation"}
 _MOMENTUM_KEYS = {"momentum", "volume_surge", "cvd_thrust"}
@@ -81,6 +87,7 @@ def evaluate_trade_recommendation(
     oi_side: str | None,
     oi_change_1h: float,
     five_minute: RiskRadarReading | None,
+    min_quote_volume_24h: float = DEFAULT_RECOMMEND_MIN_QUOTE_VOLUME_24H,
 ) -> TradeRecommendationDecision:
     """Return whether one symbol qualifies for a direct long/short recommendation."""
     return _evaluate_trade_recommendation(
@@ -95,6 +102,7 @@ def evaluate_trade_recommendation(
         transition_stages=_DASHBOARD_TRANSITION_STAGES,
         stage_priorities={"趨勢啟動": 2, "趨勢延續": 1},
         stage_failure="15m 尚未進入趨勢啟動／延續",
+        min_quote_volume_24h=min_quote_volume_24h,
     )
 
 
@@ -107,6 +115,7 @@ def evaluate_yokai_long_confirmation(
     oi_side: str | None,
     oi_change_1h: float,
     five_minute: RiskRadarReading | None,
+    min_quote_volume_24h: float = DEFAULT_YOKAI_MIN_QUOTE_VOLUME_24H,
 ) -> TradeRecommendationDecision:
     """Return whether a Gate setup confirms a Yokai LONG candidate.
 
@@ -204,13 +213,16 @@ def evaluate_yokai_long_confirmation(
         data_ready = False
         failed.append("資料未就緒：5m REAL 資料不足")
 
+    liquid, liquidity_reason = _liquidity_check(metrics, min_quote_volume_24h)
+    (passed if liquid else failed).append(liquidity_reason)
+
     vetoes: list[str] = []
     if stage in {"過熱風險", "反轉警訊"}:
         vetoes.append(f"風險否決：15m 已進入{stage}")
-    if metrics is not None and metrics.funding_rate >= _LONG_FUNDING_CROWDED:
-        vetoes.append("風險否決：資金費率偏高")
-    if metrics is not None and metrics.account_ratio >= _LONG_ACCOUNT_CROWDED:
-        vetoes.append("風險否決：全體帳戶多空比過度偏多")
+    if metrics is not None and _funding_8h(metrics) >= _LONG_FUNDING_CROWDED:
+        vetoes.append("風險否決：資金費率偏高（8h 等值）")
+    if metrics is not None and metrics.account_crowded == "LONG":
+        vetoes.append("風險否決：全體帳戶多空比高於自身常態，多單擁擠")
     if five_minute is not None and _LIQUIDATION_FLAG in five_minute.flags:
         vetoes.append("風險否決：爆倉強度異常")
     if five_minute_ready and five_minute is not None and (
@@ -233,7 +245,7 @@ def evaluate_yokai_long_confirmation(
     )
 
     return TradeRecommendationDecision(
-        eligible=(capital_passed == 2 and timing_ok and data_ready and not vetoes),
+        eligible=(capital_passed == 2 and timing_ok and data_ready and liquid and not vetoes),
         stage_priority={"早期異動": 3, "趨勢啟動": 2, "趨勢延續": 1}.get(stage, 0),
         weakest_core_strength=support_floor,
         flow_strength=flow_strength,
@@ -257,6 +269,7 @@ def _evaluate_trade_recommendation(
     transition_stages: frozenset[Stage],
     stage_priorities: dict[Stage, int],
     stage_failure: str,
+    min_quote_volume_24h: float,
 ) -> TradeRecommendationDecision:
     structure_strength = _evidence_strength(
         evidence,
@@ -290,6 +303,8 @@ def _evaluate_trade_recommendation(
         "主動流資料 REAL",
         "主動流資料不是 REAL",
     )
+    liquid, liquidity_reason = _liquidity_check(metrics, min_quote_volume_24h)
+    (passed if liquid else failed).append(liquidity_reason)
     check(
         stage in allowed_stages,
         f"15m {stage}",
@@ -338,25 +353,25 @@ def _evaluate_trade_recommendation(
 
     if direction == "LONG":
         check(
-            metrics is not None and metrics.funding_rate < _LONG_FUNDING_CROWDED,
-            "資金費率未過度擁擠",
-            "資金費率偏高",
+            metrics is not None and _funding_8h(metrics) < _LONG_FUNDING_CROWDED,
+            "資金費率未過度擁擠（8h 等值）",
+            "資金費率偏高（8h 等值）",
         )
         check(
-            metrics is not None and metrics.account_ratio < _LONG_ACCOUNT_CROWDED,
-            "全體帳戶多空比未過度擁擠",
-            "全體帳戶多空比過度偏多",
+            metrics is not None and metrics.account_crowded != "LONG",
+            "全體帳戶多空比未高於自身常態",
+            "全體帳戶多空比高於自身常態，多單擁擠",
         )
     else:
         check(
-            metrics is not None and metrics.funding_rate > _SHORT_FUNDING_CROWDED,
-            "資金費率未過度擁擠",
-            "負資金費率過度擁擠",
+            metrics is not None and _funding_8h(metrics) > _SHORT_FUNDING_CROWDED,
+            "資金費率未過度擁擠（8h 等值）",
+            "負資金費率過度擁擠（8h 等值）",
         )
         check(
-            metrics is not None and metrics.account_ratio > _SHORT_ACCOUNT_CROWDED,
-            "全體帳戶多空比未過度擁擠",
-            "全體帳戶多空比過度偏空",
+            metrics is not None and metrics.account_crowded != "SHORT",
+            "全體帳戶多空比未低於自身常態",
+            "全體帳戶多空比低於自身常態，空單擁擠",
         )
 
     check(
@@ -389,6 +404,34 @@ def _evaluate_trade_recommendation(
         oi_change_strength=abs(oi_change_1h),
         passed_reasons=tuple(passed),
         failed_reasons=tuple(failed),
+    )
+
+
+def _funding_8h(metrics: MarketSnapshot) -> float:
+    """8h-equivalent funding; payloads predating the field fall back to raw."""
+    return metrics.funding_rate if metrics.funding_rate_8h is None else metrics.funding_rate_8h
+
+
+def _usd(value: float) -> str:
+    if value >= 1_000_000:
+        return f"${value / 1_000_000:.1f}M"
+    if value >= 1_000:
+        return f"${value / 1_000:.0f}K"
+    return f"${value:.0f}"
+
+
+def _liquidity_check(
+    metrics: MarketSnapshot | None,
+    min_quote_volume_24h: float,
+) -> tuple[bool, str]:
+    """24h turnover floor: thin books let one order fake a flow anomaly."""
+    volume = metrics.quote_volume_24h if metrics is not None else None
+    if volume is None:
+        return False, "流動性未知：缺少 24h 成交額"
+    if volume >= min_quote_volume_24h:
+        return True, f"24h 成交額 {_usd(volume)}，流動性足夠"
+    return False, (
+        f"流動性不足：24h 成交額 {_usd(volume)}，低於門檻 {_usd(min_quote_volume_24h)}"
     )
 
 

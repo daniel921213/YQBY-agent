@@ -9,6 +9,7 @@ import {
   formatPercent,
   formatPrice,
   formatScore,
+  fundingRate8h,
   percentTone,
   stageHint,
   stageTone
@@ -68,8 +69,11 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
       list = list.filter((row) => row.direction === dir);
     }
 
+    // Funding sorts by its 8h equivalent so 1h/4h-settled coins rank fairly.
+    const value = (row: ScreenerRow) =>
+      activeSort.key === "funding_rate" ? fundingRate8h(row) : row[activeSort.key];
     return [...list].sort((a, b) => {
-      const diff = b[activeSort.key] - a[activeSort.key];
+      const diff = value(b) - value(a);
       return activeSort.desc ? diff : -diff;
     });
   }, [rows, query, dir, sortMode]);

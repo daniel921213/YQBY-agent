@@ -24,3 +24,12 @@ class DerivativesDataSource(ABC):
     def get_derivatives_metrics(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
         raise NotImplementedError
 
+    def get_ratio_history(self, symbol: str, hours: int) -> pd.DataFrame:
+        """Optional closed-1h long/short ratio history for crowding baselines.
+
+        Columns: ``timestamp`` (hour open), ``account_long_short_ratio``,
+        ``top_trader_long_short_ratio``. Providers without it return an empty
+        frame and crowding falls back to the analysed frame's own history.
+        """
+        return pd.DataFrame()
+

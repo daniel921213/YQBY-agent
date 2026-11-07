@@ -69,7 +69,15 @@ export interface AnalysisMeta {
 }
 
 export interface MarketSnapshot {
+  /** Raw per-settlement rate as the exchange reports it. */
   funding_rate: number;
+  /** 8h-equivalent rate; compare thresholds against this (see fundingRate8h). */
+  funding_rate_8h?: number | null;
+  funding_interval_hours?: number;
+  account_ratio_baseline?: number | null;
+  account_ratio_deviation?: number;
+  account_crowded?: "LONG" | "SHORT" | null;
+  quote_volume_24h?: number | null;
   top_trader_ratio: number;
   top_position_ratio: number;
   account_ratio: number;
@@ -188,10 +196,17 @@ export interface ScreenerRow {
   confidence_level: ConfidenceLevel;
   confluence_pillars: number;
   pillars: PillarScore[];
+  /** Raw per-settlement rate as the exchange reports it. */
   funding_rate: number;
+  /** 8h-equivalent rate; compare thresholds against this (see fundingRate8h). */
+  funding_rate_8h?: number | null;
+  funding_interval_hours?: number;
   top_trader_ratio: number;
   account_ratio: number;
   account_ratio_avg: number;
+  account_ratio_baseline?: number | null;
+  account_crowded?: "LONG" | "SHORT" | null;
+  quote_volume_24h?: number | null;
   oi_change_1h: number;
   stage: Stage;
 }

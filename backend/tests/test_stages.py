@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 
+from app.indicators.crowding import funding_to_8h
 from app.indicators.cvd import add_cvd_columns
 from app.indicators.divergence import detect_price_cvd_divergence
 from app.indicators.early_signals import (
@@ -112,3 +113,52 @@ def test_fresh_bullish_divergence_after_dump_is_reversal() -> None:
 
     assert result.stage == STAGE_REVERSAL
     assert any("底背離" in r for r in result.reasons)
+
+
+def _late_rally() -> pd.DataFrame:
+    # +10% over the last 24h with buyers still in control.
+    close = np.full(_BARS, 100.0)
+    close[-96:] = np.linspace(100.0, 110.0, 96)
+    frame = _base_frame(close)
+    frame.loc[frame.index[-8:], "buy_volume"] = 70.0
+    frame.loc[frame.index[-8:], "sell_volume"] = 30.0
+    return frame
+
+
+def test_structurally_high_account_ratio_alone_is_not_overheat() -> None:
+    # Gate majors sit around 2-3 all the time. The old fixed 1.5 line called
+    # every extended rally on them 過熱; a steady ratio is the coin's norm.
+    frame = _late_rally()
+    frame["account_long_short_ratio"] = 2.3
+
+    result = _classify(frame)
+
+    assert result.stage != STAGE_OVERHEAT
+
+
+def test_account_ratio_jump_versus_own_baseline_is_overheat() -> None:
+    frame = _late_rally()
+    frame["account_long_short_ratio"] = 2.3
+    frame.loc[frame.index[-4:], "account_long_short_ratio"] = 2.9
+
+    result = _classify(frame)
+
+    assert result.stage == STAGE_OVERHEAT
+    assert any("多單擁擠" in r and "常態" in r for r in result.reasons)
+
+
+def test_four_hour_funding_is_judged_on_an_8h_basis() -> None:
+    frame = _late_rally()
+    frame["funding_rate"] = 0.0003          # per 4h = 0.06% per 8h
+    frame["funding_interval"] = 14_400.0
+    eight_hour = frame.copy()
+    eight_hour["funding_interval"] = 28_800.0
+    for item in (frame, eight_hour):
+        item["funding_rate_8h"] = funding_to_8h(item["funding_rate"], item["funding_interval"])
+
+    hot = _classify(frame)
+    mild = _classify(eight_hour)
+
+    assert hot.stage == STAGE_OVERHEAT
+    assert any("／4h" in r for r in hot.reasons)
+    assert mild.stage != STAGE_OVERHEAT

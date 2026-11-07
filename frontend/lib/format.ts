@@ -2,6 +2,15 @@ export function formatScore(value: number): string {
   return value.toFixed(1);
 }
 
+/**
+ * Funding normalised to one 8h settlement. Gate settles many contracts every
+ * 1h or 4h, so raw rates are not comparable across coins or with 8h
+ * thresholds. Payloads predating the field fall back to the raw rate.
+ */
+export function fundingRate8h(row: { funding_rate: number; funding_rate_8h?: number | null }): number {
+  return row.funding_rate_8h ?? row.funding_rate;
+}
+
 export function formatCompactNumber(value: number): string {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",

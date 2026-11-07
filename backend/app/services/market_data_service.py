@@ -1,9 +1,16 @@
+from math import ceil
+
 import pandas as pd
 
 from app.core.config import get_settings
 from app.data_sources.base import DerivativesDataSource, MarketDataSource
 from app.data_sources.binance_mock import BinanceMockDataSource
 from app.data_sources.coinglass_mock import CoinglassMockDataSource
+from app.indicators.crowding import (
+    BASELINE_HOURS,
+    add_ratio_baseline_columns,
+    funding_to_8h,
+)
 from app.indicators.cvd import add_cvd_columns
 from app.utils.timeframes import timeframe_to_seconds
 
@@ -109,7 +116,14 @@ class MarketDataService:
         timeframe: str,
         limit: int,
         with_derivatives: bool = True,
+        with_ratio_baseline: bool = True,
     ) -> pd.DataFrame:
+        """Closed candles + causal derivatives.
+
+        ``with_ratio_baseline`` adds each symbol's own 14-day long/short ratio
+        baseline (one extra 1h request). Consumers that never read crowding,
+        such as the 5m risk radar, switch it off.
+        """
         klines = self.market_source.get_klines(symbol=symbol, timeframe=timeframe, limit=limit)
 
         if not with_derivatives:
@@ -202,5 +216,22 @@ class MarketDataService:
                 )
             else:
                 merged["funding_rate"] = merged["funding_rate_settled"]
+
+        # Thresholds are defined per 8h; Gate settles many contracts every 1h
+        # or 4h. Raw `funding_rate` stays as the exchange reports it (display);
+        # every crowding comparison reads `funding_rate_8h`.
+        merged["funding_rate_8h"] = funding_to_8h(
+            merged["funding_rate"],
+            merged["funding_interval"] if "funding_interval" in merged.columns else None,
+        )
+
+        if with_ratio_baseline:
+            hours = BASELINE_HOURS + ceil(limit * timeframe_to_seconds(timeframe) / 3_600) + 2
+            try:
+                history = self.derivatives_source.get_ratio_history(symbol, hours)
+            except Exception:
+                # A failed history request degrades to the in-frame baseline.
+                history = None
+            merged = add_ratio_baseline_columns(merged, history)
 
         return add_cvd_columns(merged)

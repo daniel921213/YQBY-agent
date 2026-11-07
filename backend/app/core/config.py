@@ -77,6 +77,15 @@ class Settings(BaseSettings):
     # dashboard has data within ~1 min while the full scan builds in background.
     scan_warmup_size: int = 60
 
+    # Liquidity floor (24h USDT turnover) for a coin to be recommended. Thin
+    # books let one or two large orders fake a flow/volume anomaly. Coins below
+    # the floor still appear in the screener; they just cannot be recommended.
+    # On Gate (Nov 2026) roughly the top 40 crypto contracts clear $2M and
+    # the top 60-70 clear $1M. Override with RECOMMEND_MIN_QUOTE_VOLUME_24H /
+    # YOKAI_MIN_QUOTE_VOLUME_24H.
+    recommend_min_quote_volume_24h: float = 2_000_000.0
+    yokai_min_quote_volume_24h: float = 1_000_000.0
+
     # Yokai narrative intelligence. External collectors are isolated from the
     # market scanner. A persisted last-good
     # snapshot keeps the feature useful during upstream outages/redeploys.

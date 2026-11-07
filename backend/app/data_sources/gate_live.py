@@ -7,6 +7,7 @@ import pandas as pd
 from app.core.config import get_settings
 from app.data_sources.base import DerivativesDataSource, MarketDataSource
 from app.data_sources.gate_client import get_gate_client
+from app.indicators.crowding import snap_funding_interval
 from app.utils.timeframes import timeframe_to_seconds
 
 # Intervals accepted by Gate's /futures/usdt/contract_stats endpoint. Prefer an
@@ -381,7 +382,10 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
         if funding.empty:
             merged = derivatives
             merged["funding_rate_settled"] = float("nan")
+            merged["funding_interval"] = float("nan")
         else:
+            # The settled rate carries the interval it covered, so an 8h
+            # equivalent can be derived causally for every historical bar.
             merged = pd.merge_asof(
                 derivatives.sort_values("timestamp"),
                 funding.sort_values("timestamp"),
@@ -389,10 +393,11 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
                 direction="backward",
                 tolerance=_FUNDING_MAX_AGE_SECONDS,
             )
+            if "funding_interval" not in merged.columns:
+                merged["funding_interval"] = float("nan")
         merged["funding_rate_current"] = float("nan")
         merged["funding_rate_next"] = float("nan")
         merged["funding_next_apply"] = float("nan")
-        merged["funding_interval"] = float("nan")
         merged["funding_rate"] = merged["funding_rate_settled"]
         merged["funding_rate_quality"] = "MISSING"
         merged.loc[merged["funding_rate_settled"].notna(), "funding_rate_quality"] = "SETTLED"
@@ -431,9 +436,45 @@ class GateLiveDerivativesDataSource(DerivativesDataSource):
             "/futures/usdt/funding_rate",
             params={"contract": contract, "limit": min(limit, 1_000)},
         )
+        columns = ["timestamp", "funding_rate_settled", "funding_interval"]
         if not rows:
-            return pd.DataFrame(columns=["timestamp", "funding_rate_settled"])
+            return pd.DataFrame(columns=columns)
         frame = pd.DataFrame(rows)
         frame["timestamp"] = frame["t"].astype("int64")
         frame["funding_rate_settled"] = frame["r"].astype(float)
-        return frame[["timestamp", "funding_rate_settled"]]
+        frame = (
+            frame.sort_values("timestamp")
+            .drop_duplicates("timestamp", keep="last")
+            .reset_index(drop=True)
+        )
+        # Gate contracts settle every 1h/4h/8h and can switch interval, so each
+        # settlement's interval is the gap since the previous one (the oldest
+        # row borrows its successor's gap), snapped to a real interval.
+        gaps = frame["timestamp"].diff().bfill()
+        frame["funding_interval"] = gaps.map(snap_funding_interval)
+        return frame[columns]
+
+    def get_ratio_history(self, symbol: str, hours: int) -> pd.DataFrame:
+        """Closed 1h account / top-account long-short ratios for baselines."""
+
+        columns = ["timestamp", "account_long_short_ratio", "top_trader_long_short_ratio"]
+        limit = max(2, min(int(hours) + 1, _STATS_LIMIT_CAP))
+        rows = self._client.get_json(
+            "/futures/usdt/contract_stats",
+            params={"contract": _to_contract(symbol), "interval": "1h", "limit": limit},
+        )
+        parsed = [
+            {
+                "timestamp": int(row["time"]),
+                "account_long_short_ratio": _number(row.get("lsr_account")),
+                "top_trader_long_short_ratio": _number(row.get("top_lsr_account")),
+            }
+            for row in rows or []
+            if "time" in row
+        ]
+        if not parsed:
+            return pd.DataFrame(columns=columns)
+        frame = pd.DataFrame(parsed)
+        # The forming hour is still changing; keep only closed snapshots.
+        frame = frame.loc[frame["timestamp"] + 3_600 <= int(time.time())]
+        return frame.sort_values("timestamp").reset_index(drop=True)[columns]

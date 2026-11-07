@@ -1,6 +1,6 @@
 import { Flame, Globe, Layers, Percent } from "lucide-react";
 import type { ScanResponse } from "@/lib/types";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, fundingRate8h } from "@/lib/format";
 
 interface MarketOverviewBarProps {
   scan: ScanResponse | null;
@@ -12,10 +12,11 @@ const OVERHEATED_FUNDING = 0.0003;
 export function MarketOverviewBar({ scan }: MarketOverviewBarProps) {
   if (!scan) return null;
   const universe = scan.universe ?? [];
+  // 8h equivalents: raw rates of 1h/4h-settled contracts are not comparable.
   const avgFunding = universe.length
-    ? universe.reduce((sum, r) => sum + r.funding_rate, 0) / universe.length
+    ? universe.reduce((sum, r) => sum + fundingRate8h(r), 0) / universe.length
     : 0;
-  const overheated = universe.filter((r) => r.funding_rate >= OVERHEATED_FUNDING).length;
+  const overheated = universe.filter((r) => fundingRate8h(r) >= OVERHEATED_FUNDING).length;
   const altseason = scan.altseason;
 
   return (
@@ -34,7 +35,7 @@ export function MarketOverviewBar({ scan }: MarketOverviewBarProps) {
       ) : null}
       <Stat
         icon={<Percent className="h-3.5 w-3.5 text-ember" />}
-        label="平均資金費率"
+        label="平均資金費率（8h）"
         value={formatPercent(avgFunding, 4)}
         valueClass={avgFunding > 0 ? "text-long" : avgFunding < 0 ? "text-short" : undefined}
       />

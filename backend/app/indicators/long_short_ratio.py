@@ -3,10 +3,17 @@ from typing import Literal
 
 import pandas as pd
 
+from app.indicators.crowding import latest_ratio_read
 from app.utils.numeric import clamp
 
 
 RatioBias = Literal["LONG", "SHORT", "NEUTRAL"]
+
+# Top accounts and all accounts must move apart by at least this much versus
+# their own medians before the split counts as 籌碼對立.
+_CONTRAST_MIN_DEVIATION = 0.05
+# A 30-point gap between the two populations' deviations is full strength.
+_CONTRAST_FULL_SPREAD = 0.30
 
 
 @dataclass(frozen=True)
@@ -18,50 +25,73 @@ class LongShortRatioSignal:
 
 
 def analyze_participant_contrast(frame: pd.DataFrame, lookback: int = 36) -> LongShortRatioSignal:
-    recent = frame.tail(lookback)
-    if len(recent) < 6:
+    """Top-account vs all-account positioning, relative to each one's own norm.
+
+    Gate's all-account ratio sits structurally above 1 for most coins, so a
+    fixed level (e.g. 1.45 = crowded) reads nearly every major as crowded long
+    and tilts the whole board short. Both ratios are instead compared with the
+    symbol's own causal baseline (14 days of 1h snapshots when available).
+    """
+
+    if len(frame.tail(lookback)) < 6:
         return LongShortRatioSignal("NEUTRAL", 0.0, "多空比資料不足", "樣本不足")
 
-    top_ratio = float(recent["top_trader_long_short_ratio"].iloc[-1])
-    account_ratio = float(recent["account_long_short_ratio"].iloc[-1])
-    spread = top_ratio - account_ratio
-    strength = clamp(abs(spread) / 0.65, 0.0, 1.0)
+    read = latest_ratio_read(frame)
+    if read.source == "none" or read.account_median is None:
+        return LongShortRatioSignal(
+            "NEUTRAL", 0.0, "多空比基準不足", "缺少足夠的自身歷史，暫不判斷籌碼擁擠"
+        )
 
-    if top_ratio >= 1.08 and account_ratio <= 0.95:
+    top_dev = read.top_deviation
+    account_dev = read.account_deviation
+    spread = top_dev - account_dev
+    strength = clamp(abs(spread) / _CONTRAST_FULL_SPREAD, 0.0, 1.0)
+    base = read.baseline_label
+    top_text = (
+        f"大戶帳戶比 {read.top_ratio:.2f}（自身{base}常態 {read.top_median:.2f}，{top_dev:+.0%}）"
+        if read.top_median is not None
+        else f"大戶帳戶比 {read.top_ratio:.2f}"
+    )
+    account_text = (
+        f"全體帳戶比 {read.account_ratio:.2f}（自身{base}常態 {read.account_median:.2f}，"
+        f"{account_dev:+.0%}）"
+    )
+
+    if top_dev >= _CONTRAST_MIN_DEVIATION and account_dev <= -_CONTRAST_MIN_DEVIATION:
         return LongShortRatioSignal(
             "LONG",
             max(strength, 0.45),
-            "大戶帳戶偏多、全體帳戶偏空",
-            f"大戶帳戶比 {top_ratio:.2f} 高於全體帳戶比 {account_ratio:.2f}，籌碼對立偏多",
+            "大戶轉多、全體帳戶轉空",
+            f"{top_text}；{account_text}，籌碼對立偏多",
         )
 
-    if top_ratio <= 0.94 and account_ratio >= 1.08:
+    if top_dev <= -_CONTRAST_MIN_DEVIATION and account_dev >= _CONTRAST_MIN_DEVIATION:
         return LongShortRatioSignal(
             "SHORT",
             max(strength, 0.45),
-            "大戶帳戶偏空、全體帳戶偏多",
-            f"大戶帳戶比 {top_ratio:.2f} 低於全體帳戶比 {account_ratio:.2f}，籌碼對立偏空",
+            "大戶轉空、全體帳戶轉多",
+            f"{top_text}；{account_text}，籌碼對立偏空",
         )
 
-    if account_ratio >= 1.45 and top_ratio < account_ratio:
+    if read.crowded == "LONG" and top_dev < account_dev:
         return LongShortRatioSignal(
             "SHORT",
             max(strength, 0.35),
-            "全體帳戶多頭擁擠",
-            f"全體帳戶多空比 {account_ratio:.2f} 過高，存在多頭擠壓風險",
+            "全體帳戶多單異常擁擠",
+            f"{account_text}，處於自身{base}高位，存在多頭擠壓風險",
         )
 
-    if account_ratio <= 0.68 and top_ratio > account_ratio:
+    if read.crowded == "SHORT" and top_dev > account_dev:
         return LongShortRatioSignal(
             "LONG",
             max(strength, 0.35),
-            "全體帳戶空頭擁擠",
-            f"全體帳戶多空比 {account_ratio:.2f} 過低，存在空頭回補風險",
+            "全體帳戶空單異常擁擠",
+            f"{account_text}，處於自身{base}低位，存在空頭回補風險",
         )
 
     return LongShortRatioSignal(
         "NEUTRAL",
         strength * 0.25,
         "多空比未明顯對立",
-        f"大戶帳戶 {top_ratio:.2f} / 全體帳戶 {account_ratio:.2f} 尚未形成高品質對立",
+        f"{top_text}；{account_text}，尚未偏離自身常態形成對立",
     )

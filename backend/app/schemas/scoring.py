@@ -47,10 +47,22 @@ class MarketSnapshot(BaseModel):
     (funding %, 大戶帳戶/全體帳戶多空比) rather than just the pillar verdict.
     """
 
+    # Raw per-settlement rate as the exchange reports it (display only).
     funding_rate: float = 0.0
+    # 8h-equivalent funding — every crowding threshold compares this. None on
+    # payloads built before the field existed; readers fall back to raw.
+    funding_rate_8h: float | None = None
+    funding_interval_hours: float = 8.0
     top_trader_ratio: float = 1.0
     top_position_ratio: float = 1.0
     account_ratio: float = 1.0
+    # The all-account ratio's own baseline median (14d of 1h snapshots when
+    # available) and whether the current read is crowded relative to it.
+    account_ratio_baseline: float | None = None
+    account_ratio_deviation: float = 0.0
+    account_crowded: Literal["LONG", "SHORT"] | None = None
+    # 24h quote turnover (USDT) from the closed primary-frame candles.
+    quote_volume_24h: float | None = None
     # Compatibility read. It is contract quantity in the Gate pipeline; new
     # consumers should use the explicitly named fields below.
     open_interest: float = 0.0
@@ -197,9 +209,14 @@ class ScreenerRow(BaseModel):
     confluence_pillars: int
     pillars: list[PillarScore]
     funding_rate: float
+    funding_rate_8h: float | None = None
+    funding_interval_hours: float = 8.0
     top_trader_ratio: float
     account_ratio: float
     account_ratio_avg: float = 1.0
+    account_ratio_baseline: float | None = None
+    account_crowded: Literal["LONG", "SHORT"] | None = None
+    quote_volume_24h: float | None = None
     oi_change_1h: float
     stage: Stage = "觀察"
     # Full-universe condition gate for the dashboard's formal recommendation

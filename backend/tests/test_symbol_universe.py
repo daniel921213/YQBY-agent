@@ -156,10 +156,12 @@ def test_fixed_frames_produce_identical_analysis_and_scan_after_eligibility_filt
     service = AnalysisService()
     frames = {}
     original = service.market_data.get_enriched_market_frame
-    def fixed(symbol, timeframe, limit, with_derivatives=True):
-        key = symbol, timeframe, limit, with_derivatives
+    def fixed(symbol, timeframe, limit, with_derivatives=True, with_ratio_baseline=True):
+        key = symbol, timeframe, limit, with_derivatives, with_ratio_baseline
         if key not in frames:
-            frames[key] = original(symbol, timeframe, limit, with_derivatives).copy(deep=True)
+            frames[key] = original(
+                symbol, timeframe, limit, with_derivatives, with_ratio_baseline
+            ).copy(deep=True)
         return frames[key].copy(deep=True)
     monkeypatch.setattr(service.market_data, "get_enriched_market_frame", fixed)
     monkeypatch.setattr("app.services.analysis_service.time.time", lambda: 1790880000)

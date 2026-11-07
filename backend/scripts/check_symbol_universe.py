@@ -47,10 +47,12 @@ def main():
     current = AnalysisService()
     frames = {}
     fetch = current.market_data.get_enriched_market_frame
-    def frozen(symbol, timeframe, limit, with_derivatives=True):
-        key = (symbol, timeframe, limit, with_derivatives)
+    def frozen(symbol, timeframe, limit, with_derivatives=True, with_ratio_baseline=True):
+        key = (symbol, timeframe, limit, with_derivatives, with_ratio_baseline)
         if key not in frames:
-            frames[key] = fetch(symbol, timeframe, limit, with_derivatives).copy(deep=True)
+            frames[key] = fetch(
+                symbol, timeframe, limit, with_derivatives, with_ratio_baseline
+            ).copy(deep=True)
         return frames[key].copy(deep=True)
     baseline.market_data.get_enriched_market_frame = frozen
     current.market_data.get_enriched_market_frame = frozen
