@@ -12,11 +12,11 @@ import { VideoLightbox } from "@/components/nav/VideoLightbox";
 
 type Lesson = { key: string; label: string; title: string; youtubeId?: string };
 
-// 01 操作教學（三步驟，先不給連結 → youtubeId 留空 = 敬請期待）
+// 01 操作教學（三步驟；youtubeId 留空 = 敬請期待）
 const STEPS: Lesson[] = [
-  { key: "gate", label: "第一步", title: "Gate 交易所教學", youtubeId: "dqTclbFTXBA" },
-  { key: "anzo", label: "第二步", title: "ANZO 外匯教學及綁定 MT5", youtubeId: "36zReooNfhU" },
-  { key: "tv", label: "第三步", title: "TradingView 教學", youtubeId: "x06fn6tL_Sw" }
+  { key: "bitget", label: "第一步", title: "Bitget 使用及綁定 MT5 教學", youtubeId: "DpKIQxQjwF0" },
+  { key: "tv", label: "第二步", title: "TradingView 教學", youtubeId: "X_YA86Z5U-Y" },
+  { key: "data", label: "第三步", title: "指標 × 數據課程", youtubeId: "pOJX4W2hGp4" }
 ];
 
 // 02 初階 SMC 專區（小課程）
@@ -94,7 +94,7 @@ export default function BeginnerPage() {
                 <p className="font-kicker text-xs tracking-[0.28em] text-gold">STEP BY STEP · 操作教學</p>
                 <h3 className="font-display text-3xl font-black text-white">快速上手</h3>
                 <p className="text-sm leading-6 text-slate-400">
-                  三個步驟，帶你完成開戶、綁定與看盤工具設定。
+                  三個步驟，帶你完成開戶綁定、看盤工具設定與指標數據判讀。
                 </p>
               </div>
             </Reveal>
@@ -224,14 +224,14 @@ function VideoCard({ lesson, onOpen }: { lesson: Lesson; onOpen: (lesson: Lesson
         <span
           className={`inline-flex h-12 w-12 items-center justify-center rounded-full border transition ${
             playable
-              ? "border-gold/40 bg-gold/10 text-gold group-hover:scale-110"
+              ? "border-gold/50 bg-[#0a0908]/60 text-goldhi backdrop-blur-sm group-hover:scale-110"
               : "border-white/10 bg-black/40 text-slate-500"
           }`}
         >
           <Play className="h-5 w-5" />
         </span>
       </div>
-      <span className="absolute left-3 top-3 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-medium text-gold">
+      <span className="absolute left-3 top-3 rounded-full border border-gold/45 bg-[#0a0908]/70 px-2.5 py-1 text-xs font-medium text-goldhi backdrop-blur-sm">
         {lesson.label}
       </span>
       {!playable ? (
