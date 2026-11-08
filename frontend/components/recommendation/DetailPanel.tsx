@@ -289,7 +289,7 @@ function ModalFrame({
             {tradingViewUrl ? (
               <a
                 href={tradingViewUrl}
-                className="group inline-flex h-9 items-center justify-center gap-2 rounded-md border border-sky-400/35 bg-sky-400/[.07] px-3 text-xs font-medium text-sky-200 transition hover:border-sky-300/65 hover:bg-sky-400/[.13] hover:text-white"
+                className="group inline-flex h-9 items-center justify-center gap-2 rounded-md border border-gold/40 bg-gold/[.08] px-3 text-xs font-medium text-goldhi transition hover:border-ember/65 hover:bg-ember/[.12] hover:text-white"
                 title={`交由 TradingView 開啟 Bitget ${symbol} 永續合約 15m 圖表`}
                 aria-label={`交由 TradingView 開啟 Bitget ${symbol} 永續合約 15 分鐘圖表；無法開啟 App 時使用網頁版`}
               >
