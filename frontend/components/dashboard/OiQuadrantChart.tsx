@@ -633,10 +633,10 @@ function SignalLens({
           {focusedSide ? "FILTER ACTIVE" : "SIGNAL LENS"}
         </span>
         <strong className="mt-2 text-sm font-semibold text-slate-300">
-          {focusedLabel ? `目前沒有符合「${focusedLabel}」的幣種` : "等待 OI 訊號"}
+          {focusedLabel ? `目前沒有符合「${focusedLabel}」的標的` : "等待 OI 訊號"}
         </strong>
         <span className="mt-1.5 max-w-48 text-[10px] leading-4 text-slate-600">
-          {focusedSide ? "可調整門檻，或等待下一輪資料更新。" : "符合目前門檻的幣種會顯示在這裡。"}
+          {focusedSide ? "可調整門檻，或等待下一輪資料更新。" : "符合目前門檻的標的會顯示在這裡。"}
         </span>
       </aside>
     );

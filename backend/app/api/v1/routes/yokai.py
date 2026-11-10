@@ -12,7 +12,7 @@ router = APIRouter(tags=["yokai"], dependencies=[Depends(require_yokai_user)])
 
 @router.get("/yokai", response_model=YokaiResponse)
 def yokai_overview() -> YokaiResponse:
-    """Narrative intelligence overlaid with the latest authoritative Gate scan."""
+    """Narrative intelligence overlaid with the latest authoritative crypto scan."""
 
     try:
         scan = scan_cache.latest

@@ -1,6 +1,7 @@
-import { Flame, Globe, Layers, Percent } from "lucide-react";
+import { Clock3, Flame, Globe, Layers, Percent } from "lucide-react";
 import type { ScanResponse } from "@/lib/types";
 import { formatPercent, fundingRate8h } from "@/lib/format";
+import { useMarketCopy } from "@/lib/market";
 
 interface MarketOverviewBarProps {
   scan: ScanResponse | null;
@@ -10,6 +11,7 @@ interface MarketOverviewBarProps {
 const OVERHEATED_FUNDING = 0.0003;
 
 export function MarketOverviewBar({ scan }: MarketOverviewBarProps) {
+  const copy = useMarketCopy();
   if (!scan) return null;
   const universe = scan.universe ?? [];
   // 8h equivalents: raw rates of 1h/4h-settled contracts are not comparable.
@@ -18,6 +20,8 @@ export function MarketOverviewBar({ scan }: MarketOverviewBarProps) {
     : 0;
   const overheated = universe.filter((r) => fundingRate8h(r) >= OVERHEATED_FUNDING).length;
   const altseason = scan.altseason;
+  const sessionRows = universe.filter((r) => r.market_session);
+  const openCount = sessionRows.filter((r) => r.market_session === "OPEN").length;
 
   return (
     <div className="flex flex-wrap gap-2.5">
@@ -29,8 +33,15 @@ export function MarketOverviewBar({ scan }: MarketOverviewBarProps) {
       {altseason ? (
         <Stat
           icon={<Globe className="h-3.5 w-3.5 text-ember" />}
-          label="強於 BTC"
+          label={`強於 ${copy.benchmark}`}
           value={`${altseason.index}% · ${altseason.label}`}
+        />
+      ) : null}
+      {copy.market === "tradfi" && sessionRows.length ? (
+        <Stat
+          icon={<Clock3 className="h-3.5 w-3.5 text-ember" />}
+          label="標的市場開盤中"
+          value={`${openCount} / ${sessionRows.length} 檔`}
         />
       ) : null}
       <Stat

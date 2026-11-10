@@ -1,5 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, Clock, Zap } from "lucide-react";
 import type { ScanItem } from "@/lib/types";
+import { MarketTags } from "@/components/dashboard/MarketTags";
 import {
   formatPercent,
   formatPrice,
@@ -35,6 +36,7 @@ export function ScanRow({ item, selected, onClick, showStage = false }: ScanRowP
       <div className="flex items-center gap-2">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
         <span className="truncate text-sm font-medium text-slate-50">{item.symbol}</span>
+        <MarketTags assetClass={item.asset_class} session={item.market_session} compact />
         {showStage ? (
           <span
             title={stageHint(item.stage)}

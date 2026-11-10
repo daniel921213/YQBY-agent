@@ -1,4 +1,4 @@
-"""Closed-5m risk overlay for Gate futures.
+"""Closed-5m risk overlay for USDT perpetual futures.
 
 The official rank remains a closed-15m score.  This module deliberately emits
 event metadata only: it detects sudden positioning/order-flow/liquidation risk
@@ -45,6 +45,8 @@ class RiskRadarReading:
     flags: list[str]
     conflicts_official: bool
     data_quality: RiskQuality
+    liquidation_source: Literal["GATE", "BITGET"] | None = None
+    liquidation_available: bool = True
 
 
 def robust_zscore(current: float, history: pd.Series | np.ndarray) -> float:
@@ -218,10 +220,18 @@ def analyze_five_minute_risk(
         # Backward compatibility for providers whose historical OI field is
         # already USD notional. Gate always supplies the explicit USD column.
         oi_usd = float(oi_qty.iloc[-1])
-    liquidation_intensity = total_liq / oi_usd if oi_usd > 0 else 0.0
+    # When liquidations come from another venue (Binance pipeline: Gate or
+    # Bitget), normalise by that venue's own OI and turnover when known.
+    ref_oi = _numeric(frame, "liq_ref_oi_usd")
+    liq_oi_usd = float(ref_oi.iloc[-1]) if len(ref_oi) and pd.notna(ref_oi.iloc[-1]) and ref_oi.iloc[-1] > 0 else oi_usd
+    liquidation_intensity = total_liq / liq_oi_usd if liq_oi_usd > 0 else 0.0
 
-    quote_volume = _numeric(frame, "quote_volume")
-    volume_1h = float(quote_volume.tail(_LIQUIDATION_BARS).sum(min_count=1))
+    ref_volume = _numeric(frame, "liq_ref_quote_volume").tail(_LIQUIDATION_BARS)
+    if ref_volume.notna().sum() == _LIQUIDATION_BARS and float(ref_volume.sum()) > 0:
+        volume_1h = float(ref_volume.sum())
+    else:
+        quote_volume = _numeric(frame, "quote_volume")
+        volume_1h = float(quote_volume.tail(_LIQUIDATION_BARS).sum(min_count=1))
     liquidation_to_volume = total_liq / volume_1h if volume_1h > 0 else 0.0
     liq_spike = liq_coverage_real and total_liq > 0 and (
         (liq_z >= 2.5 and (liquidation_intensity >= 0.00025 or liquidation_to_volume >= 0.001))
@@ -313,4 +323,13 @@ def analyze_five_minute_risk(
         flags=flags,
         conflicts_official=conflict,
         data_quality=data_quality,
+        liquidation_source=_liquidation_source(frame),
+        liquidation_available=liq_coverage_real,
     )
+
+
+def _liquidation_source(frame: pd.DataFrame) -> Literal["GATE", "BITGET"] | None:
+    if "liquidation_source" not in frame.columns or frame.empty:
+        return None
+    value = str(frame["liquidation_source"].iloc[-1]).upper()
+    return value if value in {"GATE", "BITGET"} else None  # type: ignore[return-value]

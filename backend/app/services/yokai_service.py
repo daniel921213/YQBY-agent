@@ -593,13 +593,13 @@ def build_yokai_response(
     external_ready = bool(narratives) and any(source.health != "OFFLINE" for source in sources)
     gate_ready = scan is not None and scan.breadth.total > 0
     if not external_ready:
-        notice = "外部情報正在建立快照；原有主控台與 Gate 掃描不受影響。"
+        notice = "外部情報正在建立快照；原有主控台與合約掃描不受影響。"
     elif not gate_ready:
-        notice = "題材情報已就緒，Gate 全市場掃描仍在暖機。"
+        notice = "題材情報已就緒，合約全市場掃描仍在暖機。"
     elif any(source.health != "HEALTHY" for source in sources):
         notice = "部分外部來源暫時延遲，目前以最後成功快照持續服務。"
     else:
-        notice = "妖氣只負責發現題材；做多推薦仍須通過 Gate 正式條件。"
+        notice = "妖氣只負責發現題材；做多推薦仍須通過合約數據的正式條件。"
 
     qualified = [token for token in tokens if token.qualified_long]
     return YokaiResponse(

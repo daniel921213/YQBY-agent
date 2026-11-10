@@ -241,7 +241,7 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
       <canvas
         ref={canvasRef}
         className="h-full w-full touch-manipulation"
-        aria-label="消息來源、熱門賽道與 Gate 幣種的妖氣關聯網絡"
+        aria-label="消息來源、熱門賽道與合約幣種的妖氣關聯網絡"
         onPointerMove={(event) => setHovered(nodeAt(event.clientX, event.clientY)?.id ?? null)}
         onPointerLeave={() => setHovered(null)}
         onClick={(event) => {
@@ -252,7 +252,7 @@ export function YokaiNetwork({ narratives, tokens, sources, selectedId, onSelect
       <div className="pointer-events-none absolute inset-x-3 top-[4.1rem] flex items-center justify-between text-[8px] font-medium tracking-[0.18em] text-slate-600 sm:inset-x-5 sm:top-[4.4rem] sm:text-[9px]">
         <span>SOURCE SIGNALS</span>
         <span>NARRATIVE CORE</span>
-        <span>GATE MARKET</span>
+        <span>FUTURES MARKET</span>
       </div>
       {!topNarratives.length ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-500">

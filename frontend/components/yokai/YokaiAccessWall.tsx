@@ -82,7 +82,7 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
 
               <div className="surface-sunken overflow-hidden rounded-2xl p-4 sm:p-5">
                 <p className="font-kicker text-[9px] tracking-[0.22em] text-ember">GATE CONFIRMATION MATRIX</p>
-                <h2 className="mt-1 text-lg font-bold text-slate-100">Gate 幣種確認</h2>
+                <h2 className="mt-1 text-lg font-bold text-slate-100">合約幣種確認</h2>
                 <div className="mt-5 space-y-2">
                   {PREVIEW_TOKENS.map(([symbol, lifecycle, change, state]) => (
                     <div key={symbol} className="rounded-xl border border-white/[.07] bg-black/20 px-3 py-3">
@@ -123,7 +123,7 @@ export function YokaiAccessWall({ entitlement }: { entitlement: Entitlement }) {
               </span>
               <h2 className="font-display mt-5 text-2xl font-black text-slate-50 sm:text-3xl">解鎖妖怪篩選器</h2>
               <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
-                追蹤市場熱門賽道，結合 Gate 資金數據，找出值得關注的做多機會。<br />
+                追蹤市場熱門賽道，結合合約資金數據，找出值得關注的做多機會。<br />
                 目前開放有效 30 天與永久方案使用者。
               </p>
               <div className="mt-4 inline-flex items-center gap-2 text-xs text-slate-500">

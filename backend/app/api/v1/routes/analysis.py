@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.v1.routes.auth import require_active_user
 from app.core.config import get_settings
+from app.core.markets import parse_market
 from app.core.constants import (
     DEFAULT_LOOKBACK_CANDLES,
     PRIMARY_TIMEFRAME,
@@ -16,9 +17,13 @@ from app.schemas.scoring import (
     ScanResponse,
 )
 from app.services.analysis_service import AnalysisService
-from app.services.anomaly_tracker import anomaly_tracker
-from app.services.scan_cache import scan_cache
+from app.services.anomaly_tracker import anomaly_trackers
+from app.services.market_data_service import effective_provider
+from app.services.scan_cache import scan_caches
 from app.services.symbol_universe import allowed_symbols
+
+_MARKET_QUERY = Query(default="crypto", pattern="^(crypto|tradfi)$",
+                      description="crypto = 主控台-加密；tradfi = 主控台-外匯版")
 
 
 # 全部資料端點都要「登入且未到期」；到期回 403 "expired"，前端切打馬擋板。
@@ -32,8 +37,9 @@ def get_analysis(
     trigger_timeframe: str = Query(default=TRIGGER_TIMEFRAME),
     trend_timeframe: str = Query(default=TREND_TIMEFRAME),
     lookback: int = Query(default=DEFAULT_LOOKBACK_CANDLES, ge=80, le=500),
+    market: str = _MARKET_QUERY,
 ) -> AnalysisResponse:
-    service = AnalysisService()
+    service = AnalysisService(parse_market(market))
     return service.analyze(
         symbol=symbol.upper(),
         primary_timeframe=primary_timeframe,
@@ -59,7 +65,9 @@ def scan_market(
         le=100,
         description="Requested recommendations per direction (server-capped at 3).",
     ),
+    market: str = _MARKET_QUERY,
 ) -> ScanResponse:
+    selected_market = parse_market(market)
     selected_symbols = (
         [item.strip().upper() for item in symbols.split(",") if item.strip()]
         if symbols
@@ -70,7 +78,8 @@ def scan_market(
     # Default full-universe request on a live provider is served from the
     # background scanner's cache (a live full scan would blow the rate limits).
     if selected_symbols is None and settings.is_live_provider and settings.scan_background:
-        cached = scan_cache.latest
+        cache = scan_caches[selected_market]
+        cached = cache.latest
         if cached is not None:
             return cached
         # Still warming up: return an empty-but-valid payload the UI handles.
@@ -83,11 +92,13 @@ def scan_market(
                 trigger_timeframe=trigger_timeframe,
                 trend_timeframe=trend_timeframe,
                 lookback=lookback,
-                data_provider=settings.data_provider,
+                data_provider=effective_provider(selected_market),
+                market=selected_market,
             ),
+            notice=cache.notice,
         )
 
-    service = AnalysisService()
+    service = AnalysisService(selected_market)
     # Track lifecycle only for the authoritative full-universe scan (no explicit
     # symbols) so first-seen times / trigger counts reflect the whole market.
     return service.scan_market(
@@ -102,9 +113,10 @@ def scan_market(
 
 
 @router.get("/anomaly-history", response_model=AnomalyHistoryResponse)
-def anomaly_history() -> AnomalyHistoryResponse:
-    allowed = allowed_symbols()
-    items = anomaly_tracker.history
+def anomaly_history(market: str = _MARKET_QUERY) -> AnomalyHistoryResponse:
+    selected_market = parse_market(market)
+    allowed = allowed_symbols(selected_market)
+    items = anomaly_trackers[selected_market].history
     if allowed is not None:
         items = [item for item in items if item.symbol in allowed]
     return AnomalyHistoryResponse(items=items)

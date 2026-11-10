@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import type { EvidenceDirection, PillarScore, ScreenerRow } from "@/lib/types";
+import { MarketTags } from "@/components/dashboard/MarketTags";
 import {
   directionLabel,
   directionTone,
@@ -165,7 +166,12 @@ export function ScreenerTable({ rows, onSelect, selectedSymbol }: ScreenerTableP
                 }`}
               >
                 <td className="px-3 py-2 tabular-nums text-slate-500">{index + 1}</td>
-                <td className="px-3 py-2 font-medium text-slate-50">{row.symbol}</td>
+                <td className="px-3 py-2 font-medium text-slate-50">
+                  <span className="inline-flex items-center gap-1.5">
+                    {row.symbol}
+                    <MarketTags assetClass={row.asset_class} session={row.market_session} compact />
+                  </span>
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums text-slate-200">
                   {formatPrice(row.price)}
                 </td>

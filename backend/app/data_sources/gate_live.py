@@ -212,7 +212,7 @@ class GateLiveMarketDataSource(MarketDataSource):
 
     def list_symbols(self) -> list[str]:
         from app.services.symbol_universe import symbol_universe
-        return symbol_universe.symbols(self._list_gate_symbols)
+        return symbol_universe.symbols(self._list_gate_symbols, source_key="gate")
 
     def _list_gate_symbols(self) -> list[str]:
         """Original Gate eligibility/ranking, before any universe size cap."""

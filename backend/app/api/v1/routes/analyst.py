@@ -17,6 +17,8 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(..., max_length=40)
+    # crypto = 主控台-加密；tradfi = 主控台-外匯版
+    market: Literal["crypto", "tradfi"] = "crypto"
 
 
 class ChatResponse(BaseModel):
@@ -26,5 +28,5 @@ class ChatResponse(BaseModel):
 
 @router.post("/analyst/chat", response_model=ChatResponse)
 def analyst_chat(request: ChatRequest) -> ChatResponse:
-    result = analyst_service.chat([m.model_dump() for m in request.messages])
+    result = analyst_service.chat([m.model_dump() for m in request.messages], request.market)
     return ChatResponse(**result)

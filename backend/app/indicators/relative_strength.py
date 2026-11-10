@@ -30,6 +30,7 @@ def analyze_relative_strength(
     bars_short: int = 16,   # 4h on a 15m frame
     bars_long: int = 96,    # 24h on a 15m frame
     full_scale: float = 0.03,
+    benchmark: str = "BTC",
 ) -> RelativeStrengthSignal:
     """How much the coin is out/under-performing BTC — isolates alpha from beta.
 
@@ -51,8 +52,8 @@ def analyze_relative_strength(
         return RelativeStrengthSignal(
             "LONG",
             max(strength, 0.3),
-            "相對 BTC 強勢",
-            f"近 24h 比 BTC 強 {rs_long:+.2%}（4h {rs_short:+.2%}）",
+            f"相對 {benchmark} 強勢",
+            f"近 24h 比 {benchmark} 強 {rs_long:+.2%}（4h {rs_short:+.2%}）",
             rs_short,
             rs_long,
         )
@@ -60,16 +61,16 @@ def analyze_relative_strength(
         return RelativeStrengthSignal(
             "SHORT",
             max(strength, 0.3),
-            "相對 BTC 弱勢",
-            f"近 24h 比 BTC 弱 {rs_long:+.2%}（4h {rs_short:+.2%}）",
+            f"相對 {benchmark} 弱勢",
+            f"近 24h 比 {benchmark} 弱 {rs_long:+.2%}（4h {rs_short:+.2%}）",
             rs_short,
             rs_long,
         )
     return RelativeStrengthSignal(
         "NEUTRAL",
         strength * 0.3,
-        "與 BTC 同步",
-        f"近 24h 相對 BTC {rs_long:+.2%}，無明顯超額",
+        f"與 {benchmark} 同步",
+        f"近 24h 相對 {benchmark} {rs_long:+.2%}，無明顯超額",
         rs_short,
         rs_long,
     )

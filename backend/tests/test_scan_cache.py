@@ -9,7 +9,7 @@ from app.services.scan_cache import ScanCache
 
 def _service(symbols: list[str], total: int):
     return SimpleNamespace(
-        market_data=SimpleNamespace(list_symbols=lambda: symbols),
+        market_data=SimpleNamespace(list_symbols=lambda: symbols, provider="mock"),
         scan_market=lambda **kwargs: SimpleNamespace(
             breadth=SimpleNamespace(total=total)
         ),
@@ -19,7 +19,7 @@ def _service(symbols: list[str], total: int):
 def test_refresh_rejects_an_empty_provider_universe(monkeypatch) -> None:
     cache = ScanCache()
     monkeypatch.setattr(
-        "app.services.scan_cache.AnalysisService", lambda: _service([], 0)
+        "app.services.scan_cache.AnalysisService", lambda *a: _service([], 0)
     )
 
     with pytest.raises(RuntimeError, match="no tradable symbols"):
@@ -32,7 +32,7 @@ def test_refresh_does_not_replace_last_good_scan_with_empty_result(monkeypatch) 
     cache = ScanCache()
     services = iter([_service(["BTCUSDT"], 1), _service(["BTCUSDT"], 0)])
     monkeypatch.setattr(
-        "app.services.scan_cache.AnalysisService", lambda: next(services)
+        "app.services.scan_cache.AnalysisService", lambda *a: next(services)
     )
 
     cache.refresh_once()

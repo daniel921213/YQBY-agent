@@ -77,7 +77,7 @@ def test_no_successful_cache_never_falls_back_to_gate_only():
 
 def test_analysis_and_explicit_scan_reject_unsupported_before_fetch(monkeypatch):
     from app.services.analysis_service import AnalysisService
-    monkeypatch.setattr(module, "allowed_symbols", lambda: {"BTCUSDT"})
+    monkeypatch.setattr(module, "allowed_symbols", lambda *a: {"BTCUSDT"})
     service = AnalysisService()
     monkeypatch.setattr(service.market_data, "get_enriched_market_frame",
                         lambda *a, **kw: pytest.fail("Must reject before fetching data"))
@@ -91,7 +91,7 @@ def test_stale_scan_with_removed_coin_is_not_served(monkeypatch):
     from app.services import scan_cache as cache_module
     cache = cache_module.ScanCache()
     cache._latest = SimpleNamespace(scanned_symbols=["BTCUSDT", "OLDUSDT"])
-    monkeypatch.setattr(cache_module, "allowed_symbols", lambda: {"BTCUSDT"})
+    monkeypatch.setattr(cache_module, "allowed_symbols", lambda *a: {"BTCUSDT"})
     assert cache.latest is None
 
 
@@ -100,7 +100,7 @@ def test_expired_catalog_blocks_old_scan_and_keeps_news_available(monkeypatch):
     from app.api.v1.routes import yokai
     cache = cache_module.ScanCache()
     cache._latest = SimpleNamespace(scanned_symbols=["BTCUSDT"])
-    def unavailable():
+    def unavailable(*a):
         raise UniverseUnavailable("expired")
     monkeypatch.setattr(cache_module, "allowed_symbols", unavailable)
     with pytest.raises(UniverseUnavailable):
@@ -113,7 +113,7 @@ def test_expired_catalog_blocks_old_scan_and_keeps_news_available(monkeypatch):
 def test_ai_waits_for_background_scan_instead_of_reporting_30_coin_universe(monkeypatch):
     from app.services import analyst_service as ai
     monkeypatch.setattr(ai, "scan_cache", SimpleNamespace(latest=None))
-    monkeypatch.setattr(ai, "AnalysisService", lambda: SimpleNamespace(
+    monkeypatch.setattr(ai, "AnalysisService", lambda *a: SimpleNamespace(
         settings=SimpleNamespace(is_live_provider=True, scan_background=True)))
     with pytest.raises(UniverseUnavailable):
         ai._get_scan()
@@ -121,7 +121,7 @@ def test_ai_waits_for_background_scan_instead_of_reporting_30_coin_universe(monk
 
 def test_ai_gate_tool_checks_individual_requests_and_filters_before_truncating(monkeypatch):
     from app.services import analyst_service as ai
-    monkeypatch.setattr(ai, "allowed_symbols", lambda: {"BTCUSDT"})
+    monkeypatch.setattr(ai, "allowed_symbols", lambda *a: {"BTCUSDT"})
     calls = []
     def get(url, **kwargs):
         calls.append(url)
@@ -141,9 +141,9 @@ def test_http_returns_clear_errors_without_starting_background_jobs(monkeypatch)
     app.dependency_overrides[require_active_user] = lambda: object()
     client = TestClient(app)
     try:
-        monkeypatch.setattr(module, "allowed_symbols", lambda: {"BTCUSDT"})
+        monkeypatch.setattr(module, "allowed_symbols", lambda *a: {"BTCUSDT"})
         assert client.get("/api/v1/analysis?symbol=OLDUSDT").status_code == 422
-        def unavailable():
+        def unavailable(*a):
             raise UniverseUnavailable("unavailable")
         monkeypatch.setattr(module, "allowed_symbols", unavailable)
         assert client.get("/api/v1/analysis?symbol=BTCUSDT").status_code == 503
@@ -165,10 +165,10 @@ def test_fixed_frames_produce_identical_analysis_and_scan_after_eligibility_filt
         return frames[key].copy(deep=True)
     monkeypatch.setattr(service.market_data, "get_enriched_market_frame", fixed)
     monkeypatch.setattr("app.services.analysis_service.time.time", lambda: 1790880000)
-    monkeypatch.setattr(module, "allowed_symbols", lambda: None)
+    monkeypatch.setattr(module, "allowed_symbols", lambda *a: None)
     before = service.scan_market(["BTCUSDT", "ETHUSDT"], "15m", "5m", "1h", 120)
     snapshots = {key: frame.copy(deep=True) for key, frame in frames.items()}
-    monkeypatch.setattr(module, "allowed_symbols", lambda: {"BTCUSDT", "ETHUSDT"})
+    monkeypatch.setattr(module, "allowed_symbols", lambda *a: {"BTCUSDT", "ETHUSDT"})
     after = service.scan_market(["BTCUSDT", "ETHUSDT"], "15m", "5m", "1h", 120)
     assert before.model_dump() == after.model_dump()
     for key, frame in snapshots.items():

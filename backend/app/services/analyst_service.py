@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 
 from app.core.config import get_settings
+from app.core.markets import Market
 from app.core.constants import (
     DEFAULT_LOOKBACK_CANDLES,
     PRIMARY_TIMEFRAME,
@@ -25,7 +26,7 @@ from app.core.constants import (
 )
 from app.schemas.scoring import ScanResponse
 from app.services.analysis_service import AnalysisService
-from app.services.scan_cache import scan_cache
+from app.services.scan_cache import scan_cache, scan_caches
 from app.services.symbol_universe import allowed_symbols, UnsupportedSymbol, UniverseUnavailable
 
 logger = logging.getLogger(__name__)
@@ -146,8 +147,8 @@ SYSTEM_PROMPT = (
     "回答任何關於市場、個別幣、或代幣的問題時，你『必須』先呼叫對應工具取得真實資料，再依資料回答。"
     "在還沒呼叫工具拿到資料前，絕不憑空作答，也不要列出你的功能清單或自我介紹。\n\n"
     "工具選擇：\n"
-    "- 問市場整體、推薦、轉多/轉空/疑似反轉、或某交易對(如 BTCUSDT)的支柱打分 → 用 get_market_scan 或 analyze_symbol（我們自己的即時掃描數據）。\n"
-    "- 問某幣的價格、24h漲跌、資金費率、未平倉(OI)、多空比、主動買賣、K線、市場排行/最熱/漲跌榜 → 依系統提示中的『Gate 公開 API 技能』說明，用 gate_query 呼叫(合約代號要轉成 BTC_USDT 格式)。\n\n"
+    "- 問市場整體、推薦、轉多/轉空/疑似反轉、或某交易對(如 BTCUSDT)的支柱打分、價格、資金費率、OI、多空比 → 優先用 get_market_scan 或 analyze_symbol（我們自己的即時掃描數據，來源為 Binance 合約）。\n"
+    "- 掃描沒有涵蓋的補充資訊（代幣資訊、市場排行/最熱/漲跌榜、現貨價格）→ 依系統提示中的『Gate 公開 API 技能』說明，用 gate_query 呼叫(合約代號要轉成 BTC_USDT 格式)，並註明是 Gate 的數字。\n\n"
     "誠實框架（務必遵守）：分數代表『訊號異常強度』，不是上漲機率；"
     "這是數據判讀，不是投資建議；必要時提醒使用者風險自負。\n\n"
     "回答風格：像朋友跟你講重點，不是寫報告。"
@@ -156,6 +157,18 @@ SYSTEM_PROMPT = (
     "長度拿捏適中——大約一個短段落、2～5 句話就好，不要太短也不要太長。"
     "自然口語、簡潔親切；不要 Markdown 大標題、表格、分隔線或一堆 emoji。"
     "只有使用者明確要求『詳細分析』時才展開講細節。"
+)
+
+TRADFI_SYSTEM_PROMPT = (
+    "你是 CT_Trader（CONFLUENCE THEORY）的傳統市場分析師，負責『主控台-外匯版』："
+    "黃金、白銀、原油、天然氣、美股與 ETF、韓股、港股、陸股的 Binance USDT 永續合約。用繁體中文、簡潔專業地回答。\n\n"
+    "【最重要】回答任何關於市場或個別商品的問題時，你『必須』先呼叫 get_market_scan 或 analyze_symbol 取得真實資料，再依資料回答；"
+    "交易對代號是 XAUUSDT、NVDAUSDT、QQQUSDT 這種格式。沒有拿到資料前不要作答，也不要介紹自己的功能。\n\n"
+    "注意：這些合約 24 小時交易，但標的市場有休市時段；資料中 market_session 為 CLOSED 時要提醒使用者目前休市、量能偏低、開盤可能跳空。"
+    "相對強弱是跟 SPY 比較。爆倉數據可能來自 Gate 或 Bitget，或沒有數據。\n\n"
+    "誠實框架（務必遵守）：分數代表『訊號異常強度』，不是上漲機率；這是數據判讀，不是投資建議；必要時提醒使用者風險自負。\n\n"
+    "回答風格：像朋友跟你講重點，結論先講，只挑最重要的 1～3 件事，大約 2～5 句話；"
+    "不要 Markdown 大標題、表格、分隔線或一堆 emoji。只有使用者明確要求『詳細分析』時才展開。"
 )
 
 TOOLS: list[dict[str, Any]] = [
@@ -211,11 +224,12 @@ def _item(i: Any) -> dict[str, Any]:
     }
 
 
-def _get_scan() -> ScanResponse:
-    cached = scan_cache.latest
+def _get_scan(market: Market = "crypto") -> ScanResponse:
+    cache = scan_cache if market == "crypto" else scan_caches[market]
+    cached = cache.latest
     if cached is not None:
         return cached
-    service = AnalysisService()
+    service = AnalysisService(market)
     if service.settings.is_live_provider and service.settings.scan_background:
         raise UniverseUnavailable("全市場掃描準備中，請稍後再試。")
     return service.scan_market(
@@ -223,8 +237,8 @@ def _get_scan() -> ScanResponse:
     )
 
 
-def _tool_get_market_scan() -> dict[str, Any]:
-    scan = _get_scan()
+def _tool_get_market_scan(market: Market = "crypto") -> dict[str, Any]:
+    scan = _get_scan(market)
     anomalies = [i for i in scan.items if not i.is_recommend]
     return {
         "universe_total": scan.breadth.total,
@@ -238,8 +252,8 @@ def _tool_get_market_scan() -> dict[str, Any]:
     }
 
 
-def _tool_analyze_symbol(symbol: str) -> dict[str, Any]:
-    a = AnalysisService().analyze(
+def _tool_analyze_symbol(symbol: str, market: Market = "crypto") -> dict[str, Any]:
+    a = AnalysisService(market).analyze(
         symbol.upper(), PRIMARY_TIMEFRAME, TRIGGER_TIMEFRAME, TREND_TIMEFRAME,
         DEFAULT_LOOKBACK_CANDLES,
     )
@@ -251,6 +265,7 @@ def _tool_analyze_symbol(symbol: str) -> dict[str, Any]:
         "confidence": r.confidence_level,
         "confluence_pillars": r.confluence_pillars,
         "summary": r.summary,
+        "market_session": a.metrics.market_session if a.metrics else None,
         "evidence": [
             {
                 "pillar": e.pillar,
@@ -264,13 +279,13 @@ def _tool_analyze_symbol(symbol: str) -> dict[str, Any]:
     }
 
 
-def _run_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
+def _run_tool(name: str, args: dict[str, Any], market: Market = "crypto") -> dict[str, Any]:
     try:
         if name == "get_market_scan":
-            return _tool_get_market_scan()
+            return _tool_get_market_scan(market)
         if name == "analyze_symbol":
-            return _tool_analyze_symbol(args.get("symbol", ""))
-        if name == "gate_query":
+            return _tool_analyze_symbol(args.get("symbol", ""), market)
+        if name == "gate_query" and market == "crypto":
             return _tool_gate_query(args.get("url", ""), args.get("method", "GET"), args.get("body"))
         return {"error": f"unknown tool {name}"}
     except Exception as exc:  # never let a tool failure break the chat
@@ -295,7 +310,7 @@ def _friendly_anthropic_error(exc: Exception) -> str:
     return "（分析師服務暫時異常，請稍後再試。）"
 
 
-def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
+def chat(messages: list[dict[str, str]], market: Market = "crypto") -> dict[str, Any]:
     """Run one analyst turn. messages: [{role: 'user'|'assistant', content: str}]."""
     settings = get_settings()
     if not settings.anthropic_api_key:
@@ -312,8 +327,14 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     # System = persona + the (large, static) skill docs, cached so repeat calls
     # don't re-pay for the skill reference tokens.
-    system_blocks: list[dict[str, Any]] = [{"type": "text", "text": SYSTEM_PROMPT}]
-    if _SKILL_REFERENCE:
+    if market == "tradfi":
+        # TradFi: our own Binance scan only — the Gate skills cover crypto.
+        system_blocks: list[dict[str, Any]] = [{"type": "text", "text": TRADFI_SYSTEM_PROMPT}]
+        tools = [tool for tool in TOOLS if tool["name"] != "gate_query"]
+    else:
+        system_blocks = [{"type": "text", "text": SYSTEM_PROMPT}]
+        tools = TOOLS
+    if _SKILL_REFERENCE and market == "crypto":
         system_blocks.append(
             {"type": "text", "text": _SKILL_REFERENCE, "cache_control": {"type": "ephemeral"}}
         )
@@ -328,7 +349,7 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
                 model=settings.analyst_model,
                 max_tokens=settings.analyst_max_tokens,
                 system=system_blocks,
-                tools=TOOLS,
+                tools=tools,
                 messages=conv,
             )
             if resp.stop_reason == "tool_use":
@@ -337,7 +358,7 @@ def chat(messages: list[dict[str, str]]) -> dict[str, Any]:
                 for block in resp.content:
                     if block.type == "tool_use":
                         tools_used.append(block.name)
-                        out = _run_tool(block.name, dict(block.input))
+                        out = _run_tool(block.name, dict(block.input), market)
                         results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,

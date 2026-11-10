@@ -16,7 +16,9 @@ class Settings(BaseSettings):
         alias="CORS_ORIGINS",
     )
     # "mock" => deterministic synthetic data; "binance" => live Binance futures
-    # API; "gate" => live Gate USDT-perpetual futures API.
+    # (liquidations from Gate, then Bitget; automatic Gate failover when Binance
+    # geo-blocks the server); "gate" => legacy all-Gate crypto pipeline. The
+    # 外匯版 (TradFi) dashboard reads Binance whenever the provider is live.
     data_provider: str = "mock"
 
     binance_api_key: str | None = None
@@ -59,8 +61,21 @@ class Settings(BaseSettings):
     data_cache_ttl_seconds: float = 90.0
     # Max in-flight requests during a full-universe scan fan-out.
     scan_max_workers: int = 8
-    # Soft cap on outbound requests/sec to stay under Binance IP limits.
-    binance_max_requests_per_second: float = 8.0
+    # Soft cap on outbound requests/sec to stay under Binance IP limits
+    # (2,400 weight/min; a 200-bar kline costs 2).
+    binance_max_requests_per_second: float = 20.0
+    # Each /futures/data/* statistics endpoint is limited to 1,000 requests per
+    # 5 minutes per IP; /fapi/v1/fundingRate shares 500 per 5 minutes with
+    # fundingInfo. These per-endpoint caps stay safely below both.
+    binance_stats_max_requests_per_second: float = 3.0
+    binance_funding_max_requests_per_second: float = 1.5
+    # After an HTTP 451 (Binance geo-block) every Binance call short-circuits
+    # for this long and the crypto dashboard reads Gate instead.
+    binance_block_cooldown_seconds: float = 1800.0
+
+    # Bitget public API: contract eligibility for both dashboards and the
+    # liquidation fallback when Gate does not list a contract.
+    bitget_base_url: str = "https://api.bitget.com"
 
     # Live Gate fetch tuning (only used when data_provider == "gate"). Gate's
     # public v4 market endpoints are keyless and more generous than Binance.
@@ -72,7 +87,11 @@ class Settings(BaseSettings):
     # direction every N seconds so the frontend reads a fresh result instead of each page
     # load triggering a multi-minute scan.
     scan_background: bool = True
+    # Target cadence between scan STARTS; a scan that runs longer than this is
+    # followed by a short pause instead of a full extra interval.
     scan_refresh_seconds: float = 300.0
+    # 主控台-外匯版: Binance TradFi perpetuals shared with Bitget.
+    tradfi_scan_background: bool = True
     # Symbols in the quick warm-up scan that runs immediately at startup so the
     # dashboard has data within ~1 min while the full scan builds in background.
     scan_warmup_size: int = 60

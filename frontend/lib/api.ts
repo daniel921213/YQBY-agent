@@ -1,4 +1,4 @@
-import type { AnalysisResponse, AnomalyHistoryResponse, ScanResponse, WeeklyBriefResponse, YokaiResponse } from "@/lib/types";
+import type { AnalysisResponse, AnomalyHistoryResponse, MarketKind, ScanResponse, WeeklyBriefResponse, YokaiResponse } from "@/lib/types";
 import { getToken, logout } from "@/lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -60,8 +60,8 @@ async function request<T>(path: string, label: string, init?: RequestInit): Prom
   return response.json();
 }
 
-export async function fetchMarketAnalysis(symbol: string): Promise<AnalysisResponse> {
-  const params = new URLSearchParams({ symbol });
+export async function fetchMarketAnalysis(symbol: string, market: MarketKind = "crypto"): Promise<AnalysisResponse> {
+  const params = new URLSearchParams({ symbol, market });
   return request(`/api/v1/analysis?${params}`, "分析資料讀取失敗");
 }
 
@@ -75,20 +75,20 @@ export interface AnalystReply {
   tools_used: string[];
 }
 
-export async function askAnalyst(messages: AnalystMessage[]): Promise<AnalystReply> {
+export async function askAnalyst(messages: AnalystMessage[], market: MarketKind = "crypto"): Promise<AnalystReply> {
   return request("/api/v1/analyst/chat", "分析師讀取失敗", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
+    body: JSON.stringify({ messages, market })
   });
 }
 
-export async function fetchMarketScan(): Promise<ScanResponse> {
-  return request("/api/v1/scan", "市場掃描讀取失敗");
+export async function fetchMarketScan(market: MarketKind = "crypto"): Promise<ScanResponse> {
+  return request(`/api/v1/scan?market=${market}`, "市場掃描讀取失敗");
 }
 
-export async function fetchAnomalyHistory(): Promise<AnomalyHistoryResponse> {
-  return request("/api/v1/anomaly-history", "歷史紀錄讀取失敗");
+export async function fetchAnomalyHistory(market: MarketKind = "crypto"): Promise<AnomalyHistoryResponse> {
+  return request(`/api/v1/anomaly-history?market=${market}`, "歷史紀錄讀取失敗");
 }
 
 export async function fetchYokai(): Promise<YokaiResponse> {

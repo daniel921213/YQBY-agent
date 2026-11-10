@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { ScanItem, Stage, TradeDirection } from "@/lib/types";
 import { ScanRow } from "@/components/dashboard/ScanRow";
+import { MarketTags } from "@/components/dashboard/MarketTags";
 import {
   STAGE_ORDER,
   formatPercent,
@@ -256,7 +257,10 @@ function RecommendationRow({
         <span className="text-xs text-gold">●</span>
       </div>
 
-      <div className="truncate text-sm font-semibold text-slate-50">{item.symbol}</div>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="truncate text-sm font-semibold text-slate-50">{item.symbol}</span>
+        <MarketTags assetClass={item.asset_class} session={item.market_session} compact />
+      </div>
 
       <div className="text-sm font-medium tabular-nums text-slate-200">{formatPrice(item.price)}</div>
 

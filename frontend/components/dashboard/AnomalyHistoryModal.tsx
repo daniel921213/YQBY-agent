@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, History } from "lucide-react";
 import { fetchAnomalyHistory } from "@/lib/api";
-import type { AnomalyHistoryItem } from "@/lib/types";
+import type { AnomalyHistoryItem, MarketKind } from "@/lib/types";
 import { formatPercent, formatPrice, percentTone } from "@/lib/format";
 import { ModalShell } from "@/components/dashboard/ModalShell";
 
 interface AnomalyHistoryModalProps {
   onClose: () => void;
+  market?: MarketKind;
 }
 
 function formatClock(ts: number): string {
@@ -20,19 +21,19 @@ function formatClock(ts: number): string {
   }).format(new Date(ts * 1000));
 }
 
-export function AnomalyHistoryModal({ onClose }: AnomalyHistoryModalProps) {
+export function AnomalyHistoryModal({ onClose, market = "crypto" }: AnomalyHistoryModalProps) {
   const [items, setItems] = useState<AnomalyHistoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    fetchAnomalyHistory()
+    fetchAnomalyHistory(market)
       .then((res) => active && setItems(res.items))
       .catch((err) => active && setError(err instanceof Error ? err.message : "讀取失敗"));
     return () => {
       active = false;
     };
-  }, []);
+  }, [market]);
 
   return (
     <ModalShell

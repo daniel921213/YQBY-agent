@@ -40,6 +40,8 @@ import {
   stageTone
 } from "@/lib/format";
 import { ThemeToggle } from "@/lib/theme";
+import { useMarketCopy } from "@/lib/market";
+import { MarketTags } from "@/components/dashboard/MarketTags";
 import type {
   EvidenceDirection,
   OiMover,
@@ -104,6 +106,7 @@ export function MobileDashboard({
   onShowHistory,
   onOpenAnalyst
 }: MobileDashboardProps) {
+  const copy = useMarketCopy();
   const [tab, setTab] = useState<MobileTab>("overview");
   const [query, setQuery] = useState("");
   const universe = scan?.universe ?? [];
@@ -137,7 +140,7 @@ export function MobileDashboard({
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-500">
               <span className={`h-1.5 w-1.5 rounded-full ${scan ? "bg-long shadow-[0_0_8px_rgba(35,221,141,.8)]" : "bg-slate-600"}`} />
-              <span>{scan ? `${scan.breadth.total} 幣已覆蓋` : "等待市場資料"}</span>
+              <span className="truncate">{scan ? `${copy.shortTitle}・${scan.breadth.total} ${copy.unit}` : `${copy.shortTitle}・等待市場資料`}</span>
               <span>·</span>
               <span className="tabular-nums">{updatedLabel}</span>
             </div>
@@ -158,9 +161,9 @@ export function MobileDashboard({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜尋幣種，例如 BTC、ETH…"
+            placeholder={copy.searchPlaceholder}
             inputMode="search"
-            aria-label="搜尋幣種"
+            aria-label={`搜尋${copy.noun}`}
             className="h-12 w-full rounded-xl border border-gold/20 bg-black/35 pl-10 pr-10 text-base text-slate-50 outline-none transition placeholder:text-slate-600 focus:border-gold/50 focus:shadow-[0_0_22px_rgba(206,170,112,.12)]"
           />
           {query ? (
@@ -199,7 +202,7 @@ export function MobileDashboard({
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-5 text-center text-sm text-slate-500">找不到符合的幣種</div>
+                <div className="px-3 py-5 text-center text-sm text-slate-500">找不到符合的{copy.noun}</div>
               )}
             </div>
           ) : null}
@@ -277,7 +280,7 @@ export function MobileDashboard({
                 >
                   {item.primary ? <MobileCtMark /> : <Icon className="h-5 w-5" />}
                 </span>
-                <span className={item.primary ? "-mt-3" : ""}>{item.label}</span>
+                <span className={item.primary ? "-mt-3" : ""}>{item.key === "screener" ? copy.pick : item.label}</span>
               </button>
             );
           })}
@@ -296,6 +299,7 @@ function MobileOverview({
   onSelect: (symbol: string) => void;
   onNavigate: (tab: MobileTab) => void;
 }) {
+  const copy = useMarketCopy();
   const recommendations = scan.items.filter((item) => item.is_recommend);
   const longRecommendations = recommendations.filter((item) => item.direction === "LONG").length;
   const shortRecommendations = recommendations.filter((item) => item.direction === "SHORT").length;
@@ -318,7 +322,7 @@ function MobileOverview({
               <h1 className="mt-1 text-xl font-black text-slate-50">市場即時總覽</h1>
             </div>
             <div className="rounded-lg border border-ember/25 bg-ember/10 px-2.5 py-1.5 text-right">
-              <span className="block text-[10px] text-slate-500">山寨指數</span>
+              <span className="block text-[10px] text-slate-500">{copy.breadthShort}</span>
               <span className="text-sm font-semibold tabular-nums text-ember">
                 {scan.altseason?.index ?? "--"}
               </span>
@@ -326,7 +330,7 @@ function MobileOverview({
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <OverviewMetric label="掃描" value={`${scan.breadth.total}`} suffix="幣" />
+            <OverviewMetric label="掃描" value={`${scan.breadth.total}`} suffix={copy.unit} />
             <OverviewMetric label="推薦" value={`${recommendations.length}`} suffix="筆" tone="text-gold" />
             <OverviewMetric label="5m 警戒" value={`${riskItems.filter((item) => item.severity === "HIGH").length}`} suffix="筆" tone="text-short" />
           </div>
@@ -550,6 +554,7 @@ function MobileRecommendationCard({ item, selected = false, onClick }: { item: S
         <span>
           <span className="flex items-center gap-2">
             <strong className="text-base text-slate-50">{shortSymbol(item.symbol)}</strong>
+            <MarketTags assetClass={item.asset_class} session={item.market_session} compact />
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${isLong ? "bg-long/10 text-long" : "bg-short/10 text-short"}`}>
               {isLong ? "做多" : "做空"}
             </span>
@@ -597,6 +602,7 @@ function MobileMarketStateCard({
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center gap-2">
           <strong className="shrink-0 text-sm text-slate-50">{shortSymbol(item.symbol)}</strong>
+          <MarketTags assetClass={item.asset_class} session={item.market_session} compact />
           <span className={`truncate rounded-sm border px-1.5 py-0.5 text-[10px] ${stageTone(item.stage)}`}>{item.stage}</span>
         </span>
         <span className="mt-1 block truncate text-[11px] text-slate-500">{item.stage_reasons[0] ?? stageHint(item.stage)}</span>
@@ -689,6 +695,7 @@ function MobileRiskRow({ item, onSelect, detailed = false }: { item: RiskRadarIt
 }
 
 function MobileScreener({ rows, selectedSymbol, onSelect }: { rows: ScreenerRow[]; selectedSymbol: string | null; onSelect: (symbol: string) => void }) {
+  const copy = useMarketCopy();
   const [query, setQuery] = useState("");
   const [direction, setDirection] = useState<"ALL" | EvidenceDirection>("ALL");
   const [sort, setSort] = useState<ScreenerSort>("score");
@@ -709,7 +716,7 @@ function MobileScreener({ rows, selectedSymbol, onSelect }: { rows: ScreenerRow[
 
   return (
     <div className="grid gap-4">
-      <MobilePageIntro kicker="MARKET SCREENER" title="全市場選幣" description={`掃描 ${rows.length} 個合約；手機版每次顯示最符合條件的前 40 個。`} />
+      <MobilePageIntro kicker="MARKET SCREENER" title={`全市場${copy.pick}`} description={`掃描 ${rows.length} 個合約；手機版每次顯示最符合條件的前 40 個。`} />
       <div className="surface rounded-2xl p-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -746,6 +753,7 @@ function MobileScreener({ rows, selectedSymbol, onSelect }: { rows: ScreenerRow[
               <span>
                 <span className="flex items-center gap-2">
                   <strong className="text-base text-slate-50">{shortSymbol(row.symbol)}</strong>
+                  <MarketTags assetClass={row.asset_class} session={row.market_session} compact />
                   <span className={`rounded-full px-2 py-0.5 text-[10px] ${row.direction === "LONG" ? "bg-long/10 text-long" : row.direction === "SHORT" ? "bg-short/10 text-short" : "bg-white/5 text-slate-400"}`}>
                     {directionLabel(row.direction)}
                   </span>
@@ -765,7 +773,7 @@ function MobileScreener({ rows, selectedSymbol, onSelect }: { rows: ScreenerRow[
           </button>
         ))}
       </div>
-      {!view.length ? <CompactEmpty text="找不到符合條件的幣種" /> : null}
+      {!view.length ? <CompactEmpty text={`找不到符合條件的${copy.noun}`} /> : null}
       {rows.length > view.length && !query ? <p className="text-center text-[11px] text-slate-600">可使用搜尋與方向篩選快速縮小範圍</p> : null}
     </div>
   );

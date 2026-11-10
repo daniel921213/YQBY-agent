@@ -8,6 +8,7 @@ import { SentimentBand } from "@/components/dashboard/SentimentBand";
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { ThemeToggle } from "@/lib/theme";
 import { SideNav } from "@/components/nav/SideNav";
+import { useMarketCopy } from "@/lib/market";
 
 interface MarketHeaderProps {
   onRefresh: () => void;
@@ -72,6 +73,7 @@ export function MarketHeader({
   const scannedCount = scan?.breadth?.total ?? 0;
   const clock = useClock();
   const altseason = scan?.altseason ?? null;
+  const copy = useMarketCopy();
 
   return (
     <header className="dashboard-header glass-panel sticky top-2 z-20 flex flex-col gap-5 rounded-xl px-4 py-4 lg:flex-row lg:items-end lg:justify-between">
@@ -87,9 +89,14 @@ export function MarketHeader({
             <span className="text-slate-600">·</span>
             <span className="tabular-nums text-slate-300">{clock || "--:--:--"}</span>
           </p>
-          <h1 className="font-display mt-2 bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-2xl font-black text-transparent sm:text-3xl">
-            CT_Killer
-          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="font-display bg-gradient-to-b from-white via-goldhi to-gold bg-clip-text text-2xl font-black text-transparent sm:text-3xl">
+              CT_Killer
+            </h1>
+            <span className="rounded-full border border-gold/35 bg-gold/10 px-2.5 py-1 text-xs font-medium tracking-[0.08em] text-goldhi">
+              {copy.title}
+            </span>
+          </div>
           {scan?.breadth ? (
             <div className="mt-4">
               <SentimentBand breadth={scan.breadth} />

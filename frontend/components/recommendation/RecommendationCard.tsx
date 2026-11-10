@@ -12,6 +12,7 @@ import {
   percentTone
 } from "@/lib/format";
 import { FrequencyTier } from "@/components/dashboard/FrequencyTier";
+import { MarketTags } from "@/components/dashboard/MarketTags";
 import { TugOfWarBar } from "@/components/dashboard/TugOfWarBar";
 
 interface RecommendationCardProps {
@@ -45,6 +46,7 @@ export function RecommendationCard({ item, selected, onClick }: RecommendationCa
           </div>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-lg font-semibold text-slate-50">{item.symbol}</span>
+            <MarketTags assetClass={item.asset_class} session={item.market_session} />
             <span className={`inline-flex items-center gap-1 ${tone}`}>
               <Icon className="h-4 w-4" />
               <span className="text-sm font-semibold">{directionLabel(item.direction)}</span>

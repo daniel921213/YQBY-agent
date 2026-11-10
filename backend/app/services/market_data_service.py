@@ -3,7 +3,9 @@ from math import ceil
 import pandas as pd
 
 from app.core.config import get_settings
+from app.core.markets import Market
 from app.data_sources.base import DerivativesDataSource, MarketDataSource
+from app.data_sources.binance_client import binance_block
 from app.data_sources.binance_mock import BinanceMockDataSource
 from app.data_sources.coinglass_mock import CoinglassMockDataSource
 from app.indicators.crowding import (
@@ -37,15 +39,37 @@ _DERIVATIVE_FLOW_DEFAULTS = {
 }
 
 
-def _build_sources() -> tuple[MarketDataSource, DerivativesDataSource]:
+def effective_provider(market: Market = "crypto") -> str:
+    """The provider a dashboard actually reads right now.
+
+    TradFi contracts only exist on the Binance pipeline. Crypto reads Binance
+    unless Binance is geo-blocking this server, in which case it fails over to
+    the all-Gate pipeline until the block cooldown expires.
+    """
+
     provider = get_settings().data_provider.lower()
+    if provider not in {"binance", "gate"}:
+        return "mock"
+    if market == "tradfi":
+        return "binance"
+    if provider == "binance" and binance_block.blocked:
+        return "gate"
+    return provider
+
+
+def build_market_source(market: Market = "crypto") -> MarketDataSource:
+    return _build_sources(market)[0]
+
+
+def _build_sources(market: Market = "crypto") -> tuple[MarketDataSource, DerivativesDataSource]:
+    provider = effective_provider(market)
     if provider == "binance":
         from app.data_sources.binance_live import (
             BinanceLiveDerivativesDataSource,
             BinanceLiveMarketDataSource,
         )
 
-        return BinanceLiveMarketDataSource(), BinanceLiveDerivativesDataSource()
+        return BinanceLiveMarketDataSource(market), BinanceLiveDerivativesDataSource(market)
     if provider == "gate":
         from app.data_sources.gate_live import (
             GateLiveDerivativesDataSource,
@@ -53,7 +77,7 @@ def _build_sources() -> tuple[MarketDataSource, DerivativesDataSource]:
         )
 
         return GateLiveMarketDataSource(), GateLiveDerivativesDataSource()
-    return BinanceMockDataSource(), CoinglassMockDataSource()
+    return BinanceMockDataSource(market), CoinglassMockDataSource()
 
 
 def _merge_derivatives_causally(
@@ -72,7 +96,9 @@ def _merge_derivatives_causally(
         return klines.copy()
 
     flow_columns = [
-        column for column in _DERIVATIVE_FLOW_DEFAULTS if column in derivatives.columns
+        column
+        for column in (*_DERIVATIVE_FLOW_DEFAULTS, "liq_ref_quote_volume")
+        if column in derivatives.columns
     ]
     excluded = {"timestamp", *flow_columns, "flow_quality"}
     level_columns = [column for column in derivatives.columns if column not in excluded]
@@ -104,8 +130,10 @@ def _merge_derivatives_causally(
 
 
 class MarketDataService:
-    def __init__(self) -> None:
-        self.market_source, self.derivatives_source = _build_sources()
+    def __init__(self, market: Market = "crypto") -> None:
+        self.market: Market = market
+        self.provider = effective_provider(market)
+        self.market_source, self.derivatives_source = _build_sources(market)
 
     def list_symbols(self) -> list[str]:
         return self.market_source.list_symbols()
@@ -196,6 +224,14 @@ class MarketDataService:
                 merged[column] = merged[column].fillna(default)
         merged["liquidation_quality"] = "MISSING"
         merged.loc[liquidation_present, "liquidation_quality"] = "REAL"
+        # Which venue the liquidation notionals came from (Binance pipeline:
+        # GATE / BITGET; empty = none). Native single-venue providers leave it
+        # blank and their own OI/turnover normalise the intensity ratios.
+        if "liquidation_source" in merged.columns:
+            merged["liquidation_source"] = merged["liquidation_source"].fillna("").astype(str)
+        for column in ("liq_ref_oi_usd", "liq_ref_quote_volume"):
+            if column in merged.columns:
+                merged[column] = pd.to_numeric(merged[column], errors="coerce")
 
         if has_settled_funding:
             if "funding_rate_quality" not in merged.columns:

@@ -51,16 +51,24 @@ def _frequency_tier(trigger_count: int) -> FrequencyTier:
     return "low"
 
 
-def _altseason_label(index: int) -> str:
+_ALTSEASON_LABELS = {
+    # Share of the universe beating the benchmark (BTC / SPY), low -> high.
+    "crypto": ("BTC季", "偏BTC", "中性", "偏山寨", "山寨季"),
+    "tradfi": ("SPY主導", "偏SPY", "中性", "偏個股", "個股強勢"),
+}
+
+
+def _altseason_label(index: int, market: str = "crypto") -> str:
+    labels = _ALTSEASON_LABELS.get(market, _ALTSEASON_LABELS["crypto"])
     if index <= 12:
-        return "BTC季"
+        return labels[0]
     if index <= 38:
-        return "偏BTC"
+        return labels[1]
     if index <= 62:
-        return "中性"
+        return labels[2]
     if index <= 82:
-        return "偏山寨"
-    return "山寨季"
+        return labels[3]
+    return labels[4]
 
 
 @dataclass
@@ -90,7 +98,8 @@ class _LiveEvent:
 
 
 class AnomalyTracker:
-    def __init__(self) -> None:
+    def __init__(self, market: str = "crypto") -> None:
+        self._market = market
         self._lock = threading.Lock()
         self._live: dict[tuple[str, str], _LiveEvent] = {}
         self._history: deque[AnomalyHistoryItem] = deque(maxlen=_HISTORY_MAXLEN)
@@ -257,11 +266,14 @@ class AnomalyTracker:
         previous = self.record_altseason(index) if record else None
         return AltseasonIndex(
             index=index,
-            label=_altseason_label(index),  # type: ignore[arg-type]
+            label=_altseason_label(index, self._market),  # type: ignore[arg-type]
             outperform_count=outperform,
             total=total,
             previous_index=previous,
         )
 
 
-anomaly_tracker = AnomalyTracker()
+# One tracker per dashboard so lifecycles, quadrant memory and the breadth
+# gauge never mix crypto with TradFi symbols.
+anomaly_trackers = {"crypto": AnomalyTracker("crypto"), "tradfi": AnomalyTracker("tradfi")}
+anomaly_tracker = anomaly_trackers["crypto"]

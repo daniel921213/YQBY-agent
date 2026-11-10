@@ -20,7 +20,7 @@ from app.services.auth_security_migration import run_auth_security_migration
 from app.services.entitlement_migration import run_entitlement_migration
 from app.services.journal_migration import run_journal_migration
 from app.services.password_reset_service import ensure_inventory
-from app.services.scan_cache import scan_cache
+from app.services.scan_cache import scan_caches
 from app.services.yokai_service import yokai_cache
 from app.services.weekly_brief.service import weekly_brief_cache
 from app.services.symbol_universe import UniverseUnavailable, UnsupportedSymbol
@@ -46,10 +46,12 @@ async def lifespan(app: FastAPI):
             print(f"[startup] password reset code stock ready: {stock}")
     except Exception as exc:  # pragma: no cover
         print(f"[startup] init_db skipped: {type(exc).__name__}: {exc}")
-    # Start the background full-universe scanner for any live provider
+    # Start the background full-universe scanners for any live provider
     # (binance/gate); the mock provider is fast enough to scan per request.
     if settings.is_live_provider and settings.scan_background:
-        scan_cache.start()
+        scan_caches["crypto"].start()
+        if settings.tradfi_scan_background:
+            scan_caches["tradfi"].start()
     if settings.yokai_background:
         yokai_cache.start()
     if settings.weekly_brief_background:
@@ -57,7 +59,8 @@ async def lifespan(app: FastAPI):
     yield
     weekly_brief_cache.stop()
     yokai_cache.stop()
-    scan_cache.stop()
+    for cache in scan_caches.values():
+        cache.stop()
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)

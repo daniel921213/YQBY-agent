@@ -56,6 +56,13 @@ export interface Recommendation {
   confluence_multiplier: number;
 }
 
+/** crypto = 主控台-加密；tradfi = 主控台-外匯版（Binance 傳統市場永續合約）。 */
+export type MarketKind = "crypto" | "tradfi";
+/** 外匯版：標的市場（美股、港股…）目前是否開盤。 */
+export type MarketSession = "OPEN" | "CLOSED";
+/** Binance 管線的爆倉數據來源；null = 無數據（或單一交易所的舊管線）。 */
+export type LiquidationSource = "GATE" | "BITGET";
+
 export interface AnalysisMeta {
   primary_timeframe: string;
   trigger_timeframe: string;
@@ -66,6 +73,7 @@ export interface AnalysisMeta {
   market_type?: "futures";
   score_uses_closed_candles?: boolean;
   official_close_time?: number | null;
+  market?: MarketKind;
 }
 
 export interface MarketSnapshot {
@@ -90,6 +98,11 @@ export interface MarketSnapshot {
   liquidation_intensity_1h: number;
   liquidation_to_volume_1h: number;
   flow_quality: "REAL" | "MISSING" | "PROXY" | "STALE";
+  liquidation_source?: LiquidationSource | null;
+  liquidation_available?: boolean;
+  liquidation_ref_oi_usd?: number | null;
+  asset_class?: string | null;
+  market_session?: MarketSession | null;
 }
 
 export interface AnalysisResponse {
@@ -137,6 +150,8 @@ export interface ScanItem {
   alert_trigger_count: number;
   frequency_tier: FrequencyTier;
   is_new: boolean;
+  asset_class?: string | null;
+  market_session?: MarketSession | null;
 }
 
 export interface MarketBreadth {
@@ -148,7 +163,7 @@ export interface MarketBreadth {
 
 export interface AltseasonIndex {
   index: number;
-  label: "BTC季" | "偏BTC" | "中性" | "偏山寨" | "山寨季";
+  label: "BTC季" | "偏BTC" | "中性" | "偏山寨" | "山寨季" | "SPY主導" | "偏SPY" | "偏個股" | "個股強勢";
   outperform_count: number;
   total: number;
   previous_index: number | null;
@@ -185,6 +200,10 @@ export interface OiMover {
   // 近 1 小時真實爆倉金額（USD）。
   long_liq_usd_1h: number;
   short_liq_usd_1h: number;
+  liquidation_source?: LiquidationSource | null;
+  liquidation_available?: boolean;
+  /** 爆倉來源交易所自己的 OI（USD）；爆倉強度用它當分母。 */
+  liquidation_ref_oi_usd?: number | null;
 }
 
 export interface ScreenerRow {
@@ -209,6 +228,10 @@ export interface ScreenerRow {
   quote_volume_24h?: number | null;
   oi_change_1h: number;
   stage: Stage;
+  asset_class?: string | null;
+  market_session?: MarketSession | null;
+  liquidation_source?: LiquidationSource | null;
+  liquidation_available?: boolean;
 }
 
 export type RiskSeverity = "LOW" | "MEDIUM" | "HIGH";
@@ -232,6 +255,8 @@ export interface RiskRadarItem {
   flags: string[];
   conflicts_official: boolean;
   data_quality?: "REAL" | "PARTIAL" | "MISSING";
+  liquidation_source?: LiquidationSource | null;
+  liquidation_available?: boolean;
 }
 
 export interface RiskRadarPayload {
@@ -254,6 +279,8 @@ export interface ScanResponse {
   universe: ScreenerRow[];
   // 獨立的 5m 已收盤風險提醒；舊版後端沒有此欄位時仍可正常顯示正式 15m 評分。
   risk_radar?: RiskRadarPayload | null;
+  /** 沒有資料可顯示時的原因（例如數據來源被擋）。 */
+  notice?: string | null;
 }
 
 export interface AnomalyHistoryItem {

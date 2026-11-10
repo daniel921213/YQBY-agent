@@ -5,18 +5,15 @@ import { Bot, Send, Loader2, Sparkles, Maximize2, Minimize2 } from "lucide-react
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { askAnalyst, type AnalystMessage } from "@/lib/api";
-
-const SUGGESTIONS = [
-  "現在市場有什麼值得注意的?",
-  "幫我看 BTCUSDT 的結構",
-  "有哪些疑似反轉的幣?",
-  "查一下 PEPE 的代幣資訊和價格"
-];
+import { MARKET_COPY } from "@/lib/market";
+import type { MarketKind } from "@/lib/types";
 
 const MD_CLASS =
   "prose prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:mb-1.5 prose-headings:mt-2.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-hr:my-2.5 prose-table:my-2 prose-blockquote:my-2 prose-pre:my-2";
 
-export function AnalystChat() {
+export function AnalystChat({ market = "crypto" }: { market?: MarketKind }) {
+  const copy = MARKET_COPY[market];
+  const suggestions = ["現在市場有什麼值得注意的?", ...copy.analystSuggestions];
   const [messages, setMessages] = useState<AnalystMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +49,7 @@ export function AnalystChat() {
     setInput("");
     setLoading(true);
     try {
-      const res = await askAnalyst(next);
+      const res = await askAnalyst(next, market);
       setPending(res.reply); // start typewriter
       setShown(0);
     } catch (err) {
@@ -86,13 +83,13 @@ export function AnalystChat() {
           <div className="space-y-3">
             <p className="flex items-center gap-2 text-sm text-slate-300">
               <Sparkles className="h-4 w-4 text-ember" />
-              問我市場、某個幣、或哪些異常。
+              {copy.analystIntro}
             </p>
             <p className="text-xs leading-5 text-slate-600">
               分數=訊號異常強度，非上漲機率；數據判讀，非投資建議。
             </p>
             <div className="flex flex-col gap-2">
-              {SUGGESTIONS.map((s) => (
+              {suggestions.map((s) => (
                 <button
                   key={s}
                   type="button"

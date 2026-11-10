@@ -6,6 +6,7 @@ import pandas as pd
 
 from app.core.config import get_settings
 from app.core.constants import ANOMALY_CAP, ANOMALY_MIN_CONFLUENCE
+from app.core.markets import BENCHMARK_LABEL, BENCHMARK_SYMBOL, Market
 from app.indicators.crowding import latest_funding, latest_ratio_read
 from app.indicators.risk_radar import RiskRadarReading, analyze_five_minute_risk
 from app.schemas.indicators import EvidenceItem
@@ -73,9 +74,39 @@ def _pillar_breakdown(evidence: list) -> list[PillarScore]:
         )
     return rows
 from app.scoring.engine import ScoringEngine
-from app.services.anomaly_tracker import anomaly_tracker
+from app.services.anomaly_tracker import AnomalyTracker, anomaly_trackers
 from app.services.market_data_service import MarketDataService
+from app.services.market_sessions import session_state
 from app.services.symbol_universe import require_supported_symbols
+
+# Shown on a TradFi decision while the underlying exchange is closed.
+SESSION_CLOSED_REASON = "標的市場休市中，暫停推薦"
+
+
+def _liquidation_source(frame: pd.DataFrame) -> str | None:
+    if "liquidation_source" not in frame.columns or frame.empty:
+        return None
+    value = str(frame["liquidation_source"].iloc[-1]).upper()
+    return value if value in {"GATE", "BITGET"} else None
+
+
+def _liquidation_available(frame: pd.DataFrame, bars: int) -> bool:
+    if "liquidation_quality" not in frame.columns or frame.empty:
+        return False
+    return bool(frame["liquidation_quality"].tail(bars).astype(str).str.upper().eq("REAL").all())
+
+
+def _tradfi_session(symbol: str, provider: str = "binance") -> tuple[str | None, str | None]:
+    """(Binance underlyingType, OPEN/CLOSED) for a TradFi contract."""
+    if provider == "mock":
+        from app.data_sources.binance_mock import mock_underlying_type
+
+        asset: str | None = mock_underlying_type(symbol)
+    else:
+        from app.data_sources.binance_live import underlying_type
+
+        asset = underlying_type(symbol)
+    return asset, session_state(asset)
 
 
 def _bars_for(seconds: int, primary_timeframe: str) -> int:
@@ -259,6 +290,9 @@ def _oi_mover(
         side=side,
         long_liq_usd_1h=metrics.long_liq_usd_1h if metrics else 0.0,
         short_liq_usd_1h=metrics.short_liq_usd_1h if metrics else 0.0,
+        liquidation_source=metrics.liquidation_source if metrics else None,
+        liquidation_available=metrics.liquidation_available if metrics else False,
+        liquidation_ref_oi_usd=metrics.liquidation_ref_oi_usd if metrics else None,
     )
 
 
@@ -272,10 +306,36 @@ def _is_anomaly(recommendation: Recommendation) -> bool:
 
 
 class AnalysisService:
-    def __init__(self) -> None:
-        self.market_data = MarketDataService()
+    def __init__(self, market: Market = "crypto") -> None:
+        self.market: Market = market
+        self.market_data = MarketDataService(market)
         self.scoring = ScoringEngine()
         self.settings = get_settings()
+        self.tracker: AnomalyTracker = anomaly_trackers[market]
+        self.benchmark_symbol = BENCHMARK_SYMBOL[market]
+        self.benchmark_label = BENCHMARK_LABEL[market]
+
+    def _meta(self, primary_timeframe, trigger_timeframe, trend_timeframe, lookback,
+              official_close_time=None) -> AnalysisMeta:
+        return AnalysisMeta(
+            primary_timeframe=primary_timeframe,
+            trigger_timeframe=trigger_timeframe,
+            trend_timeframe=trend_timeframe,
+            lookback=lookback,
+            data_provider=self.market_data.provider,
+            official_close_time=official_close_time,
+            market=self.market,
+        )
+
+    def _benchmark_frame(self, primary_timeframe: str, lookback: int) -> pd.DataFrame:
+        try:
+            return self.market_data.get_enriched_market_frame(
+                self.benchmark_symbol, primary_timeframe, lookback, with_derivatives=False
+            )
+        except Exception:
+            # Without the benchmark, relative strength reads 資料不足 instead
+            # of failing the whole analysis.
+            return pd.DataFrame(columns=["timestamp", "close"])
 
     def analyze(
         self,
@@ -285,20 +345,20 @@ class AnalysisService:
         trend_timeframe: str,
         lookback: int,
     ) -> AnalysisResponse:
-        require_supported_symbols([symbol])
+        require_supported_symbols([symbol], self.market)
         # The 5-pillar model derives 1h/4h/24h momentum and relative strength from
         # the single primary frame, so trigger/trend frames are no longer fetched.
-        # BTC is the relative-strength benchmark (cached => ~free across a scan).
+        # BTC (crypto) / SPY (外匯版) is the relative-strength benchmark
+        # (cached => ~free across a scan).
         primary = self.market_data.get_enriched_market_frame(symbol, primary_timeframe, lookback)
-        btc = self.market_data.get_enriched_market_frame(
-            "BTCUSDT", primary_timeframe, lookback, with_derivatives=False
-        )
+        btc = self._benchmark_frame(primary_timeframe, lookback)
 
         recommendation, evidence, stage = self.scoring.score(
             symbol=symbol,
             primary=primary,
             btc=btc,
             primary_timeframe=primary_timeframe,
+            benchmark=self.benchmark_label,
         )
 
         chart = MarketChartPayload(
@@ -330,6 +390,19 @@ class AnalysisService:
         oi_usd = _last_value(primary, "open_interest_usd", _last_value(primary, "open_interest"))
         quote_volume_1h = _flow_sum(primary, "quote_volume", bars_1h)
         total_liq_1h = long_liq_1h + short_liq_1h
+        # Liquidations from another venue are normalised by that venue's own
+        # OI and turnover when it publishes them (Gate does; Bitget does not).
+        liq_ref_oi = _last_value(primary, "liq_ref_oi_usd", 0.0)
+        liq_oi_usd = liq_ref_oi if liq_ref_oi > 0 else oi_usd
+        if "liq_ref_quote_volume" in primary.columns:
+            ref_volume = pd.to_numeric(primary["liq_ref_quote_volume"], errors="coerce").tail(bars_1h)
+            if ref_volume.notna().sum() == bars_1h and float(ref_volume.sum()) > 0:
+                quote_volume_1h = float(ref_volume.sum())
+        asset_class, market_session = (
+            _tradfi_session(symbol, self.market_data.provider)
+            if self.market == "tradfi"
+            else (None, None)
+        )
         funding_raw, funding_8h, funding_hours = latest_funding(primary)
         ratio_read = latest_ratio_read(primary)
         metrics = MarketSnapshot(
@@ -355,11 +428,18 @@ class AnalysisService:
             ),
             long_liq_usd_1h=round(long_liq_1h, 2),
             short_liq_usd_1h=round(short_liq_1h, 2),
-            liquidation_intensity_1h=round(total_liq_1h / oi_usd, 8) if oi_usd > 0 else 0.0,
+            liquidation_intensity_1h=(
+                round(total_liq_1h / liq_oi_usd, 8) if liq_oi_usd > 0 else 0.0
+            ),
             liquidation_to_volume_1h=(
                 round(total_liq_1h / quote_volume_1h, 8) if quote_volume_1h > 0 else 0.0
             ),
             flow_quality=_flow_quality(primary),
+            liquidation_source=_liquidation_source(primary),
+            liquidation_available=_liquidation_available(primary, bars_1h),
+            liquidation_ref_oi_usd=round(liq_ref_oi, 2) if liq_ref_oi > 0 else None,
+            asset_class=asset_class,
+            market_session=market_session,
         )
 
         return AnalysisResponse(
@@ -369,13 +449,9 @@ class AnalysisService:
             metrics=metrics,
             stage=stage.stage,
             stage_reasons=stage.reasons,
-            meta=AnalysisMeta(
-                primary_timeframe=primary_timeframe,
-                trigger_timeframe=trigger_timeframe,
-                trend_timeframe=trend_timeframe,
-                lookback=lookback,
-                data_provider=self.settings.data_provider,
-                official_close_time=_official_close_time(primary, primary_timeframe),
+            meta=self._meta(
+                primary_timeframe, trigger_timeframe, trend_timeframe, lookback,
+                _official_close_time(primary, primary_timeframe),
             ),
         )
 
@@ -391,7 +467,7 @@ class AnalysisService:
     ) -> ScanResponse:
         # No explicit symbols => scan the entire tradable universe.
         scanned_symbols = symbols if symbols is not None else self.market_data.list_symbols()
-        require_supported_symbols(scanned_symbols)
+        require_supported_symbols(scanned_symbols, self.market)
 
         def run(symbol: str) -> AnalysisResponse | None:
             try:
@@ -420,7 +496,7 @@ class AnalysisService:
         # qualification never mixes snapshots or adds another provider request.
         ranked = sorted(analyses, key=lambda a: a.recommendation.score, reverse=True)
         oi_movers, oi_by_symbol = self._build_oi_movers(
-            analyses, primary_timeframe, track=track
+            analyses, primary_timeframe, track=track, tracker=self.tracker
         )
         risk_radar, risk_by_symbol = self._build_risk_radar(analyses, track=track)
 
@@ -443,6 +519,12 @@ class AnalysisService:
                 five_minute=risk_by_symbol.get(symbol),
                 min_quote_volume_24h=self.settings.recommend_min_quote_volume_24h,
             )
+            if analysis.metrics is not None and analysis.metrics.market_session == "CLOSED":
+                decision = replace(
+                    decision,
+                    eligible=False,
+                    failed_reasons=(*decision.failed_reasons, SESSION_CLOSED_REASON),
+                )
             decisions_by_symbol[symbol] = decision
             yokai_decisions_by_symbol[symbol] = evaluate_yokai_long_confirmation(
                 direction=analysis.recommendation.direction,
@@ -491,12 +573,15 @@ class AnalysisService:
             item.price, item.change_24h = _price_and_change_24h(
                 analysis.chart, primary_timeframe
             )
+            if analysis.metrics is not None:
+                item.asset_class = analysis.metrics.asset_class
+                item.market_session = analysis.metrics.market_session
             items.append(item)
 
         # Lifecycle enrichment (first-seen time/price, change-since, trigger count)
         # only on an authoritative full scan — analyst/subset calls don't pollute it.
         if track:
-            anomaly_tracker.record(items)
+            self.tracker.record(items)
 
         breadth = MarketBreadth(
             total=len(analyses),
@@ -505,7 +590,7 @@ class AnalysisService:
             anomaly_count=sum(1 for a in analyses if _is_anomaly(a.recommendation)),
         )
 
-        altseason = self._build_altseason(analyses, record=track)
+        altseason = self._build_altseason(analyses, record=track, tracker=self.tracker)
         universe = self._build_universe(
             analyses,
             primary_timeframe,
@@ -527,13 +612,9 @@ class AnalysisService:
             universe=universe,
             risk_radar=risk_radar,
             generated_at=int(time.time()),
-            meta=AnalysisMeta(
-                primary_timeframe=primary_timeframe,
-                trigger_timeframe=trigger_timeframe,
-                trend_timeframe=trend_timeframe,
-                lookback=lookback,
-                data_provider=self.settings.data_provider,
-                official_close_time=min(official_closes) if official_closes else None,
+            meta=self._meta(
+                primary_timeframe, trigger_timeframe, trend_timeframe, lookback,
+                min(official_closes) if official_closes else None,
             ),
         )
 
@@ -569,7 +650,7 @@ class AnalysisService:
             readings = [reading for reading in pool.map(run, symbols) if reading is not None]
 
         if track and readings:
-            transitions = anomaly_tracker.confirm_risk_state_transitions(
+            transitions = self.tracker.confirm_risk_state_transitions(
                 {reading.symbol: reading.state for reading in readings}
             )
             updated: list[RiskRadarReading] = []
@@ -586,7 +667,18 @@ class AnalysisService:
                 updated.append(replace(reading, flags=flags, severity=severity))
             readings = updated
 
-        actionable = [reading for reading in readings if reading.severity != "LOW"]
+        # A closed underlying (外匯版: US equities after hours, weekends) only
+        # trades thinly on the perpetual, so its 5m reads are noise: those
+        # contracts keep their screener reading but stay off the radar list.
+        closed = {
+            analysis.recommendation.symbol
+            for analysis in analyses
+            if analysis.metrics is not None and analysis.metrics.market_session == "CLOSED"
+        }
+        actionable = [
+            reading for reading in readings
+            if reading.severity != "LOW" and reading.symbol not in closed
+        ]
         severity_rank = {"HIGH": 2, "MEDIUM": 1, "LOW": 0}
         actionable.sort(
             key=lambda reading: (
@@ -675,6 +767,10 @@ class AnalysisService:
                     active_flow_direction=active_flow.direction if active_flow else "NEUTRAL",
                     active_flow_strength=active_flow.strength if active_flow else 0.0,
                     cvd_signal=cvd_signal.label if cvd_signal else None,
+                    asset_class=m.asset_class if m else None,
+                    market_session=m.market_session if m else None,
+                    liquidation_source=m.liquidation_source if m else None,
+                    liquidation_available=m.liquidation_available if m else False,
                 )
             )
         rows.sort(key=lambda row: row.score, reverse=True)
@@ -682,8 +778,12 @@ class AnalysisService:
 
     @staticmethod
     def _build_oi_movers(
-        analyses: list[AnalysisResponse], primary_timeframe: str, track: bool = False
+        analyses: list[AnalysisResponse],
+        primary_timeframe: str,
+        track: bool = False,
+        tracker: AnomalyTracker | None = None,
     ) -> tuple[list[OiMover], dict[str, OiMover]]:
+        tracker = tracker or anomaly_trackers["crypto"]
         movers: list[OiMover] = []
         for a in analyses:
             price, change_24h = _price_and_change_24h(a.chart, primary_timeframe)
@@ -699,7 +799,7 @@ class AnalysisService:
         # scanned symbols — not just the shipped top movers — so a coin that
         # jumps into the top list still has a valid "previous" to compare with.
         if track and movers:
-            transitions = anomaly_tracker.confirm_oi_side_transitions(
+            transitions = tracker.confirm_oi_side_transitions(
                 {m.symbol: m.side for m in movers}
             )
             for mover in movers:
@@ -712,13 +812,18 @@ class AnalysisService:
         return movers[:OI_MOVERS_CAP], {mover.symbol: mover for mover in movers}
 
     @staticmethod
-    def _build_altseason(analyses: list[AnalysisResponse], record: bool) -> AltseasonIndex:
+    def _build_altseason(
+        analyses: list[AnalysisResponse],
+        record: bool,
+        tracker: AnomalyTracker | None = None,
+    ) -> AltseasonIndex:
+        tracker = tracker or anomaly_trackers["crypto"]
         # A snapshot is only logged for an authoritative scan (record=True), so
         # the "vs 稍早" baseline isn't skewed by analyst/subset calls.
         outperform = sum(
             1 for a in analyses if _relative_strength_direction(a.evidence) == "LONG"
         )
-        return anomaly_tracker.build_altseason(outperform, len(analyses), record=record)
+        return tracker.build_altseason(outperform, len(analyses), record=record)
 
     @staticmethod
     def _build_item(

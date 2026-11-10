@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, ChevronDown, ChevronUp, Clock, ListFilter } fr
 import type { EvidenceDirection, RiskRadarItem, RiskRadarPayload, RiskSeverity } from "@/lib/types";
 import { formatCompactNumber, formatPercent, percentTone } from "@/lib/format";
 import { ModalShell } from "@/components/dashboard/ModalShell";
+import { liquidationSourceLabel } from "@/lib/market";
 
 interface RiskRadarPanelProps {
   radar?: RiskRadarPayload | null;
@@ -267,7 +268,10 @@ function CompactRiskRow({
         <div className="mt-2 grid gap-2 border-t border-white/5 pt-2 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-5">
           <Metric label="近 15m 價格" value={formatPercent(item.price_change_pct)} tone={percentTone(item.price_change_pct)} />
           <Metric label="近 15m OI" value={formatPercent(item.oi_qty_change_pct)} tone={percentTone(item.oi_qty_change_pct)} />
-          <Metric label="爆倉強度" value={formatPercent(item.liquidation_intensity)} />
+          <Metric
+            label={liquidationSourceLabel(item.liquidation_source, item.liquidation_available) ? `爆倉強度（${liquidationSourceLabel(item.liquidation_source, item.liquidation_available)?.replace("爆倉：", "")}）` : "爆倉強度"}
+            value={item.liquidation_available === false ? "無數據" : formatPercent(item.liquidation_intensity)}
+          />
           <Metric label="主動流" value={flowLabel(item.flow_imbalance)} tone={flowTone(item.flow_imbalance)} />
           <Metric label="事件時間" value={formatEventTime(item.event_time)} />
           <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2 lg:col-span-5">
@@ -334,8 +338,19 @@ function RiskRow({ item, onSelect }: { item: RiskRadarItem; onSelect: (symbol: s
       <td className={`${TD} text-right font-medium tabular-nums ${percentTone(item.price_change_pct)}`}>{formatPercent(item.price_change_pct)}</td>
       <td className={`${TD} text-right font-medium tabular-nums ${percentTone(item.oi_qty_change_pct)}`}>{formatPercent(item.oi_qty_change_pct)}</td>
       <td className={`${TD} text-right`}>
-        <span className="block font-medium tabular-nums text-slate-200">{formatPercent(item.liquidation_intensity)}</span>
-        <span className="mt-1 block whitespace-nowrap text-[11px] tabular-nums text-slate-500">多 {formatUsd(item.long_liq_usd)} · 空 {formatUsd(item.short_liq_usd)}</span>
+        {item.liquidation_available === false ? (
+          <span className="block font-medium text-slate-500">無數據</span>
+        ) : (
+          <>
+            <span className="block font-medium tabular-nums text-slate-200">{formatPercent(item.liquidation_intensity)}</span>
+            <span className="mt-1 block whitespace-nowrap text-[11px] tabular-nums text-slate-500">多 {formatUsd(item.long_liq_usd)} · 空 {formatUsd(item.short_liq_usd)}</span>
+          </>
+        )}
+        {liquidationSourceLabel(item.liquidation_source, item.liquidation_available) ? (
+          <span className="mt-0.5 block whitespace-nowrap text-[10px] text-slate-600">
+            {liquidationSourceLabel(item.liquidation_source, item.liquidation_available)}
+          </span>
+        ) : null}
         {item.liquidation_to_volume && item.liquidation_to_volume > 0 ? (
           <span className="mt-0.5 block whitespace-nowrap text-[11px] tabular-nums text-slate-600">
             佔 1H 成交額 {formatPercent(item.liquidation_to_volume)}

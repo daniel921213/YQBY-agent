@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { fetchMarketAnalysis } from "@/lib/api";
-import type { AnalysisResponse } from "@/lib/types";
+import type { AnalysisResponse, MarketKind } from "@/lib/types";
 
-export function useMarketAnalysis(symbol: string | null) {
+export function useMarketAnalysis(symbol: string | null, market: MarketKind = "crypto") {
   const [data, setData] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,14 +17,14 @@ export function useMarketAnalysis(symbol: string | null) {
         setData(null);
         return;
       }
-      const next = await fetchMarketAnalysis(symbol);
+      const next = await fetchMarketAnalysis(symbol, market);
       setData(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "未知的分析錯誤");
     } finally {
       setLoading(false);
     }
-  }, [symbol]);
+  }, [symbol, market]);
 
   useEffect(() => {
     if (!symbol) {

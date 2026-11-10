@@ -1,5 +1,6 @@
 """Daily closes for the weekly brief: indices and commodities from Yahoo Finance,
-crypto from Gate (the exchange the rest of the site already reads)."""
+crypto from Binance perpetuals (the exchange the dashboards read), falling back
+to Gate spot when Binance is unreachable."""
 
 from __future__ import annotations
 
@@ -21,10 +22,12 @@ class Instrument:
     key: str
     name: str
     group: Group
-    source: Literal["yahoo", "gate"]
+    source: Literal["yahoo", "binance"]
     symbol: str
     kind: Literal["price", "yield"] = "price"
     decimals: int = 2
+    # Gate spot pair used when Binance cannot be reached.
+    gate_symbol: str | None = None
 
 
 INSTRUMENTS: tuple[Instrument, ...] = (
@@ -32,8 +35,8 @@ INSTRUMENTS: tuple[Instrument, ...] = (
     Instrument("nasdaq", "那斯達克", "close", "yahoo", "^IXIC"),
     Instrument("smh", "半導體 SMH", "close", "yahoo", "SMH"),
     Instrument("taiex", "台股加權", "close", "yahoo", "^TWII"),
-    Instrument("btc", "BTC", "close", "gate", "BTC_USDT", decimals=0),
-    Instrument("eth", "ETH", "close", "gate", "ETH_USDT"),
+    Instrument("btc", "BTC", "close", "binance", "BTCUSDT", decimals=0, gate_symbol="BTC_USDT"),
+    Instrument("eth", "ETH", "close", "binance", "ETHUSDT", gate_symbol="ETH_USDT"),
     Instrument("gold", "黃金", "close", "yahoo", "GC=F", decimals=1),
     Instrument("brent", "布蘭特原油", "close", "yahoo", "BZ=F"),
     Instrument("us10y", "10 年期美債殖利率", "kpi", "yahoo", "^TNX", kind="yield", decimals=3),
@@ -56,6 +59,19 @@ def _yahoo_bars(payload: dict[str, Any]) -> list[tuple[date, float]]:
             continue
         local = datetime.fromtimestamp(int(stamp) + offset, timezone.utc).date()
         bars[local] = float(close)
+    return sorted(bars.items())
+
+
+def _binance_bars(payload: list[Any]) -> list[tuple[date, float]]:
+    if not isinstance(payload, list):
+        raise ValueError("unexpected Binance kline payload")
+    bars: dict[date, float] = {}
+    for row in payload:
+        try:
+            day = datetime.fromtimestamp(int(row[0]) // 1000, timezone.utc).date()
+            bars[day] = float(row[4])
+        except (IndexError, TypeError, ValueError):
+            continue
     return sorted(bars.items())
 
 
@@ -113,6 +129,7 @@ def fetch_quotes(
     gate_url: str,
     previous: dict[str, dict[str, Any]] | None = None,
     now: int = 0,
+    binance_url: str = "https://fapi.binance.com",
 ) -> tuple[dict[str, dict[str, Any]], int]:
     """Fetch every instrument; failed ones keep their previous value (marked stale)."""
 
@@ -129,12 +146,24 @@ def fetch_quotes(
                 response.raise_for_status()
                 bars = _yahoo_bars(response.json())
             else:
-                response = client.get(
-                    f"{gate_url.rstrip('/')}/spot/candlesticks",
-                    params={"currency_pair": instrument.symbol, "interval": "1d", "limit": 30},
-                )
-                response.raise_for_status()
-                bars = _gate_bars(response.json())
+                try:
+                    response = client.get(
+                        f"{binance_url.rstrip('/')}/fapi/v1/klines",
+                        params={"symbol": instrument.symbol, "interval": "1d", "limit": 30},
+                    )
+                    response.raise_for_status()
+                    bars = _binance_bars(response.json())
+                    if not bars:
+                        raise ValueError("no Binance bars")
+                except Exception:
+                    if not instrument.gate_symbol:
+                        raise
+                    response = client.get(
+                        f"{gate_url.rstrip('/')}/spot/candlesticks",
+                        params={"currency_pair": instrument.gate_symbol, "interval": "1d", "limit": 30},
+                    )
+                    response.raise_for_status()
+                    bars = _gate_bars(response.json())
             summary = summarize(instrument, bars)
             if summary is None:
                 raise ValueError("no bars")

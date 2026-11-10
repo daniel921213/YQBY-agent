@@ -7,11 +7,13 @@ import type {
   AnalysisResponse,
   ConfidenceLevel,
   EvidenceItem,
+  MarketSession,
   PillarScore,
   ScanItem,
   Stage,
   TradeDirection
 } from "@/lib/types";
+import { assetClassLabel } from "@/lib/market";
 import {
   confidenceLabel,
   directionLabel,
@@ -76,6 +78,9 @@ interface DetailView {
   shortScore: number;
   pillars: PillarScore[];
   evidence: EvidenceItem[];
+  // 外匯版：資產類別與標的市場是否開盤。
+  assetClass?: string | null;
+  session?: MarketSession | null;
 }
 
 function viewFromScanItem(item: ScanItem): DetailView {
@@ -92,7 +97,9 @@ function viewFromScanItem(item: ScanItem): DetailView {
     longScore: item.long_score,
     shortScore: item.short_score,
     pillars: item.pillars,
-    evidence: item.evidence
+    evidence: item.evidence,
+    assetClass: item.asset_class,
+    session: item.market_session
   };
 }
 
@@ -111,7 +118,9 @@ function viewFromAnalysis(analysis: AnalysisResponse): DetailView {
     longScore: rec.long_score,
     shortScore: rec.short_score,
     pillars: derivePillars(analysis.evidence),
-    evidence: analysis.evidence
+    evidence: analysis.evidence,
+    assetClass: analysis.metrics?.asset_class,
+    session: analysis.metrics?.market_session
   };
 }
 
@@ -171,6 +180,22 @@ export function DetailPanel({
               >
                 {view.stage}
               </span>
+              {assetClassLabel(view.assetClass) ? (
+                <span className="rounded-sm border border-white/10 bg-white/[0.03] px-2 py-0.5 text-xs text-slate-300">
+                  {assetClassLabel(view.assetClass)}
+                </span>
+              ) : null}
+              {view.session ? (
+                <span
+                  className={`rounded-sm border px-2 py-0.5 text-xs font-medium ${
+                    view.session === "OPEN"
+                      ? "border-long/35 bg-long/10 text-long"
+                      : "border-ember/40 bg-ember/10 text-ember"
+                  }`}
+                >
+                  {view.session === "OPEN" ? "開盤中" : "休市中"}
+                </span>
+              ) : null}
               <span className="text-xs text-slate-500">
                 {scanMinutes !== null
                   ? `本輪掃描 · ${formatRelativeTime(scanMinutes)}`
@@ -186,6 +211,11 @@ export function DetailPanel({
               {confidenceLabel(view.confidence)}
             </p>
             <p className="mt-1 text-xs text-slate-500">{stageHint(view.stage)}</p>
+            {view.session === "CLOSED" ? (
+              <p className="mt-2 rounded-md border border-ember/30 bg-ember/10 px-3 py-2 text-xs leading-5 text-ember">
+                標的市場休市中：合約仍可交易，但量能偏低、開盤可能跳空，休市期間不列入推薦。
+              </p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-2">

@@ -177,11 +177,11 @@ function YokaiIntelligence() {
               <span className="yokai-gradient-text block">聚集的妖氣</span>
             </h2>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-              外部情報只負責發現題材；真正的做多資格，仍需通過 Gate 的 15m 正式方向、OI、主動流與 5m 時機確認。
+              外部情報只負責發現題材；真正的做多資格，仍需通過合約數據的 15m 正式方向、OI、主動流與 5m 時機確認。
             </p>
             <div className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
               <HeroMetric label="活躍賽道" value={data?.narratives.filter((item) => item.heat_score > 0).length ?? 0} suffix="條" />
-              <HeroMetric label="Gate 覆蓋" value={data?.coverage_symbols ?? 0} suffix="幣" />
+              <HeroMetric label="合約覆蓋" value={data?.coverage_symbols ?? 0} suffix="幣" />
               <HeroMetric label="確認做多" value={data?.qualified_longs.length ?? 0} suffix="筆" tone="long" />
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -246,7 +246,7 @@ function YokaiIntelligence() {
             />
           ) : (
             <div className="grid min-h-72 place-items-center rounded-[1.6rem] border border-white/10 bg-[#080709]/92 p-6 text-center text-sm text-slate-500">
-              {loading ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />正在建立全市場敘事星圖…</> : "等待第一批題材資料，原有 Gate 功能仍正常運作。"}
+              {loading ? <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />正在建立全市場敘事星圖…</> : "等待第一批題材資料，原有主控台功能仍正常運作。"}
             </div>
           )}
         </section>
@@ -499,7 +499,7 @@ function TokenMatrix({ narrative, tokens, allTokens, filter, query, onFilter, on
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-kicker text-[9px] tracking-[0.24em] text-ember">GATE CONFIRMATION MATRIX</p>
-            <h2 className="mt-1 text-xl font-bold text-slate-50">Gate 幣種確認</h2>
+            <h2 className="mt-1 text-xl font-bold text-slate-50">合約幣種確認</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">{narrative.name}相關幣種；有幾個通過就顯示幾個，不設名額。</p>
           </div>
           <div className="rounded-xl border border-long/25 bg-long/[.08] px-3 py-2 text-right">
@@ -510,7 +510,7 @@ function TokenMatrix({ narrative, tokens, allTokens, filter, query, onFilter, on
         <div className="mt-4 flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-            <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="搜尋 Gate 幣種" className="h-10 w-full rounded-lg border border-white/10 bg-black/20 pl-9 pr-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-ember/45" />
+            <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="搜尋幣種" className="h-10 w-full rounded-lg border border-white/10 bg-black/20 pl-9 pr-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-ember/45" />
           </div>
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -526,7 +526,7 @@ function TokenMatrix({ narrative, tokens, allTokens, filter, query, onFilter, on
       </div>
       <div className="max-h-[780px] divide-y divide-white/5 overflow-y-auto">
         {tokens.map((token) => <TokenRow key={token.symbol} token={token} onSelect={onSelect} />)}
-        {!tokens.length ? <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-5 text-center"><Database className="h-7 w-7 text-slate-700" /><p className="text-sm text-slate-500">{allTokens.length ? "目前篩選條件下沒有幣種" : "這個題材目前沒有對應到 Gate 掃描範圍"}</p></div> : null}
+        {!tokens.length ? <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-5 text-center"><Database className="h-7 w-7 text-slate-700" /><p className="text-sm text-slate-500">{allTokens.length ? "目前篩選條件下沒有幣種" : "這個題材目前沒有對應到合約掃描範圍"}</p></div> : null}
       </div>
     </section>
   );
@@ -569,7 +569,7 @@ function TokenDetail({ token, onClose }: { token: YokaiToken; onClose: () => voi
     <ModalShell title={token.symbol} subtitle={token.narrative_names.join("・")} icon={<Sparkles className="h-4 w-4" />} onClose={onClose} widthClass="max-w-4xl">
       <div className="grid gap-4 sm:grid-cols-3">
         <DetailMetric icon={<Gauge />} label="妖氣值" value={token.narrative_heat.toFixed(1)} hint={`${token.narrative_lifecycle}階段`} />
-        <DetailMetric icon={<Activity />} label="Gate 正式方向" value={directionLabel(token.formal_direction)} hint={token.formal_stage} tone={directionTone(token.formal_direction)} />
+        <DetailMetric icon={<Activity />} label="合約正式方向" value={directionLabel(token.formal_direction)} hint={token.formal_stage} tone={directionTone(token.formal_direction)} />
         <DetailMetric icon={<TrendingUp />} label="近 1h OI" value={formatPercent(token.oi_change_1h)} hint={token.oi_side ?? "象限等待中"} tone={percentTone(token.oi_change_1h)} />
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

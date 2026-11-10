@@ -160,6 +160,7 @@ class WeeklyBriefCollector:
             self.settings.gate_base_url,
             state.get("quotes"),
             now,
+            binance_url=self.settings.binance_base_url,
         )
         state["quotes"] = quotes
         source = state["sources"].get("markets", {})
@@ -356,7 +357,7 @@ def build_response(state: dict[str, Any] | None, now: int) -> WeeklyBriefRespons
         },
         {
             "key": "markets",
-            "name": "Yahoo Finance／Gate 行情",
+            "name": "Yahoo Finance／Binance 行情",
             "health": _health(sources_state.get("markets")),
             "last_success_at": (sources_state.get("markets") or {}).get("last_success_at"),
         },

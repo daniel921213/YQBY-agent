@@ -35,6 +35,7 @@ class GateHttpClient:
         params: dict[str, Any] | None = None,
         *,
         cache: bool = True,
+        ttl: float | None = None,
         max_retries: int = 3,
     ) -> Any:
         cache_key = f"{path}?{sorted((params or {}).items())}"
@@ -61,7 +62,7 @@ class GateHttpClient:
             response.raise_for_status()
             data = response.json()
             if cache:
-                self._cache.set(cache_key, data)
+                self._cache.set(cache_key, data, ttl)
             return data
 
         raise RuntimeError(f"Gate request failed after {max_retries} retries: {path}") from last_exc

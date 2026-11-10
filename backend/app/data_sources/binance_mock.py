@@ -24,11 +24,35 @@ _MOCK_UNIVERSE_BASES = (
 )
 
 
+# Synthetic stand-in for the 主控台-外匯版 universe (commodities, US equities
+# and ETFs, Asian equities). SPY is the relative-strength benchmark.
+_MOCK_TRADFI_BASES = (
+    "XAU", "XAG", "CL", "BZ", "NATGAS", "COPPER", "SPY", "QQQ", "NVDA", "TSLA",
+    "AAPL", "MSFT", "AMD", "MU", "GOOGL", "META", "AMZN", "TSM", "SOXL", "TQQQ",
+    "SKHYNIX", "SAMSUNG", "ZHIPU", "UNITREE",
+)
+
+
+_MOCK_TRADFI_TYPES = {
+    "XAU": "COMMODITY", "XAG": "COMMODITY", "CL": "COMMODITY", "BZ": "COMMODITY",
+    "NATGAS": "COMMODITY", "COPPER": "COMMODITY", "SKHYNIX": "KR_EQUITY",
+    "SAMSUNG": "KR_EQUITY", "ZHIPU": "HK_EQUITY", "UNITREE": "CN_EQUITY",
+}
+
+
+def mock_underlying_type(symbol: str) -> str:
+    """Binance-style underlyingType for the mock TradFi universe."""
+    return _MOCK_TRADFI_TYPES.get(symbol.removesuffix("USDT"), "EQUITY")
+
+
 class BinanceMockDataSource(MarketDataSource):
     """Deterministic synthetic OHLCV with buy/sell volume split."""
 
+    def __init__(self, market: str = "crypto") -> None:
+        self._bases = _MOCK_TRADFI_BASES if market == "tradfi" else _MOCK_UNIVERSE_BASES
+
     def list_symbols(self) -> list[str]:
-        return [f"{base}USDT" for base in _MOCK_UNIVERSE_BASES]
+        return [f"{base}USDT" for base in self._bases]
 
     def get_klines(self, symbol: str, timeframe: str, limit: int) -> pd.DataFrame:
         step = timeframe_to_seconds(timeframe)

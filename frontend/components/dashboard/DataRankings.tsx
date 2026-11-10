@@ -6,6 +6,7 @@ import type { OiMover, OiMoverSide, RiskRadarPayload, ScreenerRow } from "@/lib/
 import { formatCompactNumber, formatPercent, fundingRate8h, percentTone } from "@/lib/format";
 import { OiQuadrantChart } from "@/components/dashboard/OiQuadrantChart";
 import { RiskRadarPanel } from "@/components/dashboard/RiskRadarPanel";
+import { providerLabel, useMarketCopy } from "@/lib/market";
 
 interface DataRankingsProps {
   universe: ScreenerRow[];
@@ -90,7 +91,7 @@ const TAB_META: Record<RadarTab, { icon: React.ReactNode; title: string; descrip
   transition: {
     icon: <RadioTower className="h-3.5 w-3.5" />,
     title: "象限轉換監控",
-    description: "基準＝上一輪掃描（約 5 分鐘）；切換象限的幣優先，其餘依 1H 動能排序"
+    description: "基準＝上一輪掃描（約 5 分鐘）；切換象限者優先，其餘依 1H 動能排序"
   },
   squeeze: {
     icon: <Zap className="h-3.5 w-3.5" />,
@@ -230,20 +231,17 @@ function ScoreBasisNotice({
             正式資料截止 {formatCloseTime(officialCloseTime)}
           </p>
         ) : null}
+        {(dataProvider ?? "").toLowerCase().includes("binance") ? (
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            爆倉數據來自 Gate（Gate 沒有的合約改用 Bitget，兩邊都沒有則標示無數據）
+          </p>
+        ) : null}
       </div>
       <span className="ml-auto text-xs leading-5 text-slate-500">
         5m 雷達是獨立風險提醒，不參與正式分數或方向判定
       </span>
     </section>
   );
-}
-
-function providerLabel(provider?: string): string {
-  if (!provider) return "Gate Futures";
-  const normalized = provider.toLowerCase();
-  if (normalized.includes("gate")) return "Gate Futures";
-  if (normalized.includes("binance")) return "Binance Futures";
-  return `${provider} Futures`;
 }
 
 function formatCloseTime(epochSeconds: number): string {
@@ -254,6 +252,11 @@ function formatCloseTime(epochSeconds: number): string {
     minute: "2-digit",
     hour12: false
   }).format(new Date(epochSeconds * 1000));
+}
+
+/** 爆倉強度的分母：爆倉來源交易所自己的 OI（Gate），沒有就用 Binance OI。 */
+function liquidationBase(mover: OiMover): number {
+  return Math.max(1, mover.liquidation_ref_oi_usd ?? mover.total_oi);
 }
 
 function buildTransitionSignals(movers: EnrichedMover[]): TransitionSignal[] {
@@ -269,7 +272,7 @@ function buildTransitionSignals(movers: EnrichedMover[]): TransitionSignal[] {
         Math.min(12, (Math.abs(mover.oi_delta) / Math.max(1, mover.total_oi)) * 120);
       const pressureBonus =
         Math.min(10, Math.abs(mover.funding_8h) * 28000) +
-        Math.min(8, (liqUsd1h / Math.max(1, mover.total_oi)) / 0.002 * 8);
+        Math.min(8, (liqUsd1h / liquidationBase(mover)) / 0.002 * 8);
       const priority = momentum + pressureBonus + (changed ? 45 : 0);
 
       return {
@@ -295,8 +298,8 @@ function buildSqueezeSignals(movers: EnrichedMover[]): SqueezeSignal[] {
     // 全體帳戶擁擠以「這個幣自己的常態」為基準，不假設它是純散戶資料。
     const ratioDeviation = mover.account_ratio - mover.account_ratio_avg;
     // 實際爆倉：1 小時內爆掉 OI 的 0.2% 就拿滿分——從「推測會爆」升級成「已在爆」。
-    const shortLiqPts = Math.min(20, (mover.short_liq_usd_1h / Math.max(1, mover.total_oi)) / 0.002 * 20);
-    const longLiqPts = Math.min(20, (mover.long_liq_usd_1h / Math.max(1, mover.total_oi)) / 0.002 * 20);
+    const shortLiqPts = Math.min(20, (mover.short_liq_usd_1h / liquidationBase(mover)) / 0.002 * 20);
+    const longLiqPts = Math.min(20, (mover.long_liq_usd_1h / liquidationBase(mover)) / 0.002 * 20);
 
     const shortSqueezeScore =
       Math.min(24, (Math.max(0, priceChange) / 0.08) * 24) +
@@ -404,6 +407,7 @@ function TransitionTable({
   signals: TransitionSignal[];
   onSelect: (symbol: string) => void;
 }) {
+  const copy = useMarketCopy();
   if (!signals.length) {
     return <EmptyState text="目前沒有足夠的 OI 轉換資料" />;
   }
@@ -412,7 +416,7 @@ function TransitionTable({
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
-            <th className={TH_CLASS}>幣種</th>
+            <th className={TH_CLASS}>{copy.noun}</th>
             <th className={TH_CLASS}>路徑</th>
             <th className={`${TH_CLASS} text-right`}>OI 1H</th>
             <th className={`${TH_CLASS} text-right`}>價格 1H</th>
@@ -484,15 +488,16 @@ function SqueezeTable({
   signals: SqueezeSignal[];
   onSelect: (symbol: string) => void;
 }) {
+  const copy = useMarketCopy();
   if (!signals.length) {
-    return <EmptyState text="目前沒有明顯擠壓風險（所有幣種指數低於 40）" />;
+    return <EmptyState text={`目前沒有明顯擠壓風險（所有${copy.noun}指數低於 40）`} />;
   }
   return (
     <div className="surface-sunken overflow-x-auto rounded-lg">
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-white/10 bg-white/[0.02] text-left text-xs tracking-wide text-slate-500">
-            <th className={TH_CLASS}>幣種</th>
+            <th className={TH_CLASS}>{copy.noun}</th>
             <th className={TH_CLASS}>類型</th>
             <th className={TH_CLASS}>指數</th>
             <th className={`${TH_CLASS} text-right`}>爆倉 1H</th>

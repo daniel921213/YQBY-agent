@@ -14,12 +14,13 @@
    - **Region** = `Southeast Asia (Singapore)`
 3. **Variables**（環境變數）貼上：
    ```
-   DATA_PROVIDER=gate
+   DATA_PROVIDER=binance
    ANTHROPIC_API_KEY=<你的 Claude 金鑰>
    ANALYST_MODEL=claude-sonnet-4-6
-   SCAN_UNIVERSE_SIZE=150
    ```
-   （`DATA_PROVIDER` 可選 `gate`(預設、免金鑰) / `binance` / `mock`；Gate 公開 API 在新加坡/東京區皆可，無地理封鎖問題。）
+   （`DATA_PROVIDER`：`binance`（建議）= 兩個主控台都讀 Binance 合約，爆倉讀 Gate、Gate 沒有的合約改讀 Bitget；
+   `gate` = 舊版全 Gate 的加密管線（主控台-外匯版仍讀 Binance）；`mock` = 本機假資料。全部免金鑰。）
+   （伺服器若被 Binance 擋（HTTP 451），主控台-加密會自動改用 Gate、30 分鐘後再試 Binance；主控台-外匯版只有 Binance 有資料，會顯示「暫時無法取得」。）
    （`CORS_ORIGINS` 等拿到前端網址後再回來加。）
 4. **Settings → Networking → Generate Domain**，記下後端網址，例如
    `https://yqby-backend-production.up.railway.app`
@@ -60,9 +61,14 @@
 - **推薦的流動性門檻**（24h USDT 成交額，低於門檻的幣仍會出現在篩選表，只是不會被推薦）：
   - `RECOMMEND_MIN_QUOTE_VOLUME_24H`：首頁多空推薦，預設 `2000000`（200 萬美元）
   - `YOKAI_MIN_QUOTE_VOLUME_24H`：妖怪篩選器，預設 `1000000`（100 萬美元）
-- 每個幣每輪掃描會多抓一次 Gate 的 1h 多空比歷史（14 天），用來判斷「相對自身常態」的擁擠程度；5m 雷達不抓。
+- **兩個主控台**（`/` 主控台-加密、`/forex` 主控台-外匯版）權限相同（登入且未到期），各自在背景掃描：
+  - 名單＝Binance 與 Bitget 都有的 USDT 永續合約。外匯版是 Binance 的傳統市場合約：商品（黃金、白銀、原油、天然氣…）、美股與 ETF、韓股、港股、陸股。
+  - 外匯版的相對強弱基準是 SPY（加密是 BTC）；標的市場休市時（美股收盤、週末、商品期貨每日休息）顯示「休市」且不列入推薦。
+  - Binance 統計端點每個 IP 每 5 分鐘限 1,000 次，程式按端點限速並依數據週期快取；第一輪完整掃描約 7–8 分鐘，之後每輪約 5 分鐘。可調 `BINANCE_STATS_MAX_REQUESTS_PER_SECOND`（預設 3）。
+  - 關閉外匯版背景掃描：`TRADFI_SCAN_BACKGROUND=false`。
+- 每個幣每小時多抓一次 Binance 的 1h 多空比歷史（14 天），用來判斷「相對自身常態」的擁擠程度；5m 雷達不抓。
 - **每週消息面**（`/weekly`，登入即可看）不需要新的金鑰：
-  - 經濟日曆來自 Forex Factory 公開日曆檔（只有「本週」，美東週日換週，約台灣時間週日下午）；實際值由美國勞工統計局 BLS 公開 API 補上（非農、失業率、時薪、CPI、PPI、JOLTS）；收盤價來自 Yahoo Finance，BTC／ETH 來自 Gate。
+  - 經濟日曆來自 Forex Factory 公開日曆檔（只有「本週」，美東週日換週，約台灣時間週日下午）；實際值由美國勞工統計局 BLS 公開 API 補上（非農、失業率、時薪、CPI、PPI、JOLTS）；收盤價來自 Yahoo Finance，BTC／ETH 來自 Binance（連不上時改用 Gate）。
   - AI 觀察沿用 `ANTHROPIC_API_KEY` 與 `ANALYST_MODEL`；想換模型可另設 `WEEKLY_BRIEF_MODEL`。只在換週、換模式或新數據公布時重寫，一週約 10 次。
   - 每小時更新一次，另外在重要數據公布後 3 分鐘、以及週一 00:00／週六 06:00（台灣時間）自動更新；資料存在資料庫，重新部署不會遺失上週日曆。
   - 關閉：`WEEKLY_BRIEF_BACKGROUND=false`。

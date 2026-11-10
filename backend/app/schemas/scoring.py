@@ -38,6 +38,8 @@ class AnalysisMeta(BaseModel):
     market_type: Literal["futures"] = "futures"
     score_uses_closed_candles: bool = True
     official_close_time: int | None = None
+    # Which dashboard produced this payload.
+    market: Literal["crypto", "tradfi"] = "crypto"
 
 
 class MarketSnapshot(BaseModel):
@@ -77,6 +79,17 @@ class MarketSnapshot(BaseModel):
     liquidation_intensity_1h: float = 0.0
     liquidation_to_volume_1h: float = 0.0
     flow_quality: Literal["REAL", "MISSING", "PROXY", "STALE"] = "MISSING"
+    # Venue of the liquidation figures on the Binance pipeline ("GATE" /
+    # "BITGET"); None = no venue covers this contract (shown as 無數據), or a
+    # single-venue provider whose liquidations need no label.
+    liquidation_source: Literal["GATE", "BITGET"] | None = None
+    liquidation_available: bool = True
+    # That venue's own OI notional, so intensity = venue liq / venue OI.
+    liquidation_ref_oi_usd: float | None = None
+    # TradFi only: asset class (Binance underlyingType) and whether the
+    # underlying exchange session is open right now.
+    asset_class: str | None = None
+    market_session: Literal["OPEN", "CLOSED"] | None = None
 
 
 class AnalysisResponse(BaseModel):
@@ -137,6 +150,9 @@ class ScanItem(BaseModel):
     alert_trigger_count: int = 1
     frequency_tier: FrequencyTier = "low"
     is_new: bool = False
+    # TradFi only (see MarketSnapshot).
+    asset_class: str | None = None
+    market_session: Literal["OPEN", "CLOSED"] | None = None
 
 
 class AltseasonIndex(BaseModel):
@@ -146,7 +162,11 @@ class AltseasonIndex(BaseModel):
     """
 
     index: int
-    label: Literal["BTC季", "偏BTC", "中性", "偏山寨", "山寨季"]
+    label: Literal[
+        "BTC季", "偏BTC", "中性", "偏山寨", "山寨季",
+        # 外匯版: share of contracts beating SPY.
+        "SPY主導", "偏SPY", "偏個股", "個股強勢",
+    ]
     outperform_count: int
     total: int
     # Earliest snapshot we still hold this session, for a "vs 稍早" delta. None
@@ -193,6 +213,10 @@ class OiMover(BaseModel):
     # Real liquidations over the last hour (squeeze radar's confirmation).
     long_liq_usd_1h: float = 0.0
     short_liq_usd_1h: float = 0.0
+    # Liquidation venue + that venue's OI notional (intensity denominator).
+    liquidation_source: Literal["GATE", "BITGET"] | None = None
+    liquidation_available: bool = True
+    liquidation_ref_oi_usd: float | None = None
 
 
 class ScreenerRow(BaseModel):
@@ -237,6 +261,11 @@ class ScreenerRow(BaseModel):
     active_flow_direction: Literal["LONG", "SHORT", "NEUTRAL"] = "NEUTRAL"
     active_flow_strength: float = 0.0
     cvd_signal: str | None = None
+    # TradFi only (see MarketSnapshot).
+    asset_class: str | None = None
+    market_session: Literal["OPEN", "CLOSED"] | None = None
+    liquidation_source: Literal["GATE", "BITGET"] | None = None
+    liquidation_available: bool = True
 
 
 class MarketBreadth(BaseModel):
@@ -272,6 +301,8 @@ class RiskRadarItem(BaseModel):
     flags: list[str] = Field(default_factory=list)
     conflicts_official: bool = False
     data_quality: Literal["REAL", "PARTIAL", "MISSING"] = "MISSING"
+    liquidation_source: Literal["GATE", "BITGET"] | None = None
+    liquidation_available: bool = True
 
 
 class RiskRadar(BaseModel):
@@ -297,6 +328,8 @@ class ScanResponse(BaseModel):
     universe: list[ScreenerRow] = []
     # Independent risk overlay. It never changes the closed-15m official score.
     risk_radar: RiskRadar | None = None
+    # Shown when the dashboard has nothing to serve (e.g. data source blocked).
+    notice: str | None = None
 
 
 class AnomalyHistoryItem(BaseModel):

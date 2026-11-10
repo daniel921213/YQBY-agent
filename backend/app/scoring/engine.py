@@ -69,6 +69,7 @@ class ScoringEngine:
         primary: pd.DataFrame,
         btc: pd.DataFrame,
         primary_timeframe: str,
+        benchmark: str = "BTC",
     ) -> tuple[Recommendation, list[EvidenceItem], StageResult]:
         long_score = 0.0
         short_score = 0.0
@@ -176,8 +177,10 @@ class ScoringEngine:
             direction=ratio.direction, weight=self.weights.participant_contrast,
             strength=ratio.strength, description=ratio.description)
 
-        # ── 相對 BTC 強弱 ────────────────────────────────────────────
-        rs = analyze_relative_strength(primary, btc, bars_short=16, bars_long=96)
+        # ── 相對基準強弱（加密: BTC；外匯版: SPY）────────────────────
+        rs = analyze_relative_strength(
+            primary, btc, bars_short=16, bars_long=96, benchmark=benchmark
+        )
         add(key="relative_strength", label=rs.label, pillar=P_RELATIVE,
             direction=rs.direction, weight=self.weights.relative_strength,
             strength=rs.strength, description=rs.description)

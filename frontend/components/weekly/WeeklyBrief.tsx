@@ -521,7 +521,7 @@ function SourcesFooter({ sources }: { sources: WeeklySourceStatus[] }) {
   return (
     <footer className="flex flex-col gap-2 px-1 pb-4 text-[11px] leading-relaxed text-slate-500 sm:flex-row sm:items-start sm:justify-between">
       <p className="max-w-3xl">
-        資料來源：Forex Factory 經濟日曆、美國勞工統計局（BLS）、Yahoo Finance、Gate。實際值目前只自動補上
+        資料來源：Forex Factory 經濟日曆、美國勞工統計局（BLS）、Yahoo Finance、Binance。實際值目前只自動補上
         BLS 發布的非農、失業率、時薪、CPI、PPI、JOLTS。AI 觀察由 Claude 依本頁數據撰寫，僅供參考，不構成投資建議。
       </p>
       <ul className="flex shrink-0 flex-wrap gap-x-3 gap-y-1">
